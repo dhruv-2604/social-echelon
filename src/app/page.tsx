@@ -1,103 +1,199 @@
-import Image from "next/image";
+import { Instagram, TrendingUp, Users, Zap } from 'lucide-react'
+import Link from 'next/link'
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+      {/* Navigation */}
+      <nav className="px-6 py-4">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-purple-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-sm">SE</span>
+            </div>
+            <span className="text-white font-bold text-xl">Social Echelon</span>
+          </div>
+          <div className="hidden md:flex space-x-8 text-white/80">
+            <a href="#features" className="hover:text-white transition-colors">Features</a>
+            <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
+            <a href="#about" className="hover:text-white transition-colors">About</a>
+          </div>
+        </div>
+      </nav>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      {/* Hero Section */}
+      <main className="px-6 pt-20 pb-32">
+        <div className="max-w-7xl mx-auto text-center">
+          <h1 className="text-5xl md:text-7xl font-bold text-white mb-8 leading-tight">
+            Your AI-Powered
+            <span className="bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">
+              {" "}Talent Manager
+            </span>
+          </h1>
+          
+          <p className="text-xl md:text-2xl text-white/80 mb-12 max-w-3xl mx-auto leading-relaxed">
+            Transform your Instagram presence with AI-driven insights, personalized growth strategies, 
+            and automated brand partnerships. Professional talent management for micro-influencers.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16">
+            <Link 
+              href="/api/auth/instagram"
+              className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold text-lg flex items-center gap-3 hover:from-pink-600 hover:to-purple-700 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105"
+            >
+              <Instagram className="w-6 h-6" />
+              Connect Instagram & Start Free
+            </Link>
+            
+            <button className="border-2 border-white/30 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white/10 transition-all duration-300">
+              Watch Demo
+            </button>
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+              <div className="text-3xl font-bold text-white mb-2">$2K-5K</div>
+              <div className="text-white/70">Traditional talent manager cost/month</div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+              <div className="text-3xl font-bold text-white mb-2">$97-997</div>
+              <div className="text-white/70">Our AI-powered solution</div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+              <div className="text-3xl font-bold text-white mb-2">24/7</div>
+              <div className="text-white/70">AI availability vs human hours</div>
+            </div>
+          </div>
         </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+
+      {/* Features Section */}
+      <section id="features" className="px-6 py-20 bg-black/20">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-4xl md:text-5xl font-bold text-white text-center mb-16">
+            Everything You Need to 
+            <span className="bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent"> Scale</span>
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 hover:bg-white/10 transition-all duration-300">
+              <TrendingUp className="w-12 h-12 text-pink-400 mb-6" />
+              <h3 className="text-2xl font-bold text-white mb-4">Growth Analytics</h3>
+              <p className="text-white/70 leading-relaxed">
+                Real-time insights into follower growth, engagement rates, and content performance with AI-powered recommendations.
+              </p>
+            </div>
+            
+            <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 hover:bg-white/10 transition-all duration-300">
+              <Zap className="w-12 h-12 text-purple-400 mb-6" />
+              <h3 className="text-2xl font-bold text-white mb-4">AI Content Strategy</h3>
+              <p className="text-white/70 leading-relaxed">
+                Personalized content ideas, optimal posting times, and hashtag strategies tailored to your niche and audience.
+              </p>
+            </div>
+            
+            <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 hover:bg-white/10 transition-all duration-300">
+              <Users className="w-12 h-12 text-blue-400 mb-6" />
+              <h3 className="text-2xl font-bold text-white mb-4">Brand Matching</h3>
+              <p className="text-white/70 leading-relaxed">
+                Automated brand partnership discovery with personalized outreach templates and contract review assistance.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section id="pricing" className="px-6 py-20">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-4xl md:text-5xl font-bold text-white text-center mb-16">
+            Choose Your 
+            <span className="bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent">Growth Plan</span>
+          </h2>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Basic Tier */}
+            <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10">
+              <div className="text-center mb-8">
+                <h3 className="text-2xl font-bold text-white mb-2">Growth Starter</h3>
+                <div className="text-5xl font-bold text-white mb-2">$97<span className="text-2xl text-white/60">/mo</span></div>
+                <p className="text-white/70">Perfect for emerging micro-influencers</p>
+              </div>
+              
+              <ul className="space-y-4 mb-8">
+                <li className="flex items-center text-white/80">
+                  <div className="w-2 h-2 bg-pink-400 rounded-full mr-3"></div>
+                  AI content strategy & templates
+                </li>
+                <li className="flex items-center text-white/80">
+                  <div className="w-2 h-2 bg-pink-400 rounded-full mr-3"></div>
+                  Growth analytics dashboard
+                </li>
+                <li className="flex items-center text-white/80">
+                  <div className="w-2 h-2 bg-pink-400 rounded-full mr-3"></div>
+                  Community access
+                </li>
+                <li className="flex items-center text-white/80">
+                  <div className="w-2 h-2 bg-pink-400 rounded-full mr-3"></div>
+                  Email support
+                </li>
+              </ul>
+              
+              <button className="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white py-3 rounded-xl font-semibold hover:from-pink-600 hover:to-purple-700 transition-all duration-300">
+                Start Free Trial
+              </button>
+            </div>
+
+            {/* Pro Tier */}
+            <div className="bg-gradient-to-r from-pink-500/10 to-purple-600/10 backdrop-blur-sm rounded-2xl p-8 border border-pink-400/30 relative">
+              <div className="absolute top-4 right-4 bg-gradient-to-r from-pink-400 to-purple-400 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                Most Popular
+              </div>
+              
+              <div className="text-center mb-8">
+                <h3 className="text-2xl font-bold text-white mb-2">Pro Manager</h3>
+                <div className="text-5xl font-bold text-white mb-2">$997<span className="text-2xl text-white/60">/mo</span></div>
+                <p className="text-white/70">Complete talent management solution</p>
+              </div>
+              
+              <ul className="space-y-4 mb-8">
+                <li className="flex items-center text-white/80">
+                  <div className="w-2 h-2 bg-purple-400 rounded-full mr-3"></div>
+                  Everything in Growth Starter
+                </li>
+                <li className="flex items-center text-white/80">
+                  <div className="w-2 h-2 bg-purple-400 rounded-full mr-3"></div>
+                  AI brand matching & outreach
+                </li>
+                <li className="flex items-center text-white/80">
+                  <div className="w-2 h-2 bg-purple-400 rounded-full mr-3"></div>
+                  Contract review assistance
+                </li>
+                <li className="flex items-center text-white/80">
+                  <div className="w-2 h-2 bg-purple-400 rounded-full mr-3"></div>
+                  Monthly 1:1 strategy calls
+                </li>
+                <li className="flex items-center text-white/80">
+                  <div className="w-2 h-2 bg-purple-400 rounded-full mr-3"></div>
+                  Priority support
+                </li>
+              </ul>
+              
+              <button className="w-full bg-gradient-to-r from-pink-400 to-purple-500 text-white py-3 rounded-xl font-semibold hover:from-pink-500 hover:to-purple-600 transition-all duration-300">
+                Start Free Trial
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="px-6 py-12 border-t border-white/10">
+        <div className="max-w-7xl mx-auto text-center text-white/60">
+          <p>&copy; 2024 Social Echelon. All rights reserved.</p>
+        </div>
       </footer>
     </div>
-  );
+  )
 }
