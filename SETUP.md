@@ -20,10 +20,11 @@ Transform your Instagram presence with AI-driven insights, personalized growth s
    - Run the SQL schema: `supabase-schema.sql`
    - Update your Supabase URL and keys in `.env.local`
 
-4. **Instagram API Setup**
+4. **Facebook/Instagram Graph API Setup**
    - Create Facebook Developer account
-   - Set up Instagram Basic Display API
-   - Add your client ID, secret, and redirect URI
+   - Set up Facebook App with Instagram Graph API
+   - Add Instagram Business Account permissions
+   - Add your app ID, secret, and redirect URI
 
 5. **Run Development Server**
    ```bash
@@ -86,10 +87,10 @@ NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
-# Instagram API
-INSTAGRAM_CLIENT_ID=your_instagram_client_id
-INSTAGRAM_CLIENT_SECRET=your_instagram_client_secret
-INSTAGRAM_REDIRECT_URI=http://localhost:3000/api/auth/instagram/callback
+# Facebook/Instagram Graph API
+FACEBOOK_APP_ID=your_facebook_app_id
+FACEBOOK_APP_SECRET=your_facebook_app_secret
+FACEBOOK_REDIRECT_URI=http://localhost:3000/api/auth/instagram/callback
 
 # OpenAI
 OPENAI_API_KEY=your_openai_api_key
@@ -121,11 +122,13 @@ NEXTAUTH_SECRET=your_nextauth_secret
 
 ## 🚦 Getting Started Development
 
-1. **Set up Instagram Basic Display API**:
+1. **Set up Facebook/Instagram Graph API**:
    - Go to [Facebook Developers](https://developers.facebook.com/)
-   - Create a new app
-   - Add Instagram Basic Display product
+   - Create a new app (Business type)
+   - Add Instagram Graph API product
+   - Configure permissions: instagram_basic, pages_show_list, pages_read_engagement
    - Configure OAuth redirect URIs
+   - **Important**: Requires Instagram Business Account connected to Facebook Page
 
 2. **Set up Supabase**:
    - Create new project at [Supabase](https://supabase.com)

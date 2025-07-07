@@ -1,6 +1,92 @@
-import { Instagram, TrendingUp, Target, Calendar, DollarSign, Users } from 'lucide-react'
+'use client'
+
+import { Instagram, TrendingUp, Target, Calendar, DollarSign, Users, Loader2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { formatNumber } from '@/lib/utils'
+
+interface UserProfile {
+  id: string
+  instagram_username: string
+  full_name: string
+  avatar_url: string
+  follower_count: number
+  following_count: number
+  posts_count: number
+  engagement_rate: number
+  subscription_tier: string
+  subscription_status: string
+}
+
+interface InstagramPost {
+  id: string
+  instagram_post_id: string
+  caption: string
+  media_type: string
+  media_url: string
+  permalink: string
+  timestamp: string
+  like_count: number
+  comments_count: number
+}
 
 export default function Dashboard() {
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [posts, setPosts] = useState<InstagramPost[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function fetchUserData() {
+      try {
+        const response = await fetch('/api/user/profile')
+        
+        if (!response.ok) {
+          if (response.status === 401) {
+            window.location.href = '/'
+            return
+          }
+          throw new Error('Failed to fetch profile')
+        }
+        
+        const data = await response.json()
+        setProfile(data.profile)
+        setPosts(data.posts)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchUserData()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-purple-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading your dashboard...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Error: {error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    )
+  }
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navigation */}
@@ -17,9 +103,16 @@ export default function Dashboard() {
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <Instagram className="w-5 h-5 text-pink-500" />
-                <span className="text-sm text-gray-600">@username</span>
+                <span className="text-sm text-gray-600">@{profile?.instagram_username}</span>
               </div>
-              <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
+              <img 
+                src={profile?.avatar_url || '/default-avatar.png'} 
+                alt={profile?.full_name || 'Profile'} 
+                className="w-8 h-8 rounded-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.src = '/default-avatar.png'
+                }}
+              />
             </div>
           </div>
         </div>
@@ -28,7 +121,7 @@ export default function Dashboard() {
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Welcome Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back! 👋</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back, {profile?.full_name || profile?.instagram_username}! 👋</h1>
           <p className="text-gray-600">Here's what's happening with your Instagram growth today.</p>
         </div>
 
@@ -41,7 +134,7 @@ export default function Dashboard() {
               </div>
               <span className="text-sm font-medium text-green-600">+5.2%</span>
             </div>
-            <div className="text-2xl font-bold text-gray-900 mb-1">12.5K</div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{formatNumber(profile?.follower_count || 0)}</div>
             <div className="text-sm text-gray-600">Followers</div>
           </div>
 
@@ -50,9 +143,9 @@ export default function Dashboard() {
               <div className="p-2 bg-pink-100 rounded-lg">
                 <TrendingUp className="w-6 h-6 text-pink-600" />
               </div>
-              <span className="text-sm font-medium text-green-600">+12.1%</span>
+              <span className="text-sm font-medium text-purple-600">Rate</span>
             </div>
-            <div className="text-2xl font-bold text-gray-900 mb-1">4.8%</div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{(profile?.engagement_rate || 0).toFixed(1)}%</div>
             <div className="text-sm text-gray-600">Engagement Rate</div>
           </div>
 
@@ -61,21 +154,21 @@ export default function Dashboard() {
               <div className="p-2 bg-purple-100 rounded-lg">
                 <Target className="w-6 h-6 text-purple-600" />
               </div>
-              <span className="text-sm font-medium text-gray-500">This Month</span>
+              <span className="text-sm font-medium text-gray-500">Total</span>
             </div>
-            <div className="text-2xl font-bold text-gray-900 mb-1">24</div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{profile?.posts_count || 0}</div>
             <div className="text-sm text-gray-600">Posts Published</div>
           </div>
 
           <div className="bg-white rounded-xl p-6 shadow-sm border">
             <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <DollarSign className="w-6 h-6 text-green-600" />
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Users className="w-6 h-6 text-blue-600" />
               </div>
-              <span className="text-sm font-medium text-green-600">+$450</span>
+              <span className="text-sm font-medium text-blue-600">Following</span>
             </div>
-            <div className="text-2xl font-bold text-gray-900 mb-1">$1,200</div>
-            <div className="text-sm text-gray-600">Monthly Revenue</div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{formatNumber(profile?.following_count || 0)}</div>
+            <div className="text-sm text-gray-600">Following</div>
           </div>
         </div>
 
@@ -214,13 +307,23 @@ export default function Dashboard() {
 
             {/* Subscription Status */}
             <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-6 text-white">
-              <h3 className="text-lg font-bold mb-2">Growth Starter Plan</h3>
+              <h3 className="text-lg font-bold mb-2">
+                {profile?.subscription_tier === 'pro' ? 'Pro Manager Plan' : 'Growth Starter Plan'}
+              </h3>
               <p className="text-purple-100 text-sm mb-4">
-                You're making great progress! Upgrade to Pro for advanced brand matching.
+                {profile?.subscription_tier === 'pro' 
+                  ? 'You have access to all premium features including brand matching and 1:1 calls.'
+                  : 'You\'re making great progress! Upgrade to Pro for advanced brand matching.'
+                }
               </p>
-              <button className="w-full px-4 py-2 bg-white text-purple-600 font-medium rounded-lg hover:bg-gray-50 transition-colors">
-                Upgrade to Pro
-              </button>
+              {profile?.subscription_tier !== 'pro' && (
+                <button className="w-full px-4 py-2 bg-white text-purple-600 font-medium rounded-lg hover:bg-gray-50 transition-colors">
+                  Upgrade to Pro
+                </button>
+              )}
+              <div className="mt-2 text-xs text-purple-100">
+                Status: {profile?.subscription_status || 'inactive'}
+              </div>
             </div>
           </div>
         </div>
