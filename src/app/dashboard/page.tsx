@@ -3,6 +3,7 @@
 import { Instagram, TrendingUp, Target, Calendar, DollarSign, Users, Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { formatNumber } from '@/lib/utils'
+import WeeklyContentPlan from '@/components/WeeklyContentPlan'
 
 interface UserProfile {
   id: string
@@ -171,6 +172,9 @@ export default function Dashboard() {
             <div className="text-sm text-gray-600">Following</div>
           </div>
         </div>
+
+        {/* Weekly Content Plan */}
+        <WeeklyContentPlan />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* AI Action Center */}

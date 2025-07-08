@@ -101,6 +101,32 @@ export async function GET(request: NextRequest) {
       console.log('Created user with ID:', userId)
     }
 
+    // Store Instagram posts in database
+    if (media.length > 0) {
+      console.log('Storing', media.length, 'Instagram posts')
+      const postsToInsert = media.map(post => ({
+        profile_id: userId,
+        instagram_post_id: post.id,
+        caption: post.caption || '',
+        media_type: post.media_type,
+        media_url: post.media_url,
+        permalink: post.permalink,
+        timestamp: post.timestamp,
+        like_count: post.like_count || 0,
+        comments_count: post.comments_count || 0
+      }))
+
+      const { error: postsError } = await supabaseAdmin
+        .from('instagram_posts')
+        .upsert(postsToInsert, { onConflict: 'profile_id,instagram_post_id' })
+
+      if (postsError) {
+        console.error('Error storing posts:', postsError)
+      } else {
+        console.log('Successfully stored posts')
+      }
+    }
+
     // Store access token securely (in production, encrypt this)
     const { error: tokenError } = await supabaseAdmin
       .from('user_tokens')
@@ -108,7 +134,7 @@ export async function GET(request: NextRequest) {
         user_id: userId,
         instagram_access_token: accessToken,
         updated_at: new Date().toISOString()
-      })
+      }, { onConflict: 'user_id' })
 
     if (tokenError) {
       console.error('Token storage error:', tokenError)

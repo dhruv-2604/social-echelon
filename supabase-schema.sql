@@ -154,6 +154,39 @@ CREATE TRIGGER update_user_tokens_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
+-- Create content_plans table for AI-generated weekly plans
+CREATE TABLE content_plans (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  week_starting DATE NOT NULL,
+  suggestions JSONB NOT NULL,
+  overall_strategy TEXT,
+  user_preferences JSONB,
+  performance_data JSONB,
+  generated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create index for efficient querying
+CREATE INDEX idx_content_plans_user_week ON content_plans(user_id, week_starting);
+
+-- Add RLS policy for content_plans
+ALTER TABLE content_plans ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own content plans" ON content_plans
+  FOR SELECT USING (
+    user_id IN (
+      SELECT id FROM profiles WHERE auth.uid()::text = id::text
+    )
+  );
+
+CREATE POLICY "Users can insert own content plans" ON content_plans
+  FOR INSERT WITH CHECK (
+    user_id IN (
+      SELECT id FROM profiles WHERE auth.uid()::text = id::text
+    )
+  );
+
 -- Insert sample brands for testing
 INSERT INTO brands (name, website, industry, description, target_follower_min, target_follower_max, target_engagement_min, target_niches, budget_min, budget_max) VALUES
 ('FitnessBrand', 'https://fitnessbrand.com', 'Health & Fitness', 'Premium fitness equipment and supplements', 5000, 100000, 3.0, ARRAY['fitness', 'health', 'wellness'], 200, 500),

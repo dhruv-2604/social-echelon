@@ -1,0 +1,143 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+import { cookies } from 'next/headers'
+import { ContentGenerator, UserProfile } from '@/lib/ai/content-generator'
+import { ContentAnalyzer } from '@/lib/ai/content-analyzer'
+import { InstagramAPI } from '@/lib/instagram'
+
+// Create admin client for server-side operations
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
+
+export async function POST(request: NextRequest) {
+  try {
+    const cookieStore = await cookies()
+    const userId = cookieStore.get('user_id')?.value
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+    }
+
+    console.log('Generating content plan for user:', userId)
+
+    // Get user profile and preferences
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single()
+
+    if (profileError || !profile) {
+      console.error('Profile error:', profileError)
+      return NextResponse.json({ error: 'User profile not found' }, { status: 404 })
+    }
+
+    // Get user's content preferences (with defaults)
+    const body = await request.json()
+    const userProfile: UserProfile = {
+      niche: body.niche || profile.niche || 'lifestyle',
+      primary_goal: body.primary_goal || profile.primary_goal || 'growth',
+      content_style: body.content_style || profile.content_style || 'authentic',
+      target_audience: body.target_audience || profile.target_audience || 'young professionals and entrepreneurs',
+      voice_tone: body.voice_tone || profile.voice_tone || 'casual',
+      posting_frequency: body.posting_frequency || profile.posting_frequency || 3
+    }
+
+    // Save preferences to user profile if they were provided in the request
+    if (body.niche || body.primary_goal || body.content_style || body.target_audience || body.voice_tone || body.posting_frequency) {
+      console.log('Updating user preferences in profile')
+      const { error: updateError } = await supabaseAdmin
+        .from('profiles')
+        .update({
+          niche: userProfile.niche,
+          primary_goal: userProfile.primary_goal,
+          content_style: userProfile.content_style,
+          target_audience: userProfile.target_audience,
+          voice_tone: userProfile.voice_tone,
+          posting_frequency: userProfile.posting_frequency,
+          preferences_set: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId)
+
+      if (updateError) {
+        console.error('Failed to update user preferences:', updateError)
+      } else {
+        console.log('User preferences saved successfully')
+      }
+    }
+
+    console.log('User profile:', userProfile)
+
+    // Get user's Instagram posts for analysis
+    const { data: posts, error: postsError } = await supabaseAdmin
+      .from('instagram_posts')
+      .select('*')
+      .eq('profile_id', userId)
+      .order('timestamp', { ascending: false })
+      .limit(20)
+
+    if (postsError) {
+      console.error('Posts error:', postsError)
+    }
+
+    console.log('Found posts:', posts?.length || 0)
+
+    // Analyze user's performance data
+    const performanceData = ContentAnalyzer.analyzeUserPerformance(
+      posts || [], 
+      profile.follower_count || 0
+    )
+
+    console.log('Performance analysis complete:', {
+      avgEngagementRate: performanceData.avgEngagementRate,
+      topContentTypes: performanceData.topPerformingContentTypes.length
+    })
+
+    // Generate weekly content plan
+    const contentPlan = await ContentGenerator.generateWeeklyPlan(
+      userProfile,
+      performanceData,
+      userId
+    )
+
+    console.log('Content plan generated with', contentPlan.suggestions.length, 'suggestions')
+
+    // Store the content plan in the database
+    const { error: insertError } = await supabaseAdmin
+      .from('content_plans')
+      .insert({
+        user_id: userId,
+        week_starting: contentPlan.week_starting,
+        suggestions: contentPlan.suggestions,
+        overall_strategy: contentPlan.overall_strategy,
+        user_preferences: userProfile,
+        performance_data: performanceData,
+        generated_at: contentPlan.generated_at
+      })
+
+    if (insertError) {
+      console.error('Failed to store content plan:', insertError)
+      // Continue anyway - we can still return the plan
+    }
+
+    return NextResponse.json({
+      success: true,
+      content_plan: contentPlan,
+      performance_summary: {
+        avg_engagement_rate: performanceData.avgEngagementRate,
+        total_posts_analyzed: posts?.length || 0,
+        top_content_type: performanceData.topPerformingContentTypes[0]?.type || 'REELS'
+      }
+    })
+
+  } catch (error) {
+    console.error('Content plan generation error:', error)
+    return NextResponse.json(
+      { error: 'Failed to generate content plan' },
+      { status: 500 }
+    )
+  }
+}
