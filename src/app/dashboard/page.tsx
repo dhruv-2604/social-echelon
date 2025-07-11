@@ -101,7 +101,19 @@ export default function Dashboard() {
               <span className="font-bold text-xl text-gray-900">Social Echelon</span>
             </div>
             
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-6">
+              <a 
+                href="/algorithm-insights" 
+                className="text-sm font-medium text-gray-600 hover:text-purple-600 transition-colors"
+              >
+                Algorithm Insights
+              </a>
+              <a 
+                href="/trends" 
+                className="text-sm font-medium text-gray-600 hover:text-purple-600 transition-colors"
+              >
+                Trends
+              </a>
               <div className="flex items-center space-x-2">
                 <Instagram className="w-5 h-5 text-pink-500" />
                 <span className="text-sm text-gray-600">@{profile?.instagram_username}</span>

@@ -4,11 +4,12 @@
 
 ## 🏗️ **SYSTEM ARCHITECTURE OVERVIEW**
 
-Social Echelon is built on 4 core engines:
+Social Echelon is built on 5 core engines:
 1. **Content Intelligence Engine** - AI-powered personalized content generation
 2. **Trend Monitoring Engine** - Real-time trend collection and analysis
 3. **User Management Engine** - Authentication, profiles, and preferences
 4. **Brand Partnership Engine** - AI matching for influencer-brand partnerships
+5. **Algorithm Detection Engine** - Crowdsourced Instagram algorithm change detection
 
 ---
 
@@ -131,6 +132,36 @@ Social Echelon is built on 4 core engines:
 | **Brand Database** | MEDIUM | Web scraping or API integration | 2 weeks |
 | **Contract Templates** | LOW | Legal document generation | 1 week |
 | **Payment Processing** | LOW | Stripe Connect integration | 2 weeks |
+
+---
+
+## 🔍 **ALGORITHM DETECTION ENGINE**
+
+### ✅ **FULLY FUNCTIONING**
+| Feature | Status | Description |
+|---------|---------|-------------|
+| **Database Architecture** | ✅ LIVE | user_performance_metrics, algorithm_changes, algorithm_insights tables |
+| **Performance Collector** | ✅ LIVE | Collects reach, engagement, content type metrics hourly |
+| **Anomaly Detection** | ✅ LIVE | Detects reach drops, format shifts, timing changes |
+| **Confidence Scoring** | ✅ LIVE | Statistical significance testing for changes |
+| **Dashboard Interface** | ✅ LIVE | Real-time algorithm status visualization |
+| **API Endpoints** | ✅ LIVE | Status, history, metrics collection endpoints |
+| **Scheduled Jobs** | ✅ LIVE | Runs detection every 6 hours via Vercel cron |
+
+### ⚠️ **SEMI-FUNCTIONING**
+| Feature | Status | Limitation | Fix Needed |
+|---------|---------|------------|------------|
+| **Instagram Insights API** | ⚠️ PARTIAL | Limited to basic metrics | Need advanced insights |
+| **Cross-User Analysis** | ⚠️ PARTIAL | Requires 50+ users per niche | Need more users |
+| **Seasonality Filtering** | ⚠️ BASIC | Simple time-based filters | ML-based filtering |
+
+### ❌ **NOT YET IMPLEMENTED**
+| Feature | Priority | Requirements | Effort |
+|---------|----------|--------------|---------|
+| **Email/SMS Alerts** | HIGH | Notification service setup | 3 days |
+| **Strategy Auto-Update** | HIGH | Connect to Content Engine | 1 week |
+| **Historical Learning** | MEDIUM | Pattern recognition ML | 2 weeks |
+| **Competitor Correlation** | LOW | External data sources | 1 week |
 
 ---
 

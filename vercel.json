@@ -2,7 +2,15 @@
   "crons": [
     {
       "path": "/api/trends/collect",
-      "schedule": "0 */6 * * *"
+      "schedule": "0 */12 * * *"
+    },
+    {
+      "path": "/api/algorithm/collect",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/algorithm/detect",
+      "schedule": "0 3 * * *"
     }
   ]
 }

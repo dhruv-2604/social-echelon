@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { InstagramTrendCollector } from '@/lib/trends/instagram-collector'
 import { TrendManager } from '@/lib/trends/trend-manager'
 import { createClient } from '@supabase/supabase-js'
+import { cookies } from 'next/headers'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -24,10 +25,14 @@ export async function POST(request: NextRequest) {
 
     console.log('Starting trend collection job')
     
-    // Get a system Instagram token (in production, use a dedicated account)
-    // For now, we'll use mock data
-    const mockToken = 'system-trend-collector'
-    const collector = new InstagramTrendCollector(mockToken)
+    // Get a real Instagram access token from database
+    const accessToken = await getSystemInstagramToken()
+    if (!accessToken) {
+      console.error('No Instagram access token available for trend collection')
+      return NextResponse.json({ error: 'No Instagram access token' }, { status: 500 })
+    }
+
+    const collector = new InstagramTrendCollector(accessToken)
 
     const allTrends = []
 
@@ -36,16 +41,16 @@ export async function POST(request: NextRequest) {
       console.log(`Collecting trends for ${niche}`)
       
       try {
-        // Collect hashtag trends
-        const hashtagTrends = await collector.collectHashtagTrends(niche)
-        allTrends.push(...hashtagTrends)
+        // Collect trends (topics, formats, and basic hashtags)
+        const trends = await collector.collectTrends(niche)
+        allTrends.push(...trends)
 
-        // Analyze competitors
+        // Analyze competitors if available
         const competitorTrends = await collector.analyzeNicheCompetitors(niche)
         allTrends.push(...competitorTrends)
 
         // Save trends to database
-        await TrendManager.saveTrends([...hashtagTrends, ...competitorTrends])
+        await TrendManager.saveTrends([...trends, ...competitorTrends])
         
         // Add small delay to avoid rate limits
         await new Promise(resolve => setTimeout(resolve, 1000))
@@ -83,12 +88,31 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'This endpoint is for scheduled jobs only' }, { status: 403 })
   }
 
+  // For testing, get user's Instagram token from database
+  const cookieStore = await cookies()
+  const userId = cookieStore.get('user_id')?.value
+
+  if (!userId) {
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+  }
+
+  // Get user's Instagram access token
+  const { data: tokenData, error } = await supabaseAdmin
+    .from('user_tokens')
+    .select('instagram_access_token')
+    .eq('user_id', userId)
+    .single()
+
+  if (error || !tokenData?.instagram_access_token) {
+    return NextResponse.json({ error: 'No Instagram access token found' }, { status: 400 })
+  }
+
   // For testing, collect trends for a single niche
   const niche = url.searchParams.get('niche') || 'lifestyle'
-  const collector = new InstagramTrendCollector('test-token')
+  const collector = new InstagramTrendCollector(tokenData.instagram_access_token)
   
   try {
-    const trends = await collector.collectHashtagTrends(niche)
+    const trends = await collector.collectTrends(niche)
     await TrendManager.saveTrends(trends)
 
     return NextResponse.json({
