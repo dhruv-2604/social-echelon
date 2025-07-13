@@ -96,11 +96,37 @@ export async function POST(request: NextRequest) {
       topContentTypes: performanceData.topPerformingContentTypes.length
     })
 
-    // Generate weekly content plan
+    // Get user's discovered patterns from intelligence system
+    const { data: userInsights } = await supabaseAdmin
+      .from('user_content_insights')
+      .select('*')
+      .eq('user_id', userId)
+      .single()
+
+    // Get top patterns that work for this user's niche
+    const { data: topPatterns } = await supabaseAdmin
+      .from('content_patterns')
+      .select('*')
+      .contains('applicable_niches', [userProfile.niche])
+      .gte('confidence_score', 70)
+      .order('avg_performance_score', { ascending: false })
+      .limit(5)
+
+    // Combine insights into user patterns object
+    const userPatterns = {
+      caption_length: userInsights?.best_caption_length,
+      hashtag_count: userInsights?.best_hashtag_count,
+      best_posting_hour: userInsights?.best_posting_hour,
+      best_content_format: userInsights?.best_content_format,
+      patterns: topPatterns || []
+    }
+
+    // Generate weekly content plan with intelligence
     const contentPlan = await ContentGenerator.generateWeeklyPlan(
       userProfile,
       performanceData,
-      userId
+      userId,
+      userPatterns
     )
 
     console.log('Content plan generated with', contentPlan.suggestions.length, 'suggestions')

@@ -47,7 +47,8 @@ export class ContentGenerator {
   static async generateWeeklyPlan(
     userProfile: UserProfile,
     performanceData: UserPerformanceData,
-    userId: string
+    userId: string,
+    userPatterns?: any // Add user-specific patterns
   ): Promise<WeeklyContentPlan> {
     const trends = TrendEngine.getCurrentTrends()
     const contentTypePreferences = TrendEngine.getContentTypePreferences()
@@ -68,7 +69,8 @@ export class ContentGenerator {
         contentType,
         userProfile,
         performanceData,
-        trends
+        trends,
+        userPatterns
       )
       suggestions.push(suggestion)
     }
@@ -118,7 +120,8 @@ export class ContentGenerator {
     contentType: string,
     userProfile: UserProfile,
     performanceData: UserPerformanceData,
-    trends: any
+    trends: any,
+    userPatterns?: any
   ): Promise<ContentSuggestion> {
     const trendingTopics = TrendEngine.getTrendingTopicsForNiche(userProfile.niche)
     const trendingHashtags = TrendEngine.getTrendingHashtagsForNiche(userProfile.niche)
@@ -128,7 +131,8 @@ export class ContentGenerator {
       userProfile,
       performanceData,
       trendingTopics,
-      day
+      day,
+      userPatterns
     )
 
     try {
@@ -184,7 +188,8 @@ export class ContentGenerator {
     userProfile: UserProfile,
     performanceData: UserPerformanceData,
     trendingTopics: string[],
-    day: number
+    day: number,
+    userPatterns?: any
   ): string {
     const bestPosts = performanceData.bestPerformingPosts
       .map(post => `"${post.caption?.substring(0, 100)}..." (${post.like_count} likes, ${post.comments_count} comments)`)
@@ -211,6 +216,12 @@ ${bestPosts || 'No historical data available'}
 TRENDING TOPICS TO CONSIDER:
 ${trendingTopics.join(', ')}
 
+${userPatterns ? `PROVEN PATTERNS FOR SUCCESS:
+${userPatterns.caption_length ? `- Optimal caption length: ${userPatterns.caption_length.min}-${userPatterns.caption_length.max} characters` : ''}
+${userPatterns.hashtag_count ? `- Best hashtag count: ${userPatterns.hashtag_count}` : ''}
+${userPatterns.best_posting_hour ? `- Best posting time: ${userPatterns.best_posting_hour}:00` : ''}
+${userPatterns.emoji_usage ? `- Emoji usage: ${userPatterns.emoji_usage}` : ''}
+` : ''}
 Please provide:
 1. CONTENT_TOPIC: A specific, engaging topic/theme
 2. CAPTION_OUTLINE: A structured caption outline (hook, body, call-to-action)
