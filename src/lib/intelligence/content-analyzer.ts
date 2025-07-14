@@ -202,12 +202,18 @@ export class ContentAnalyzer {
    * Store content signals in database
    */
   async storeContentSignal(signal: ContentSignal): Promise<void> {
-    const { error } = await supabaseAdmin
+    console.log('Storing signal for post:', signal.instagram_post_id)
+    
+    const { data, error } = await supabaseAdmin
       .from('content_signals')
       .upsert(signal, { onConflict: 'instagram_post_id' })
+      .select()
     
     if (error) {
       console.error('Error storing content signal:', error)
+      console.error('Signal data:', JSON.stringify(signal, null, 2))
+    } else {
+      console.log('Signal stored successfully:', data)
     }
   }
 
@@ -244,17 +250,109 @@ export class ContentAnalyzer {
     
     // Analyze each post
     for (const post of posts) {
-      // In real implementation, would fetch insights from Instagram API
-      // For now, use the data we have
-      const mockInsights = {
-        reach: Math.floor(Math.random() * profile.follower_count * 0.5),
-        saved: Math.floor(Math.random() * 100)
+      // Use actual insights data from the Instagram post
+      const insights = {
+        reach: post.insights_reach || 0,
+        saved: post.insights_saved || 0
       }
       
-      const signal = this.analyzePost(post, mockInsights, profile)
+      const signal = this.analyzePost(post, insights, profile)
       await this.storeContentSignal(signal)
     }
     
     console.log(`Analyzed ${posts.length} posts for user ${userId}`)
+    
+    // Generate user insights after analyzing all posts
+    await this.generateUserInsights(userId)
+  }
+  
+  /**
+   * Generate personalized insights for a user based on their content signals
+   */
+  async generateUserInsights(userId: string): Promise<void> {
+    console.log(`Generating insights for user ${userId}`)
+    
+    // Get all content signals for this user
+    const { data: signals } = await supabaseAdmin
+      .from('content_signals')
+      .select('*')
+      .eq('user_id', userId)
+      .order('performance_score', { ascending: false })
+    
+    if (!signals || signals.length === 0) {
+      console.log('No signals to generate insights from')
+      return
+    }
+    
+    // Analyze top performing content (top 20%, minimum 2 posts)
+    const topPercentile = Math.max(2, Math.ceil(signals.length * 0.2))
+    const topSignals = signals.slice(0, Math.min(topPercentile, signals.length))
+    
+    // Calculate best caption length range
+    const captionLengths = topSignals.map(s => s.caption_length).filter(len => len > 0).sort((a, b) => a - b)
+    const minCaption = captionLengths.length > 0 ? captionLengths[0] : 100
+    const maxCaption = captionLengths.length > 0 ? captionLengths[captionLengths.length - 1] : 300
+    
+    // Calculate best hashtag count
+    const hashtagCounts = topSignals.map(s => s.hashtag_count)
+    const avgHashtags = Math.round(hashtagCounts.reduce((a, b) => a + b, 0) / hashtagCounts.length)
+    
+    // Calculate best posting time
+    const postingHours = topSignals.map(s => s.hour_of_day)
+    const hourFrequency: Record<number, number> = {}
+    postingHours.forEach(hour => {
+      hourFrequency[hour] = (hourFrequency[hour] || 0) + 1
+    })
+    const bestHour = Number(Object.entries(hourFrequency)
+      .sort((a, b) => b[1] - a[1])[0]?.[0]) || 15
+    
+    // Calculate best day of week
+    const daysOfWeek = topSignals.map(s => s.day_of_week)
+    const dayFrequency: Record<number, number> = {}
+    daysOfWeek.forEach(day => {
+      dayFrequency[day] = (dayFrequency[day] || 0) + 1
+    })
+    const bestDay = Number(Object.entries(dayFrequency)
+      .sort((a, b) => b[1] - a[1])[0]?.[0]) || 3
+    
+    // Calculate best content format
+    const formats = {
+      reel: topSignals.filter(s => s.has_reel).length,
+      carousel: topSignals.filter(s => s.has_carousel).length,
+      image: topSignals.filter(s => !s.has_reel && !s.has_carousel).length
+    }
+    const bestFormat = Object.entries(formats)
+      .sort((a, b) => b[1] - a[1])[0]?.[0] || 'reel'
+    
+    // Calculate average metrics
+    const avgReach = Math.round(signals.reduce((a, b) => a + b.reach_count, 0) / signals.length)
+    const avgEngagement = Number((signals.reduce((a, b) => a + b.engagement_rate, 0) / signals.length).toFixed(2))
+    const top10Reach = Math.round(topSignals.reduce((a, b) => a + b.reach_count, 0) / topSignals.length)
+    
+    // Store or update user insights
+    const insights = {
+      user_id: userId,
+      best_caption_length: [minCaption, maxCaption],
+      best_hashtag_count: avgHashtags,
+      best_posting_hour: bestHour,
+      best_day_of_week: bestDay,
+      best_content_format: bestFormat,
+      avg_reach: avgReach,
+      avg_engagement_rate: avgEngagement,
+      top_10_percent_reach: top10Reach,
+      posts_analyzed: signals.length,  // Changed from total_posts_analyzed
+      last_analyzed: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
+    
+    const { error } = await supabaseAdmin
+      .from('user_content_insights')
+      .upsert(insights, { onConflict: 'user_id' })
+    
+    if (error) {
+      console.error('Error storing user insights:', error)
+    } else {
+      console.log('User insights generated successfully')
+    }
   }
 }

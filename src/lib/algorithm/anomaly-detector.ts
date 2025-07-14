@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { StatisticalAnalyzer } from './statistical-analyzer'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -64,6 +65,10 @@ export class AnomalyDetector {
       .lt('date', oneWeekAgo.toISOString())
 
     if (!recentData || !previousData) return changes
+
+    // Filter out seasonal effects
+    const adjustedRecentData = await StatisticalAnalyzer.filterSeasonalEffects(recentData, 'date')
+    const adjustedPreviousData = await StatisticalAnalyzer.filterSeasonalEffects(previousData, 'date')
 
     // 1. Check for platform-wide reach changes
     const reachChange = await this.detectReachChanges(recentData, previousData)
@@ -139,6 +144,27 @@ export class AnomalyDetector {
     // Check if enough users are affected
     if (userChanges.length < this.MIN_USERS_THRESHOLD) return null
 
+    // Prepare data for statistical analysis
+    const beforeValues = userChanges.map(u => {
+      const prevData = previousByUser.get(u.userId)!
+      return prevData.totalReach / prevData.count
+    })
+    
+    const afterValues = userChanges.map(u => {
+      const recentData = recentByUser.get(u.userId)!
+      return recentData.totalReach / recentData.count
+    })
+
+    // Perform statistical analysis
+    const statistical = await StatisticalAnalyzer.analyzeChange(
+      'reach',
+      beforeValues,
+      afterValues
+    )
+
+    // If not statistically significant, it's likely normal variation
+    if (!statistical.isSignificant) return null
+
     // Calculate overall change
     const overallChange = (totalAfter - totalBefore) / totalBefore
     const affectedNiches = [...new Set(userChanges.map(u => u.niche))]
@@ -162,7 +188,7 @@ export class AnomalyDetector {
       afterValue: Math.round(totalAfter / userChanges.length),
       percentChange: Number((overallChange * 100).toFixed(1)),
       affectedUsers: userChanges.length,
-      confidence: this.calculateConfidence(userChanges.length, Math.abs(overallChange)),
+      confidence: Math.round(statistical.confidenceLevel),
       niches: affectedNiches,
       recommendations
     }

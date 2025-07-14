@@ -50,11 +50,27 @@ export default function IntelligencePage() {
   const runAnalysis = async () => {
     setAnalyzing(true)
     try {
+      console.log('Starting content analysis...')
       const response = await fetch('/api/intelligence/analyze', { method: 'POST' })
-      if (!response.ok) throw new Error('Failed to analyze content')
-      await fetchInsights() // Refresh insights
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('Analysis failed:', errorData)
+        alert(`Analysis failed: ${errorData.error || 'Unknown error'}`)
+        throw new Error(errorData.error || 'Failed to analyze content')
+      }
+      
+      const result = await response.json()
+      console.log('Analysis result:', result)
+      
+      // Show success message
+      alert('Content analysis completed successfully! Refreshing insights...')
+      
+      // Refresh insights
+      await fetchInsights()
     } catch (error) {
       console.error('Error analyzing content:', error)
+      alert('Failed to analyze content. Check console for details.')
     } finally {
       setAnalyzing(false)
     }
