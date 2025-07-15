@@ -103,10 +103,16 @@ export default function Dashboard() {
             
             <div className="flex items-center space-x-6">
               <a 
-                href="/algorithm-insights" 
+                href="/intelligence" 
                 className="text-sm font-medium text-gray-600 hover:text-purple-600 transition-colors"
               >
-                Algorithm Insights
+                Intelligence
+              </a>
+              <a 
+                href="/algorithm" 
+                className="text-sm font-medium text-gray-600 hover:text-purple-600 transition-colors"
+              >
+                Algorithm
               </a>
               <a 
                 href="/trends" 

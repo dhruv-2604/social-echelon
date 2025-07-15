@@ -14,9 +14,10 @@ export default function Home() {
             <span className="text-white font-bold text-xl">Social Echelon</span>
           </div>
           <div className="hidden md:flex space-x-8 text-white/80">
+            <Link href="/intelligence" className="hover:text-white transition-colors">Intelligence</Link>
+            <Link href="/algorithm" className="hover:text-white transition-colors">Algorithm</Link>
             <a href="#features" className="hover:text-white transition-colors">Features</a>
             <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
-            <a href="#about" className="hover:text-white transition-colors">About</a>
           </div>
         </div>
       </nav>
@@ -48,6 +49,33 @@ export default function Home() {
             <button className="border-2 border-white/30 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white/10 transition-all duration-300">
               Watch Demo
             </button>
+          </div>
+          
+          {/* Quick Access Buttons */}
+          <div className="flex flex-wrap gap-4 justify-center mb-12">
+            <Link 
+              href="/intelligence"
+              className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-6 py-3 rounded-lg font-medium hover:bg-white/20 transition-all duration-300 flex items-center gap-2"
+            >
+              <TrendingUp className="w-5 h-5" />
+              Content Intelligence
+            </Link>
+            
+            <Link 
+              href="/algorithm"
+              className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-6 py-3 rounded-lg font-medium hover:bg-white/20 transition-all duration-300 flex items-center gap-2"
+            >
+              <Zap className="w-5 h-5" />
+              Algorithm Detection
+            </Link>
+            
+            <Link 
+              href="/dashboard"
+              className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-6 py-3 rounded-lg font-medium hover:bg-white/20 transition-all duration-300 flex items-center gap-2"
+            >
+              <Users className="w-5 h-5" />
+              Dashboard
+            </Link>
           </div>
 
           {/* Stats */}

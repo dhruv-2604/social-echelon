@@ -34,7 +34,12 @@ export default function AlgorithmPage() {
     try {
       const response = await fetch('/api/algorithm/history')
       const data = await response.json()
-      setChanges(data.changes || [])
+      console.log('Algorithm history response:', data)
+      
+      // Try both possible fields
+      const changesData = data.changes || data.recent_changes || []
+      console.log('Changes data:', changesData)
+      setChanges(changesData)
     } catch (error) {
       console.error('Error fetching algorithm changes:', error)
     } finally {
@@ -52,7 +57,9 @@ export default function AlgorithmPage() {
       
       // Refresh the changes list after test
       if (data.changes_detected > 0) {
-        await fetchChanges()
+        setTimeout(() => {
+          fetchChanges()
+        }, 1000) // Give the database a moment to save
       }
     } catch (error) {
       console.error('Error running test:', error)

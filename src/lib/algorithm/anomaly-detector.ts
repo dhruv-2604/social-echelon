@@ -83,7 +83,9 @@ export class AnomalyDetector {
     changes.push(...formatChanges)
 
     // Save significant changes to database
+    console.log(`Found ${changes.length} total changes`)
     for (const change of changes) {
+      console.log(`Change confidence: ${change.confidence}`)
       if (change.confidence >= 70) {
         await this.saveChange(change)
       }
@@ -201,9 +203,18 @@ export class AnomalyDetector {
     recent: any[], 
     previous: any[]
   ): Promise<AlgorithmChange | null> {
-    // Similar logic but for engagement_rate
-    const recentEngagement = recent.reduce((sum, r) => sum + r.avg_engagement_rate, 0) / recent.length
-    const prevEngagement = previous.reduce((sum, r) => sum + r.avg_engagement_rate, 0) / previous.length
+    if (recent.length === 0 || previous.length === 0) return null
+    
+    // Filter out records without engagement data
+    const validRecent = recent.filter(r => r.avg_engagement_rate != null && !isNaN(r.avg_engagement_rate))
+    const validPrevious = previous.filter(r => r.avg_engagement_rate != null && !isNaN(r.avg_engagement_rate))
+    
+    if (validRecent.length === 0 || validPrevious.length === 0) return null
+    
+    const recentEngagement = validRecent.reduce((sum, r) => sum + r.avg_engagement_rate, 0) / validRecent.length
+    const prevEngagement = validPrevious.reduce((sum, r) => sum + r.avg_engagement_rate, 0) / validPrevious.length
+    
+    if (isNaN(recentEngagement) || isNaN(prevEngagement) || prevEngagement === 0) return null
     
     const change = (recentEngagement - prevEngagement) / prevEngagement
 
@@ -215,7 +226,7 @@ export class AnomalyDetector {
       beforeValue: Number(prevEngagement.toFixed(2)),
       afterValue: Number(recentEngagement.toFixed(2)),
       percentChange: Number((change * 100).toFixed(1)),
-      affectedUsers: recent.length,
+      affectedUsers: validRecent.length,
       confidence: 75,
       niches: [],
       recommendations: change > 0 ? [
@@ -313,7 +324,9 @@ export class AnomalyDetector {
    * Save detected change to database
    */
   private async saveChange(change: AlgorithmChange): Promise<void> {
-    await supabaseAdmin
+    console.log('Saving algorithm change:', change)
+    
+    const { data, error } = await supabaseAdmin
       .from('algorithm_changes')
       .insert({
         change_type: change.type,
@@ -328,5 +341,13 @@ export class AnomalyDetector {
         recommendations: change.recommendations,
         status: 'detected'
       })
+      .select()
+    
+    if (error) {
+      console.error('Error saving algorithm change:', error)
+      console.error('Change data:', JSON.stringify(change, null, 2))
+    } else {
+      console.log('Algorithm change saved successfully:', data)
+    }
   }
 }

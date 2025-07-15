@@ -18,12 +18,28 @@ export async function GET(request: NextRequest) {
     const since = new Date()
     since.setDate(since.getDate() - days)
 
-    // Build query
+    // Build query - explicitly select all fields to avoid issues
     let query = supabaseAdmin
       .from('algorithm_changes')
-      .select('*')
+      .select(`
+        id,
+        change_type,
+        metric_name,
+        before_value,
+        after_value,
+        percent_change,
+        affected_users_count,
+        sample_size,
+        confidence_score,
+        niches_affected,
+        recommendations,
+        status,
+        detected_at,
+        confirmed_at,
+        created_at,
+        updated_at
+      `)
       .gte('detected_at', since.toISOString())
-      .eq('status', 'confirmed')
       .order('detected_at', { ascending: false })
 
     // Apply filters
@@ -83,15 +99,14 @@ export async function GET(request: NextRequest) {
       most_affected_niche: mostAffectedNiche,
       most_common_type: mostCommonType,
       changes_by_week: changesByWeek,
+      changes: changes || [],  // Return raw changes for the frontend
       recent_changes: changes?.slice(0, 10).map(c => ({
         id: c.id,
         date: c.detected_at,
         type: c.change_type,
-        metric: c.affected_metric,
-        impact: `${c.change_percentage > 0 ? '+' : ''}${c.change_percentage.toFixed(1)}%`,
+        metric: c.metric_name,
+        impact: `${c.percent_change > 0 ? '+' : ''}${c.percent_change}%`,
         confidence: c.confidence_score,
-        severity: c.severity,
-        duration_days: c.expected_duration_days,
         recommendations: c.recommendations
       }))
     })

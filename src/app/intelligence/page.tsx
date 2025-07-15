@@ -132,7 +132,18 @@ export default function IntelligencePage() {
                 <h3 className="font-semibold">Optimal Caption Length</h3>
               </div>
               <p className="text-2xl font-bold text-blue-600">
-                {insights.best_caption_length[0]}-{insights.best_caption_length[1]}
+                {(() => {
+                  // Parse PostgreSQL range format "[85,128)" or handle array
+                  if (typeof insights.best_caption_length === 'string') {
+                    const match = insights.best_caption_length.match(/\[(\d+),(\d+)\)/)
+                    if (match) {
+                      return `${match[1]}-${match[2]}`
+                    }
+                  } else if (Array.isArray(insights.best_caption_length)) {
+                    return `${insights.best_caption_length[0]}-${insights.best_caption_length[1]}`
+                  }
+                  return '0-300'
+                })()}
               </p>
               <p className="text-sm text-gray-600 mt-1">characters</p>
             </div>
