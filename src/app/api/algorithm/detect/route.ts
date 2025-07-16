@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { AnomalyDetector } from '@/lib/algorithm/anomaly-detector'
+import { AlertManager } from '@/lib/algorithm/alert-manager'
 
 // POST /api/algorithm/detect - Run anomaly detection (protected endpoint)
 export async function POST(request: NextRequest) {
@@ -17,6 +18,13 @@ export async function POST(request: NextRequest) {
     const changes = await detector.detectChanges()
 
     console.log(`Detection complete. Found ${changes.length} changes`)
+    
+    // Send alerts for significant changes
+    if (changes.length > 0) {
+      const alertManager = new AlertManager()
+      await alertManager.sendAlgorithmChangeAlerts(changes)
+      console.log('Alerts sent successfully')
+    }
 
     return NextResponse.json({
       success: true,

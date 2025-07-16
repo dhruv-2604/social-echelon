@@ -4,6 +4,7 @@ import { Instagram, TrendingUp, Target, Calendar, DollarSign, Users, Loader2 } f
 import { useEffect, useState } from 'react'
 import { formatNumber } from '@/lib/utils'
 import WeeklyContentPlan from '@/components/WeeklyContentPlan'
+import AlertBell from '@/components/alerts/alert-bell'
 
 interface UserProfile {
   id: string
@@ -120,6 +121,7 @@ export default function Dashboard() {
               >
                 Trends
               </a>
+              <AlertBell />
               <div className="flex items-center space-x-2">
                 <Instagram className="w-5 h-5 text-pink-500" />
                 <span className="text-sm text-gray-600">@{profile?.instagram_username}</span>

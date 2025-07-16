@@ -1,6 +1,7 @@
 import OpenAI from 'openai'
 import { UserPerformanceData } from './content-analyzer'
 import { TrendEngine } from './trend-engine'
+import { AlgorithmInsightsProvider } from '@/lib/algorithm/algorithm-insights-provider'
 
 export interface UserProfile {
   niche: string
@@ -53,11 +54,15 @@ export class ContentGenerator {
     const trends = TrendEngine.getCurrentTrends()
     const contentTypePreferences = TrendEngine.getContentTypePreferences()
     
+    // Get current algorithm insights
+    const algorithmState = await AlgorithmInsightsProvider.getCurrentAlgorithmState(userProfile.niche)
+    
     // Generate the content mix for the week
     const contentMix = this.planWeeklyContentMix(
       userProfile, 
       performanceData, 
-      contentTypePreferences
+      contentTypePreferences,
+      algorithmState
     )
 
     const suggestions: ContentSuggestion[] = []
@@ -70,7 +75,8 @@ export class ContentGenerator {
         userProfile,
         performanceData,
         trends,
-        userPatterns
+        userPatterns,
+        algorithmState
       )
       suggestions.push(suggestion)
     }
@@ -93,18 +99,37 @@ export class ContentGenerator {
   private static planWeeklyContentMix(
     userProfile: UserProfile,
     performanceData: UserPerformanceData,
-    algorithmPrefs: any[]
+    algorithmPrefs: any[],
+    algorithmState?: any
   ): string[] {
     const { posting_frequency } = userProfile
     const mix: string[] = []
 
     // Prioritize based on user's historical performance and algorithm preferences
-    const contentTypes = performanceData.topPerformingContentTypes.length > 0
+    let contentTypes = performanceData.topPerformingContentTypes.length > 0
       ? performanceData.topPerformingContentTypes
       : algorithmPrefs.map(pref => ({
           type: pref.content_type,
           performanceScore: pref.priority_score
         }))
+    
+    // Apply algorithm insights to adjust content type priorities
+    if (algorithmState?.content_type_performance) {
+      contentTypes = contentTypes.map(ct => {
+        const algPerf = algorithmState.content_type_performance.find(
+          (p: any) => p.content_type === ct.type
+        )
+        if (algPerf && algPerf.performance_trend !== 'stable') {
+          // Adjust score based on algorithm performance
+          const adjustedScore = ct.performanceScore * algPerf.reach_multiplier
+          return { ...ct, performanceScore: adjustedScore }
+        }
+        return ct
+      })
+      
+      // Re-sort by adjusted scores
+      contentTypes.sort((a, b) => b.performanceScore - a.performanceScore)
+    }
 
     // Fill the week with optimal content types
     for (let i = 0; i < posting_frequency; i++) {
@@ -121,7 +146,8 @@ export class ContentGenerator {
     userProfile: UserProfile,
     performanceData: UserPerformanceData,
     trends: any,
-    userPatterns?: any
+    userPatterns?: any,
+    algorithmState?: any
   ): Promise<ContentSuggestion> {
     const trendingTopics = TrendEngine.getTrendingTopicsForNiche(userProfile.niche)
     const trendingHashtags = TrendEngine.getTrendingHashtagsForNiche(userProfile.niche)
@@ -132,7 +158,8 @@ export class ContentGenerator {
       performanceData,
       trendingTopics,
       day,
-      userPatterns
+      userPatterns,
+      algorithmState
     )
 
     try {
@@ -189,7 +216,8 @@ export class ContentGenerator {
     performanceData: UserPerformanceData,
     trendingTopics: string[],
     day: number,
-    userPatterns?: any
+    userPatterns?: any,
+    algorithmState?: any
   ): string {
     const bestPosts = performanceData.bestPerformingPosts
       .map(post => `"${post.caption?.substring(0, 100)}..." (${post.like_count} likes, ${post.comments_count} comments)`)
@@ -222,6 +250,7 @@ ${userPatterns.hashtag_count ? `- Best hashtag count: ${userPatterns.hashtag_cou
 ${userPatterns.best_posting_hour ? `- Best posting time: ${userPatterns.best_posting_hour}:00` : ''}
 ${userPatterns.emoji_usage ? `- Emoji usage: ${userPatterns.emoji_usage}` : ''}
 ` : ''}
+${algorithmState ? AlgorithmInsightsProvider.formatForAI(algorithmState) : ''}
 Please provide:
 1. CONTENT_TOPIC: A specific, engaging topic/theme
 2. CAPTION_OUTLINE: A structured caption outline (hook, body, call-to-action)
