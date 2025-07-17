@@ -357,6 +357,18 @@ export default function WeeklyContentPlan() {
                   <span className="text-gray-600">Goal: {suggestion.reasoning.goal_progression}%</span>
                 </div>
               </div>
+              
+              {/* Algorithm Optimization Indicator */}
+              {suggestion.reasoning.algorithm_optimization && (
+                <div className="mt-2 flex items-center space-x-1 text-xs">
+                  <span className="text-purple-600">🤖</span>
+                  <span className="text-gray-600">
+                    Algorithm: {suggestion.reasoning.algorithm_optimization}%
+                    {suggestion.reasoning.algorithm_optimization < 60 && ' (Deprioritized)'}
+                    {suggestion.reasoning.algorithm_optimization > 80 && ' (Favored)'}
+                  </span>
+                </div>
+              )}
             </div>
           )
         })}
@@ -370,6 +382,14 @@ export default function WeeklyContentPlan() {
             This Week's Strategy
           </h3>
           <p className="text-sm text-gray-700">{contentPlan.overall_strategy}</p>
+          
+          {/* Algorithm Insights Notice */}
+          {contentPlan.suggestions.some(s => s.reasoning.algorithm_optimization !== undefined) && (
+            <div className="mt-3 flex items-center space-x-2 text-xs text-purple-700">
+              <span className="text-purple-600">🤖</span>
+              <span>This plan adapts to recent Instagram algorithm changes</span>
+            </div>
+          )}
         </div>
       )}
       

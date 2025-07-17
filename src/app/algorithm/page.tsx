@@ -24,7 +24,7 @@ export default function AlgorithmPage() {
   const [changes, setChanges] = useState<AlgorithmChange[]>([])
   const [loading, setLoading] = useState(true)
   const [testing, setTesting] = useState(false)
-  const [testResult, setTestResult] = useState<any>(null)
+  const [testResult, setTestResult] = useState<{success: boolean; message: string} | null>(null)
 
   useEffect(() => {
     fetchChanges()

@@ -63,3 +63,43 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const cookieStore = await cookies()
+    const userId = cookieStore.get('user_id')?.value
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const { full_name, email } = body
+
+    // Update user profile
+    const { data: profile, error } = await supabaseAdmin
+      .from('profiles')
+      .update({
+        full_name,
+        email,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', userId)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Profile update error:', error)
+      throw error
+    }
+
+    return NextResponse.json({ profile })
+
+  } catch (error) {
+    console.error('Profile update API error:', error)
+    return NextResponse.json(
+      { error: 'Failed to update profile' },
+      { status: 500 }
+    )
+  }
+}

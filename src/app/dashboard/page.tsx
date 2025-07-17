@@ -126,14 +126,16 @@ export default function Dashboard() {
                 <Instagram className="w-5 h-5 text-pink-500" />
                 <span className="text-sm text-gray-600">@{profile?.instagram_username}</span>
               </div>
-              <img 
-                src={profile?.avatar_url || '/default-avatar.png'} 
-                alt={profile?.full_name || 'Profile'} 
-                className="w-8 h-8 rounded-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.src = '/default-avatar.png'
-                }}
-              />
+              <a href="/settings" className="cursor-pointer">
+                <img 
+                  src={profile?.avatar_url || '/default-avatar.png'} 
+                  alt={profile?.full_name || 'Profile'} 
+                  className="w-8 h-8 rounded-full object-cover hover:ring-2 hover:ring-purple-500 transition-all"
+                  onError={(e) => {
+                    e.currentTarget.src = '/default-avatar.png'
+                  }}
+                />
+              </a>
             </div>
           </div>
         </div>
