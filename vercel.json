@@ -11,6 +11,10 @@
     {
       "path": "/api/algorithm/detect",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/brand-discovery/scrape",
+      "schedule": "0 9 * * *"
     }
   ]
 }

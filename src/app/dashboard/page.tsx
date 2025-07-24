@@ -116,6 +116,18 @@ export default function Dashboard() {
                 Algorithm
               </a>
               <a 
+                href="/dashboard/brand-opportunities" 
+                className="text-sm font-medium text-gray-600 hover:text-purple-600 transition-colors"
+              >
+                Brand Matching
+              </a>
+              <a 
+                href="/dashboard/brand-outreach" 
+                className="text-sm font-medium text-gray-600 hover:text-purple-600 transition-colors"
+              >
+                Outreach
+              </a>
+              <a 
                 href="/trends" 
                 className="text-sm font-medium text-gray-600 hover:text-purple-600 transition-colors"
               >

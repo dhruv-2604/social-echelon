@@ -47,6 +47,8 @@ export default function SettingsPage() {
     full_name: '',
     email: ''
   })
+  const [hasProfileChanges, setHasProfileChanges] = useState(false)
+  const [hasPreferenceChanges, setHasPreferenceChanges] = useState(false)
 
   useEffect(() => {
     fetchUserData()
@@ -113,7 +115,13 @@ export default function SettingsPage() {
 
       const data = await response.json()
       setProfile(data.profile)
+      // Update the form with the new data to show it was saved
+      setProfileForm({
+        full_name: data.profile.full_name || '',
+        email: data.profile.email
+      })
       alert('Profile updated successfully!')
+      setHasProfileChanges(false)
     } catch (err) {
       alert('Failed to update profile')
     } finally {
@@ -136,23 +144,28 @@ export default function SettingsPage() {
         throw new Error('Failed to save preferences')
       }
 
-      // Also generate new content plan with updated preferences
-      const planResponse = await fetch('/api/ai/generate-content-plan', {
+      alert('Preferences saved successfully!')
+      
+      // Generate new content plan in the background
+      fetch('/api/ai/generate-content-plan', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           userId: profile?.id,
-          preferences
+          ...preferences
         })
+      }).then(res => {
+        if (res.ok) {
+          console.log('New content plan generated successfully')
+        } else {
+          console.error('Failed to generate new content plan')
+        }
+      }).catch(err => {
+        console.error('Error generating content plan:', err)
       })
-
-      if (!planResponse.ok) {
-        console.error('Failed to generate new content plan')
-      }
-
-      alert('Preferences saved successfully! A new content plan has been generated.')
+      
     } catch (err) {
       alert('Failed to save preferences')
     } finally {
@@ -283,7 +296,10 @@ export default function SettingsPage() {
                       <input
                         type="text"
                         value={profileForm.full_name}
-                        onChange={(e) => setProfileForm({ ...profileForm, full_name: e.target.value })}
+                        onChange={(e) => {
+                          setProfileForm({ ...profileForm, full_name: e.target.value })
+                          setHasProfileChanges(true)
+                        }}
                         className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
                       />
                     </div>
@@ -295,7 +311,10 @@ export default function SettingsPage() {
                       <input
                         type="email"
                         value={profileForm.email}
-                        onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+                        onChange={(e) => {
+                          setProfileForm({ ...profileForm, email: e.target.value })
+                          setHasProfileChanges(true)
+                        }}
                         className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
                       />
                     </div>
@@ -313,15 +332,19 @@ export default function SettingsPage() {
 
                     <button
                       onClick={handleSaveProfile}
-                      disabled={saving}
-                      className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all disabled:opacity-50"
+                      disabled={saving || !hasProfileChanges}
+                      className={`flex items-center space-x-2 px-6 py-3 text-white rounded-lg transition-all disabled:opacity-50 ${
+                        hasProfileChanges 
+                          ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600' 
+                          : 'bg-gray-400 cursor-not-allowed'
+                      }`}
                     >
                       {saving ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
                         <Save className="w-4 h-4" />
                       )}
-                      <span>{saving ? 'Saving...' : 'Save Changes'}</span>
+                      <span>{saving ? 'Saving...' : hasProfileChanges ? 'Save Changes' : 'Saved'}</span>
                     </button>
                   </div>
                 </div>
