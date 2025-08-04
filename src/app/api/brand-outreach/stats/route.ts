@@ -46,8 +46,7 @@ export async function GET(request: NextRequest) {
       responseRate: 0,
       positiveResponses: outreachData?.filter(o => o.response_sentiment === 'positive').length || 0,
       scheduledOutreach: outreachData?.filter(o => o.outreach_status === 'scheduled').length || 0,
-      activeDeals: outreachData?.filter(o => o.outreach_status === 'meeting_scheduled').length || 0,
-      totalRevenue: 0 // Would calculate from collaborations table
+      activeDeals: outreachData?.filter(o => o.outreach_status === 'meeting_scheduled').length || 0
     }
 
     // Calculate response rate

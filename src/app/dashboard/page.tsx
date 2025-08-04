@@ -36,6 +36,12 @@ export default function Dashboard() {
   const [posts, setPosts] = useState<InstagramPost[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [metrics, setMetrics] = useState<{
+    followerChange: number
+    engagementChange: number
+    previousFollowers: number
+    previousEngagement: number
+  } | null>(null)
 
   useEffect(() => {
     async function fetchUserData() {
@@ -53,6 +59,11 @@ export default function Dashboard() {
         const data = await response.json()
         setProfile(data.profile)
         setPosts(data.posts)
+        
+        // Calculate metrics changes
+        if (data.metrics) {
+          setMetrics(data.metrics)
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred')
       } finally {
@@ -116,7 +127,7 @@ export default function Dashboard() {
                 Algorithm
               </a>
               <a 
-                href="/dashboard/brand-opportunities" 
+                href="/dashboard/brand-matching" 
                 className="text-sm font-medium text-gray-600 hover:text-purple-600 transition-colors"
               >
                 Brand Matching
@@ -126,6 +137,12 @@ export default function Dashboard() {
                 className="text-sm font-medium text-gray-600 hover:text-purple-600 transition-colors"
               >
                 Outreach
+              </a>
+              <a 
+                href="/dashboard/outreach-tracking" 
+                className="text-sm font-medium text-gray-600 hover:text-purple-600 transition-colors"
+              >
+                Tracking
               </a>
               <a 
                 href="/trends" 
@@ -167,7 +184,11 @@ export default function Dashboard() {
               <div className="p-2 bg-blue-100 rounded-lg">
                 <Users className="w-6 h-6 text-blue-600" />
               </div>
-              <span className="text-sm font-medium text-green-600">+5.2%</span>
+              {metrics?.followerChange !== undefined && (
+                <span className={`text-sm font-medium ${metrics.followerChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {metrics.followerChange >= 0 ? '+' : ''}{metrics.followerChange.toFixed(1)}%
+                </span>
+              )}
             </div>
             <div className="text-2xl font-bold text-gray-900 mb-1">{formatNumber(profile?.follower_count || 0)}</div>
             <div className="text-sm text-gray-600">Followers</div>
@@ -178,7 +199,11 @@ export default function Dashboard() {
               <div className="p-2 bg-pink-100 rounded-lg">
                 <TrendingUp className="w-6 h-6 text-pink-600" />
               </div>
-              <span className="text-sm font-medium text-purple-600">Rate</span>
+              {metrics?.engagementChange !== undefined && (
+                <span className={`text-sm font-medium ${metrics.engagementChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {metrics.engagementChange >= 0 ? '+' : ''}{metrics.engagementChange.toFixed(1)}%
+                </span>
+              )}
             </div>
             <div className="text-2xl font-bold text-gray-900 mb-1">{(profile?.engagement_rate || 0).toFixed(1)}%</div>
             <div className="text-sm text-gray-600">Engagement Rate</div>
@@ -338,9 +363,12 @@ export default function Dashboard() {
                 </div>
               </div>
               
-              <button className="w-full mt-4 px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-sm font-medium rounded-lg hover:from-pink-600 hover:to-purple-700 transition-all">
+              <a 
+                href="/dashboard/brand-matching"
+                className="block w-full mt-4 px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-sm font-medium rounded-lg hover:from-pink-600 hover:to-purple-700 transition-all text-center"
+              >
                 View All Opportunities
-              </button>
+              </a>
             </div>
 
             {/* Subscription Status */}

@@ -50,9 +50,56 @@ export async function GET(request: NextRequest) {
       console.error('Posts fetch error:', postsError)
     }
 
+    // Calculate engagement rate from recent posts
+    let calculatedEngagementRate = 0
+    if (posts && posts.length > 0 && profile.follower_count > 0) {
+      const totalEngagement = posts.reduce((sum, post) => {
+        return sum + (post.like_count || 0) + (post.comments_count || 0)
+      }, 0)
+      const avgEngagement = totalEngagement / posts.length
+      calculatedEngagementRate = (avgEngagement / profile.follower_count) * 100
+    }
+
+    // Update engagement rate in profile
+    if (calculatedEngagementRate > 0) {
+      await supabaseAdmin
+        .from('profiles')
+        .update({ engagement_rate: calculatedEngagementRate })
+        .eq('id', userId)
+    }
+
+    // Get historical metrics (30 days ago)
+    const thirtyDaysAgo = new Date()
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
+    const { data: historicalMetrics } = await supabaseAdmin
+      .from('user_performance_metrics')
+      .select('total_followers, average_engagement_rate')
+      .eq('user_id', userId)
+      .gte('date', thirtyDaysAgo.toISOString().split('T')[0])
+      .order('date', { ascending: true })
+      .limit(1)
+
+    let metrics = null
+    if (historicalMetrics && historicalMetrics.length > 0) {
+      const oldFollowers = historicalMetrics[0].total_followers || profile.follower_count
+      const oldEngagement = historicalMetrics[0].average_engagement_rate || calculatedEngagementRate
+
+      metrics = {
+        followerChange: oldFollowers > 0 ? ((profile.follower_count - oldFollowers) / oldFollowers) * 100 : 0,
+        engagementChange: oldEngagement > 0 ? ((calculatedEngagementRate - oldEngagement) / oldEngagement) * 100 : 0,
+        previousFollowers: oldFollowers,
+        previousEngagement: oldEngagement
+      }
+    }
+
     return NextResponse.json({
-      profile,
-      posts: posts || []
+      profile: {
+        ...profile,
+        engagement_rate: calculatedEngagementRate
+      },
+      posts: posts || [],
+      metrics
     })
 
   } catch (error) {

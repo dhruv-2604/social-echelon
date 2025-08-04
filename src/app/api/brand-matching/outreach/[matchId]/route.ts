@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import OpenAI from 'openai'
+import { EnhancedBrandMatchingService } from '@/lib/brand-matching/enhanced-matching-service'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,6 +12,8 @@ const supabaseAdmin = createClient(
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!
 })
+
+const matchingService = new EnhancedBrandMatchingService()
 
 export async function GET(
   request: NextRequest,
@@ -24,15 +27,15 @@ export async function GET(
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    // Get match details
+    // Get match details from user_brand_matches
     const { data: match, error: matchError } = await supabaseAdmin
-      .from('brand_matches')
+      .from('user_brand_matches')
       .select(`
         *,
         brand:brands(*)
       `)
       .eq('id', params.matchId)
-      .eq('profile_id', userId)
+      .eq('user_id', userId)
       .single()
 
     if (matchError || !match) {
@@ -54,7 +57,7 @@ export async function GET(
 
     // Generate personalized outreach content using OpenAI
     const emailPrompt = `
-      Generate a personalized outreach email following proven brand outreach best practices.
+      Generate a personalized brand outreach email using one of these three proven templates.
       
       Creator Info:
       - Name: ${profile.full_name}
@@ -62,71 +65,102 @@ export async function GET(
       - Followers: ${profile.follower_count}
       - Engagement Rate: ${profile.engagement_rate}%
       - Content Focus: ${creatorProfile?.profile_data?.identity?.contentPillars?.join(', ')}
-      - Style: ${creatorProfile?.profile_data?.identity?.contentStyle?.aestheticKeywords?.join(', ')}
-      - Top Audience Locations: ${creatorProfile?.profile_data?.analytics?.audienceDemographics?.topLocations?.slice(0, 2).map((l: any) => l.country).join(', ')}
+      - Audience: ${creatorProfile?.profile_data?.analytics?.audienceDemographics?.topLocations?.[0]?.country || 'Global'} based, ${creatorProfile?.profile_data?.analytics?.audienceDemographics?.ageRanges?.[0]?.range || '18-34'} age range
       
       Brand Info:
-      - Name: ${match.brand.name}
+      - Name: ${match.brand.display_name}
       - Industry: ${match.brand.industry}
-      - Values: ${match.brand.brand_values?.join(', ')}
-      - Instagram: ${match.brand.instagram_handle || 'Not provided'}
-      - Description: ${match.brand.description}
+      - Instagram: @${match.brand.instagram_handle || match.brand.brand_name.toLowerCase().replace(/\s+/g, '')}
+      - Recent Campaigns: ${match.brand.recent_campaigns || 'Not specified'}
+      - Influencer Strategy: ${match.brand.influencer_strategy || 'Standard partnerships'}
       
-      Match Insights:
-      - Overall Score: ${match.match_score}%
-      - Top Match Reasons: ${match.insights?.strengths?.slice(0, 2).join(', ')}
-      - Audience Overlap: ${match.audience_resonance_score ? Math.round(match.audience_resonance_score * 100) + '%' : 'High'}
+      Choose ONE of these templates and fill in the bracketed parts:
       
-      CRITICAL Requirements:
-      1. Subject line: Reference their RECENT campaign, product launch, or specific initiative
-      2. Opening: Show you've researched them - mention something specific from their Instagram or website
-      3. Keep it SHORT - max 150 words for the body
-      4. Include ONE specific content idea that aligns with their brand aesthetic
-      5. Natural, conversational tone - like you're talking to a friend
-      6. End with a clear but soft CTA (e.g., "Would love to chat about this!")
-      7. Do NOT mention generic things like "I love your brand" without specifics
+      Template 1 - Direct Approach:
+      "Hey [Brand Name] team!
       
-      Use one of these proven approaches:
-      - Product Enthusiast: You genuinely use and love a specific product
-      - Storytelling: You have a unique story idea that fits their brand narrative
-      - Audience Insights: Your audience specifically needs/wants their products
+      I'm [Your Name], a [brief description of what you do], and I absolutely love your [specific product].
+      
+      It's been a game-changer for me, and I'd love to share my passion for it with my followers.
+      
+      Do you have some time to chat about how we can showcase your amazing products together?
+      
+      PS – Feel free to check out my Social Echelon profile to get a better feel for engagement metrics and content style."
+      
+      Template 2 - Storytelling Approach:
+      "Hi [Brand Name] team,
+      
+      I'm [Your Name], a [brief description of what you do].
+      
+      Your [specific product] has truly transformed my daily routine, and I'd love to share this journey with my audience.
+      
+      I believe that together, we can create a compelling narrative around how your product helps people achieve [specific goal].
+      
+      Let's discuss how we can bring this story to life!
+      
+      PS – Feel free to check out my Social Echelon profile to get a better feel for engagement metrics and content style."
+      
+      Template 3 - Audience Insights:
+      "Hi [Recipient's Name or Brand Team],
+      
+      I'm [Your Name], a [brief description of what you do], and I've been closely following [Brand Name]'s innovations.
+      
+      My audience consists primarily of [demographic], who are always looking for [specific benefit your product offers]. I'm confident that we can create content that not only engages my audience but also drives value for your brand.
+      
+      Could we schedule a call to explore this potential partnership?
+      
+      PS – Feel free to check out my Social Echelon profile to get a better feel for engagement metrics and content style."
+      
+      CRITICAL REQUIREMENTS:
+      - Research the brand and mention SPECIFIC products, campaigns, or recent posts - NO generic compliments
+      - Keep total email under 150 words (templates are already short)
+      - For [specific product], mention an ACTUAL product name from their catalog
+      - For [specific goal/benefit], be precise about what their customers achieve
+      - Choose the template that best matches the brand-creator fit
+      - Subject line should reference a recent campaign or product launch if possible
+      - USE THE RECENT CAMPAIGNS INFO: If provided, reference their actual campaigns or collaborations
+      - ALIGN WITH THEIR STRATEGY: If they prefer long-term partnerships, mention that. If they work with specific types of creators, explain why you fit
+      
+      EXAMPLE of specificity:
+      BAD: "I love your products"
+      GOOD: "I absolutely love your Cloud Paint in Storm"
+      
+      BAD: "helps people feel confident"  
+      GOOD: "helps busy moms achieve that 5-minute no-makeup look"
       
       Format the response as JSON with:
       {
-        "subject": "subject line with specific reference",
-        "body": "email body (keep SHORT!)",
-        "personalizationPoints": ["specific brand detail referenced", "content idea mentioned", "audience insight shared"]
+        "subject": "subject line",
+        "body": "completed email template with all brackets filled",
+        "template_used": "direct/storytelling/audience_insights",
+        "personalizationPoints": ["specific product mentioned", "specific benefit/goal mentioned"]
       }
     `
 
     const dmPrompt = `
-      Generate a personalized Instagram DM following proven outreach best practices.
+      Generate a SHORT, NATURAL Instagram DM for brand outreach.
       
-      Creator: @${profile.instagram_username} (${profile.follower_count} followers, ${profile.engagement_rate}% engagement)
-      Content: ${creatorProfile?.profile_data?.identity?.contentPillars?.slice(0, 2).join(' & ')}
+      Creator: @${profile.instagram_username} (${creatorProfile?.profile_data?.identity?.contentPillars?.[0] || 'lifestyle'} creator)
+      Brand: ${match.brand.display_name} (@${match.brand.instagram_handle || match.brand.brand_name.toLowerCase().replace(/\s+/g, '')})
       
-      Brand: ${match.brand.name} (@${match.brand.instagram_handle || match.brand.name.toLowerCase().replace(/\s+/g, '')})
-      Match Score: ${match.match_score}%
+      CRITICAL RULES:
+      1. Maximum 2-3 sentences (under 50 words total)
+      2. Reference their MOST RECENT post or story specifically
+      3. Sound like you're DMing a friend - super casual
+      4. One specific content idea that fits their current vibe
+      5. End with: "Check out my creator profile: [link]"
       
-      CRITICAL DM Requirements:
-      1. Super casual and natural - like messaging a friend
-      2. Start with something SPECIFIC from their recent posts/stories
-      3. Keep it VERY brief - under 80 words
-      4. Mention ONE quick collaboration idea that feels organic
-      5. No formal introductions - they can see who you are
-      6. End with a soft question, not a hard sell
-      7. Use emojis sparingly (1-2 max) if it fits naturally
+      EXAMPLES of natural DMs:
+      "Hey! Your new matcha latte launch looks incredible 🍵 Would love to create a 'morning routine' reel featuring it - my wellness audience would be obsessed. Check out my creator profile: [link]"
       
-      Good DM structure:
-      - Hook: Reference their recent post/story specifically
-      - Connection: Quick mention of why you relate/connect
-      - Idea: One sentence collaboration thought
-      - Soft CTA: "Would love to chat if you're interested!"
+      "Just saw your Coachella collection drop! I'd love to style 3 festival looks for my fashion-forward followers. Check out my creator profile: [link]"
+      
+      BE SPECIFIC - mention actual products, campaigns, or posts you "just saw"
       
       Format the response as JSON with:
       {
-        "message": "dm text (KEEP IT SHORT AND NATURAL!)",
-        "personalizationPoints": ["specific post/story referenced", "collaboration idea type"]
+        "message": "the DM text (MUST be under 50 words, natural tone)",
+        "personalizationPoints": ["specific thing you referenced"]
       }
     `
 
@@ -151,12 +185,17 @@ export async function GET(
     // Add profile link to both drafts
     const profileUrl = `${process.env.NEXT_PUBLIC_APP_URL}/creator/${profile.instagram_username}`
     
+    // For email, replace the placeholder in the PS section
     emailDraft.body = emailDraft.body.replace(
-      'call to action',
-      `call to action\n\nYou can view my full creator profile and media kit here: ${profileUrl}`
+      'Social Echelon profile',
+      `Social Echelon profile: ${profileUrl}`
     )
     
-    dmDraft.message = dmDraft.message + `\n\nCheck out my creator profile: ${profileUrl}`
+    // For DM, replace the [link] placeholder
+    dmDraft.message = dmDraft.message.replace('[link]', profileUrl)
+
+    // Track that outreach was generated (helps with response rate tracking)
+    await matchingService.trackOutreachSent(userId, match.brand_id)
 
     return NextResponse.json({
       success: true,
@@ -164,6 +203,7 @@ export async function GET(
         id: match.id,
         brand: match.brand,
         overallScore: match.match_score,
+        matchCategory: match.match_category,
         insights: match.insights || {}
       },
       creator: {

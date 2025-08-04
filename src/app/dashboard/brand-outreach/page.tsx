@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { 
   Search, Target, Send, Mail, Instagram, TrendingUp, 
   Calendar, Users, AlertCircle, CheckCircle, Clock,
-  BarChart3, MessageSquare, DollarSign, RefreshCw
+  BarChart3, MessageSquare, RefreshCw
 } from 'lucide-react'
 
 interface OutreachStats {
@@ -14,7 +14,6 @@ interface OutreachStats {
   positiveResponses: number
   scheduledOutreach: number
   activeDeals: number
-  totalRevenue: number
 }
 
 interface OutreachActivity {
@@ -171,13 +170,11 @@ export default function BrandOutreachDashboard() {
 
             <div className="bg-white rounded-xl shadow-sm p-6">
               <div className="flex items-center justify-between mb-4">
-                <DollarSign className="w-8 h-8 text-green-600" />
-                <TrendingUp className="w-4 h-4 text-green-500" />
+                <Calendar className="w-8 h-8 text-indigo-500" />
+                <span className="text-sm text-gray-500">Scheduled</span>
               </div>
-              <div className="text-2xl font-bold text-gray-900">
-                ${stats.totalRevenue.toLocaleString()}
-              </div>
-              <div className="text-sm text-gray-600 mt-1">Total Revenue</div>
+              <div className="text-2xl font-bold text-gray-900">{stats.scheduledOutreach}</div>
+              <div className="text-sm text-gray-600 mt-1">Upcoming Outreach</div>
             </div>
           </div>
 

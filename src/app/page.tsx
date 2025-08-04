@@ -1,7 +1,12 @@
-import { Instagram, TrendingUp, Users, Zap } from 'lucide-react'
+'use client'
+
+import { Instagram, TrendingUp, Users, Zap, Menu, X, Target, BarChart3, Send } from 'lucide-react'
 import Link from 'next/link'
+import { useState } from 'react'
 
 export default function Home() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
       {/* Navigation */}
@@ -16,10 +21,70 @@ export default function Home() {
           <div className="hidden md:flex space-x-8 text-white/80">
             <Link href="/intelligence" className="hover:text-white transition-colors">Intelligence</Link>
             <Link href="/algorithm" className="hover:text-white transition-colors">Algorithm</Link>
+            <Link href="/dashboard/brand-matching" className="hover:text-white transition-colors">Brand Matching</Link>
+            <Link href="/dashboard/brand-outreach" className="hover:text-white transition-colors">Outreach</Link>
             <a href="#features" className="hover:text-white transition-colors">Features</a>
             <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
           </div>
+          
+          {/* Mobile menu button */}
+          <button 
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden text-white"
+          >
+            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
         </div>
+        
+        {/* Mobile menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden bg-black/30 backdrop-blur-md mt-4 rounded-lg">
+            <div className="flex flex-col space-y-4 p-6">
+              <Link 
+                href="/intelligence" 
+                className="text-white/80 hover:text-white transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Intelligence
+              </Link>
+              <Link 
+                href="/algorithm" 
+                className="text-white/80 hover:text-white transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Algorithm
+              </Link>
+              <Link 
+                href="/dashboard/brand-matching" 
+                className="text-white/80 hover:text-white transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Brand Matching
+              </Link>
+              <Link 
+                href="/dashboard/brand-outreach" 
+                className="text-white/80 hover:text-white transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Outreach
+              </Link>
+              <a 
+                href="#features" 
+                className="text-white/80 hover:text-white transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Features
+              </a>
+              <a 
+                href="#pricing" 
+                className="text-white/80 hover:text-white transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Pricing
+              </a>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Hero Section */}
@@ -70,10 +135,26 @@ export default function Home() {
             </Link>
             
             <Link 
+              href="/dashboard/brand-matching"
+              className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-6 py-3 rounded-lg font-medium hover:bg-white/20 transition-all duration-300 flex items-center gap-2"
+            >
+              <Target className="w-5 h-5" />
+              Brand Matching
+            </Link>
+            
+            <Link 
+              href="/dashboard/brand-outreach"
+              className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-6 py-3 rounded-lg font-medium hover:bg-white/20 transition-all duration-300 flex items-center gap-2"
+            >
+              <Send className="w-5 h-5" />
+              Outreach Hub
+            </Link>
+            
+            <Link 
               href="/dashboard"
               className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-6 py-3 rounded-lg font-medium hover:bg-white/20 transition-all duration-300 flex items-center gap-2"
             >
-              <Users className="w-5 h-5" />
+              <BarChart3 className="w-5 h-5" />
               Dashboard
             </Link>
           </div>
