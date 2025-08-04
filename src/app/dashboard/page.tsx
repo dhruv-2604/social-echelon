@@ -36,17 +36,21 @@ export default function Dashboard() {
   const [posts, setPosts] = useState<InstagramPost[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d' | 'custom'>('30d')
   const [metrics, setMetrics] = useState<{
     followerChange: number
     engagementChange: number
+    postsChange: number
+    postsPublished: number
     previousFollowers: number
     previousEngagement: number
+    previousPosts: number
   } | null>(null)
 
   useEffect(() => {
     async function fetchUserData() {
       try {
-        const response = await fetch('/api/user/profile')
+        const response = await fetch(`/api/user/profile?timeRange=${timeRange}`)
         
         if (!response.ok) {
           if (response.status === 401) {
@@ -72,7 +76,7 @@ export default function Dashboard() {
     }
 
     fetchUserData()
-  }, [])
+  }, [timeRange])
 
   if (loading) {
     return (
@@ -172,9 +176,20 @@ export default function Dashboard() {
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Welcome Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back, {profile?.full_name || profile?.instagram_username}! 👋</h1>
-          <p className="text-gray-600">Here's what's happening with your Instagram growth today.</p>
+        <div className="mb-8 flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back, {profile?.full_name || profile?.instagram_username}! 👋</h1>
+            <p className="text-gray-600">Here's what's happening with your Instagram growth today.</p>
+          </div>
+          <select
+            value={timeRange}
+            onChange={(e) => setTimeRange(e.target.value as any)}
+            className="px-4 py-2 border border-gray-300 rounded-lg bg-white shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+          >
+            <option value="24h">Last 24 hours</option>
+            <option value="7d">Last 7 days</option>
+            <option value="30d">Last 30 days</option>
+          </select>
         </div>
 
         {/* Key Metrics */}
@@ -185,8 +200,15 @@ export default function Dashboard() {
                 <Users className="w-6 h-6 text-blue-600" />
               </div>
               {metrics?.followerChange !== undefined && (
-                <span className={`text-sm font-medium ${metrics.followerChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {metrics.followerChange >= 0 ? '+' : ''}{metrics.followerChange.toFixed(1)}%
+                <span className={`text-sm font-medium ${
+                  metrics.previousFollowers === profile?.follower_count 
+                    ? 'text-gray-500' 
+                    : metrics.followerChange >= 0 ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  {metrics.previousFollowers === profile?.follower_count 
+                    ? `${timeRange === '24h' ? '24h' : timeRange === '7d' ? '7d' : '30d'} data pending`
+                    : `${metrics.followerChange >= 0 ? '+' : ''}${metrics.followerChange.toFixed(1)}%`
+                  }
                 </span>
               )}
             </div>
@@ -200,13 +222,21 @@ export default function Dashboard() {
                 <TrendingUp className="w-6 h-6 text-pink-600" />
               </div>
               {metrics?.engagementChange !== undefined && (
-                <span className={`text-sm font-medium ${metrics.engagementChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {metrics.engagementChange >= 0 ? '+' : ''}{metrics.engagementChange.toFixed(1)}%
+                <span className={`text-sm font-medium ${
+                  metrics.engagementChange === 0 && metrics.previousEngagement === profile?.engagement_rate
+                    ? 'text-gray-500' 
+                    : metrics.engagementChange >= 0 ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  {metrics.engagementChange === 0 && metrics.previousEngagement === profile?.engagement_rate
+                    ? `${timeRange === '24h' ? '24h' : timeRange === '7d' ? '7d' : '30d'} data pending`
+                    : `${metrics.engagementChange >= 0 ? '+' : ''}${metrics.engagementChange.toFixed(1)}%`
+                  }
                 </span>
               )}
             </div>
-            <div className="text-2xl font-bold text-gray-900 mb-1">{(profile?.engagement_rate || 0).toFixed(1)}%</div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{(profile?.engagement_rate || 0).toFixed(2)}%</div>
             <div className="text-sm text-gray-600">Engagement Rate</div>
+            <div className="text-xs text-gray-500 mt-1">(Likes + Comments) / Followers</div>
           </div>
 
           <div className="bg-white rounded-xl p-6 shadow-sm border">
@@ -214,10 +244,21 @@ export default function Dashboard() {
               <div className="p-2 bg-purple-100 rounded-lg">
                 <Target className="w-6 h-6 text-purple-600" />
               </div>
-              <span className="text-sm font-medium text-gray-500">Total</span>
+              {metrics?.postsPublished !== undefined ? (
+                <span className="text-sm font-medium text-purple-600">
+                  {metrics.postsPublished} in {timeRange === '24h' ? '24h' : timeRange === '7d' ? '7 days' : '30 days'}
+                </span>
+              ) : (
+                <span className="text-sm font-medium text-gray-500">Total</span>
+              )}
             </div>
             <div className="text-2xl font-bold text-gray-900 mb-1">{profile?.posts_count || 0}</div>
             <div className="text-sm text-gray-600">Posts Published</div>
+            {metrics?.postsChange !== undefined && metrics.postsChange !== 0 && (
+              <div className={`text-xs mt-1 ${metrics.postsChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {metrics.postsChange >= 0 ? '+' : ''}{metrics.postsChange.toFixed(1)}% vs previous period
+              </div>
+            )}
           </div>
 
           <div className="bg-white rounded-xl p-6 shadow-sm border">

@@ -17,7 +17,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    console.log('Looking for user with ID:', userId)
+    // Get time range from query params
+    const searchParams = request.nextUrl.searchParams
+    const timeRange = searchParams.get('timeRange') || '30d'
+
+    console.log('Looking for user with ID:', userId, 'Time range:', timeRange)
 
     // Get user profile
     const { data: profile, error: profileError } = await supabaseAdmin
@@ -53,11 +57,36 @@ export async function GET(request: NextRequest) {
     // Calculate engagement rate from recent posts
     let calculatedEngagementRate = 0
     if (posts && posts.length > 0 && profile.follower_count > 0) {
-      const totalEngagement = posts.reduce((sum, post) => {
-        return sum + (post.like_count || 0) + (post.comments_count || 0)
-      }, 0)
-      const avgEngagement = totalEngagement / posts.length
-      calculatedEngagementRate = (avgEngagement / profile.follower_count) * 100
+      // Filter posts within the selected time range
+      let postsInRange = posts
+      if (timeRange !== '30d') {
+        const cutoffDate = new Date()
+        const daysToSubtract = timeRange === '24h' ? 1 : timeRange === '7d' ? 7 : 30
+        cutoffDate.setDate(cutoffDate.getDate() - daysToSubtract)
+        
+        postsInRange = posts.filter(post => {
+          const postDate = new Date(post.timestamp)
+          return postDate >= cutoffDate
+        })
+      }
+      
+      if (postsInRange.length > 0) {
+        const totalEngagement = postsInRange.reduce((sum, post) => {
+          return sum + (post.like_count || 0) + (post.comments_count || 0)
+        }, 0)
+        const avgEngagement = totalEngagement / postsInRange.length
+        calculatedEngagementRate = (avgEngagement / profile.follower_count) * 100
+        
+        console.log('Engagement calculation:', {
+          timeRange,
+          totalEngagement,
+          avgEngagement,
+          followerCount: profile.follower_count,
+          engagementRate: calculatedEngagementRate,
+          postsAnalyzed: postsInRange.length,
+          totalPosts: posts.length
+        })
+      }
     }
 
     // Update engagement rate in profile
@@ -68,28 +97,88 @@ export async function GET(request: NextRequest) {
         .eq('id', userId)
     }
 
-    // Get historical metrics (30 days ago)
-    const thirtyDaysAgo = new Date()
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+    // Calculate days based on time range
+    let daysAgo = 30
+    switch (timeRange) {
+      case '24h':
+        daysAgo = 1
+        break
+      case '7d':
+        daysAgo = 7
+        break
+      case '30d':
+        daysAgo = 30
+        break
+    }
 
-    const { data: historicalMetrics } = await supabaseAdmin
+    // Get historical metrics
+    const historicalDate = new Date()
+    historicalDate.setDate(historicalDate.getDate() - daysAgo)
+
+    const { data: historicalMetrics, error: historicalError } = await supabaseAdmin
       .from('user_performance_metrics')
-      .select('total_followers, average_engagement_rate')
+      .select('total_followers, average_engagement_rate, total_posts, date')
       .eq('user_id', userId)
-      .gte('date', thirtyDaysAgo.toISOString().split('T')[0])
+      .gte('date', historicalDate.toISOString().split('T')[0])
       .order('date', { ascending: true })
       .limit(1)
+
+    console.log('Historical metrics query:', {
+      userId,
+      lookingForDate: historicalDate.toISOString().split('T')[0],
+      found: historicalMetrics?.length || 0,
+      data: historicalMetrics?.[0],
+      error: historicalError
+    })
+
+    // Also check if ANY historical data exists
+    const { data: anyHistoricalData } = await supabaseAdmin
+      .from('user_performance_metrics')
+      .select('date, total_followers, average_engagement_rate, total_posts')
+      .eq('user_id', userId)
+      .order('date', { ascending: false })
+      .limit(5)
+
+    console.log('Any historical data for user:', anyHistoricalData)
+
+    // Count posts in the selected time range
+    const cutoffDate = new Date()
+    cutoffDate.setDate(cutoffDate.getDate() - daysAgo)
+    
+    const { count: postsInTimeRange } = await supabaseAdmin
+      .from('instagram_posts')
+      .select('*', { count: 'exact', head: true })
+      .eq('profile_id', userId)
+      .gte('timestamp', cutoffDate.toISOString())
 
     let metrics = null
     if (historicalMetrics && historicalMetrics.length > 0) {
       const oldFollowers = historicalMetrics[0].total_followers || profile.follower_count
       const oldEngagement = historicalMetrics[0].average_engagement_rate || calculatedEngagementRate
+      const oldPosts = historicalMetrics[0].total_posts || 0
+
+      // Calculate posts published in this time period
+      const postsPublished = postsInTimeRange || 0
 
       metrics = {
         followerChange: oldFollowers > 0 ? ((profile.follower_count - oldFollowers) / oldFollowers) * 100 : 0,
         engagementChange: oldEngagement > 0 ? ((calculatedEngagementRate - oldEngagement) / oldEngagement) * 100 : 0,
+        postsChange: oldPosts > 0 ? ((profile.posts_count - oldPosts) / oldPosts) * 100 : 0,
+        postsPublished,
         previousFollowers: oldFollowers,
-        previousEngagement: oldEngagement
+        previousEngagement: oldEngagement,
+        previousPosts: oldPosts
+      }
+    } else {
+      // If no historical data, just show posts published
+      metrics = {
+        followerChange: 0,
+        engagementChange: 0,
+        postsChange: 0,
+        postsPublished: postsInTimeRange || 0,
+        previousFollowers: profile.follower_count,
+        previousEngagement: calculatedEngagementRate,
+        previousPosts: profile.posts_count
       }
     }
 
