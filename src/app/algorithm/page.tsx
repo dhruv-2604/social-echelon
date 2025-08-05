@@ -24,7 +24,7 @@ export default function AlgorithmPage() {
   const [changes, setChanges] = useState<AlgorithmChange[]>([])
   const [loading, setLoading] = useState(true)
   const [testing, setTesting] = useState(false)
-  const [testResult, setTestResult] = useState<{success: boolean; message: string} | null>(null)
+  const [testResult, setTestResult] = useState<{success: boolean; message: string; error?: string} | null>(null)
 
   useEffect(() => {
     fetchChanges()
@@ -63,7 +63,7 @@ export default function AlgorithmPage() {
       }
     } catch (error) {
       console.error('Error running test:', error)
-      setTestResult({ error: 'Failed to run test' })
+      setTestResult({ success: false, message: 'Failed to run test', error: 'Failed to run test' })
     } finally {
       setTesting(false)
     }
