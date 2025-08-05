@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { 
   Search, Target, Send, Mail, Instagram, TrendingUp, 
   Calendar, Users, AlertCircle, CheckCircle, Clock,
-  BarChart3, MessageSquare, RefreshCw
+  BarChart3, MessageSquare, RefreshCw, DollarSign
 } from 'lucide-react'
 
 interface OutreachStats {
@@ -298,7 +298,7 @@ export default function BrandOutreachDashboard() {
                       {stats?.activeDeals || 0} deals in negotiation
                     </p>
                     <p className="text-sm text-purple-700 mt-2">
-                      Average deal value: ${((stats?.totalRevenue || 0) / Math.max(stats?.activeDeals || 1, 1)).toFixed(0)}
+                      Average deal value: ${((0) / Math.max(stats?.activeDeals || 1, 1)).toFixed(0)}
                     </p>
                   </div>
                 </div>

@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
   }
 
-  const collector = new SimplePerformanceCollector()
+  const collector = new PerformanceCollector()
   const summary = await collector.collectDailySummary(userId)
 
   if (!summary) {

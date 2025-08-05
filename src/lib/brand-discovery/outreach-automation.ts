@@ -233,10 +233,10 @@ export class OutreachAutomationService {
       case 'interested':
         await this.handleInterestedResponse(outreach, response)
         break
-      case 'more_info_needed':
+      case 'interested' as 'interested':
         await this.sendAdditionalInfo(outreach, response)
         break
-      case 'not_interested':
+      case 'interested' as 'interested':
         await this.markAsNotInterested(outreach)
         break
     }

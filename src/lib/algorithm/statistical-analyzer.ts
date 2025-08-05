@@ -333,7 +333,7 @@ export class StatisticalAnalyzer {
     metricName: string,
     originalValue: number,
     newData: number[]
-  ): boolean {
+  ): Promise<boolean> {
     if (newData.length === 0) return false
 
     const newMean = newData.reduce((sum, val) => sum + val, 0) / newData.length

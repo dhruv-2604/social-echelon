@@ -76,7 +76,7 @@ export class BrandDiscoveryService {
       }
 
       // Sort by confidence score (most worked with brands first)
-      return discoveredBrands.sort((a, b) => b.confidence_score - a.confidence_score)
+      return discoveredBrands.sort((a: any, b: any) => (b?.confidence_score || 0) - (a?.confidence_score || 0))
       
     } catch (error) {
       console.error('Error in niche peer analysis:', error)

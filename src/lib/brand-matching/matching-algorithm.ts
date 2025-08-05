@@ -113,7 +113,7 @@ export class BrandMatchingEngine {
       const similarToPastBrands = creator.identity.pastBrands.some(pastBrand => {
         // Same industry or similar brand positioning
         return brand.industry.toLowerCase().includes(pastBrand.toLowerCase().split(' ')[0]) ||
-               brand.positioning.marketSegment === this.getMarketSegment(pastBrand);
+               brand.industry.marketSegment === this.getMarketSegment(pastBrand);
       });
       
       if (similarToPastBrands) {

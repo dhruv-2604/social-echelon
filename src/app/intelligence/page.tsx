@@ -135,7 +135,7 @@ export default function IntelligencePage() {
                 {(() => {
                   // Parse PostgreSQL range format "[85,128)" or handle array
                   if (typeof insights.best_caption_length === 'string') {
-                    const match = insights.best_caption_length.match(/\[(\d+),(\d+)\)/)
+                    const match = insights.best_caption_length.content && post.content.match(/\[(\d+),(\d+)\)/)
                     if (match) {
                       return `${match[1]}-${match[2]}`
                     }

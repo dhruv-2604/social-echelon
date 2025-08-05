@@ -24,7 +24,7 @@ export default function AlgorithmPage() {
   const [changes, setChanges] = useState<AlgorithmChange[]>([])
   const [loading, setLoading] = useState(true)
   const [testing, setTesting] = useState(false)
-  const [testResult, setTestResult] = useState<{success: boolean; message: string; error?: string} | null>(null)
+  const [testResult, setTestResult] = useState<{success: boolean; message: string; error?: string; changes_detected?: number} | null>(null)
 
   useEffect(() => {
     fetchChanges()
@@ -142,9 +142,9 @@ export default function AlgorithmPage() {
           ) : (
             <div>
               <p className="text-green-800">
-                Detection complete: {testResult.changes_detected} algorithm changes found
+                Detection complete: {testResult.changes_detected || 0} algorithm changes found
               </p>
-              {testResult.changes_detected > 0 && (
+              {(testResult.changes_detected || 0) > 0 && (
                 <p className="text-sm text-gray-600 mt-1">
                   Changes have been saved to the database
                 </p>
