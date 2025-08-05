@@ -53,7 +53,7 @@ export class EnhancedBrandMatchingService {
         // For national/international brands, check country overlap
         brandsQuery.or(
           `and(is_local_only.eq.false,ships_to_countries.ov.{${creatorCountries.join(',')}}),` +
-          `and(is_local_only.eq.true,headquarters_city.in.(${creatorCities.map(c => `"${c}"`).join(',')}))`
+          `and(is_local_only.eq.true,headquarters_city.in.(${creatorCities.map((c: string) => `"${c}"`).join(',')}))`
         )
       }
 

@@ -70,21 +70,9 @@ export class InstagramTrendCollector {
     for (const competitor of competitors) {
       try {
         // Analyze their recent posts
-        const posts = await this.api.getMedia(20, competitor.instagram_id)
-        
-        for (const post of posts) {
-          // Track content formats
-          contentPatterns.set(
-            post.media_type, 
-            (contentPatterns.get(post.media_type) || 0) + 1
-          )
-
-          // Extract and count hashtags
-          const hashtags = this.extractHashtags(post.caption || '')
-          hashtags.forEach(tag => {
-            hashtagFrequency.set(tag, (hashtagFrequency.get(tag) || 0) + 1)
-          })
-        }
+        // For now, we can only analyze our own posts, not competitors
+        // Skip competitor analysis until we have API access
+        continue
       } catch (error) {
         console.error(`Error analyzing competitor ${competitor.instagram_username}:`, error)
       }

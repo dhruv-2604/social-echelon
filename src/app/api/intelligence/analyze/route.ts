@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
       success: true,
       personal_insights: insights,
       top_patterns: patterns,
-      recommendations: generateRecommendations(insights, patterns)
+      recommendations: generateRecommendations(insights, patterns || [])
     })
 
   } catch (error) {

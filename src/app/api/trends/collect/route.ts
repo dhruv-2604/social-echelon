@@ -26,7 +26,15 @@ export async function POST(request: NextRequest) {
     console.log('Starting trend collection job')
     
     // Get a real Instagram access token from database
-    const accessToken = await getSystemInstagramToken()
+    // For now, we'll use the first available token from any user
+    const { data: tokenData } = await supabaseAdmin
+      .from('user_tokens')
+      .select('instagram_access_token')
+      .not('instagram_access_token', 'is', null)
+      .limit(1)
+      .single()
+    
+    const accessToken = tokenData?.instagram_access_token
     if (!accessToken) {
       console.error('No Instagram access token available for trend collection')
       return NextResponse.json({ error: 'No Instagram access token' }, { status: 500 })

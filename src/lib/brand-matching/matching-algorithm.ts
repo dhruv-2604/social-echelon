@@ -112,8 +112,7 @@ export class BrandMatchingEngine {
       // Check if brand is similar to past collaborations
       const similarToPastBrands = creator.identity.pastBrands.some(pastBrand => {
         // Same industry or similar brand positioning
-        return brand.industry.toLowerCase().includes(pastBrand.toLowerCase().split(' ')[0]) ||
-               brand.industry.marketSegment === this.getMarketSegment(pastBrand);
+        return brand.industry.toLowerCase().includes(pastBrand.toLowerCase().split(' ')[0]);
       });
       
       if (similarToPastBrands) {
@@ -313,7 +312,7 @@ export class BrandMatchingEngine {
     score: number;
     factors: string[];
   } {
-    let score = B;
+    let score = 0;
     const factors: string[] = [];
     
     // Creator size preference match

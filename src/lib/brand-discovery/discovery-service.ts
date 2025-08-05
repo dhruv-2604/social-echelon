@@ -43,7 +43,7 @@ export class BrandDiscoveryService {
         const brandLower = record.brand_name.toLowerCase().trim()
         
         // Skip if this creator already worked with this brand
-        if (creatorPastBrands.some(b => b.toLowerCase() === brandLower)) {
+        if (creatorPastBrands.some((b: string) => b.toLowerCase() === brandLower)) {
           continue
         }
         
@@ -121,7 +121,7 @@ export class BrandDiscoveryService {
         return []
       }
 
-      return profile.past_brands.map(b => b.toLowerCase().trim())
+      return profile.past_brands.map((b: string) => b.toLowerCase().trim())
     } catch (error) {
       console.error('Error getting creator existing brands:', error)
       return []

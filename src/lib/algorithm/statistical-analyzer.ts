@@ -323,7 +323,7 @@ export class StatisticalAnalyzer {
       .lte('date', endDate.toISOString())
       .in('profiles.niche', niches)
 
-    return data?.map(d => d[metricName]) || []
+    return data?.map(d => (d as any)[metricName]) || []
   }
 
   /**

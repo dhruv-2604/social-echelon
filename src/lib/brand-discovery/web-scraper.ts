@@ -103,7 +103,7 @@ export class BrandOpportunityScraper {
       const html = await response.text()
       const $ = cheerio.load(html)
       
-      const opportunities = []
+      const opportunities: any[] = []
       const keywords = await this.getActiveKeywords()
       
       // Look for press releases mentioning our keywords
@@ -148,7 +148,7 @@ export class BrandOpportunityScraper {
       const html = await response.text()
       const $ = cheerio.load(html)
       
-      const opportunities = []
+      const opportunities: any[] = []
       const selectors = source.selectors as any
       
       $(selectors.title).each((_, element) => {
@@ -159,7 +159,7 @@ export class BrandOpportunityScraper {
         if (this.containsOpportunityKeywords(title)) {
           opportunities.push({
             title,
-            url: this.normalizeUrl(link, source.source_url),
+            url: this.normalizeUrl(link || '', source.source_url),
             opportunity_type: 'campaign_announcement',
             brand_name: this.extractBrandName(title),
             description: $(element).siblings(selectors.excerpt).text().trim()
@@ -186,7 +186,7 @@ export class BrandOpportunityScraper {
       const html = await response.text()
       const $ = cheerio.load(html)
       
-      const opportunities = []
+      const opportunities: any[] = []
       
       // Look for application forms, deadlines, requirements
       const pageText = $('body').text().toLowerCase()
@@ -286,7 +286,12 @@ export class BrandOpportunityScraper {
    * Extract program requirements from page
    */
   private extractRequirements($: cheerio.CheerioAPI): any {
-    const requirements = {
+    const requirements: {
+      followers: { min: number | null, max: number | null },
+      engagement_rate: number | null,
+      niches: string[],
+      locations: string[]
+    } = {
       followers: { min: null, max: null },
       engagement_rate: null,
       niches: [],
@@ -315,7 +320,10 @@ export class BrandOpportunityScraper {
    * Extract contact information
    */
   private extractContactInfo($: cheerio.CheerioAPI): any {
-    const contact = {
+    const contact: {
+      email: string | null,
+      form_url: string | null
+    } = {
       email: null,
       form_url: null
     }

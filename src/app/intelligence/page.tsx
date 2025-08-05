@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Brain, TrendingUp, Hash, Clock, Sparkles, Users, BookOpen } from 'lucide-react'
 
 interface UserInsights {
-  best_caption_length?: number[]
+  best_caption_length?: number[] | string
   best_hashtag_count?: number
   best_posting_hour?: number
   best_day_of_week?: number
@@ -135,7 +135,7 @@ export default function IntelligencePage() {
                 {(() => {
                   // Parse PostgreSQL range format "[85,128)" or handle array
                   if (typeof insights.best_caption_length === 'string') {
-                    const match = insights.best_caption_length.content && post.content.match(/\[(\d+),(\d+)\)/)
+                    const match = insights.best_caption_length.match(/\[(\d+),(\d+)\)/)
                     if (match) {
                       return `${match[1]}-${match[2]}`
                     }
