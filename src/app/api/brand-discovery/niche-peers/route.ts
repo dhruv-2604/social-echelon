@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     // Get additional info about top discovered brands
     const enrichedBrands = []
     for (const brand of newBrands.slice(0, 10)) { // Top 10 brands
-      const research = await discoveryService.researchBrand(brand.instagram_handle)
+      const research = await discoveryService.researchBrand(brand.instagram_handle || '')
       enrichedBrands.push({
         ...brand,
         research
