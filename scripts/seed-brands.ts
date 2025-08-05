@@ -127,10 +127,10 @@ async function seedBrands() {
         : ['micro', 'macro'] // Default sizes
 
       // Auto-determine company size from followers
-      const company_size = getCompanySize(record.followers)
+      const company_size = getCompanySize(record.followers || '')
 
       // Map influencer types to brand values
-      const brand_values = mapInfluencerTypesToValues(record.influencer_types)
+      const brand_values = mapInfluencerTypesToValues(record.influencer_types || '')
 
       return {
         brand_name: record.brand_name.toLowerCase().trim(),
