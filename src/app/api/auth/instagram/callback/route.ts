@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
 
     let userId: string
     
-    if (existingUser) {
+    if (existingUser && !fetchError) {
       // Update existing user
       console.log('Updating existing user:', existingUser.id)
       const { error: updateError } = await supabaseAdmin
@@ -57,14 +57,14 @@ export async function GET(request: NextRequest) {
           engagement_rate: engagementRate,
           updated_at: new Date().toISOString()
         })
-        .eq('id', existingUser.id)
+        .eq('id', existingUser.id as string)
 
       if (updateError) {
         console.error('Update error:', updateError)
         throw updateError
       }
       
-      userId = existingUser.id
+      userId = existingUser.id as string
     } else {
       // Create new user
       console.log('Creating new user for Instagram ID:', profile.id)
@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
         throw insertError
       }
       
-      userId = newUser?.id || newUserId
+      userId = (newUser?.id as string) || newUserId
       console.log('Created user with ID:', userId)
     }
 

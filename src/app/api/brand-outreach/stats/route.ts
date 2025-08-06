@@ -37,12 +37,12 @@ export async function GET(request: NextRequest) {
 
     // Calculate stats
     const stats = {
-      totalOutreachSent: outreachData?.filter(o => ['sent', 'opened', 'replied', 'deal_closed'].includes(o.outreach_status)).length || 0,
-      totalResponses: outreachData?.filter(o => o.outreach_status === 'replied').length || 0,
+      totalOutreachSent: outreachData?.filter((o: any) => ['sent', 'opened', 'replied', 'deal_closed'].includes(o.outreach_status)).length || 0,
+      totalResponses: outreachData?.filter((o: any) => o.outreach_status === 'replied').length || 0,
       responseRate: 0,
-      positiveResponses: outreachData?.filter(o => o.response_sentiment === 'positive').length || 0,
-      scheduledOutreach: outreachData?.filter(o => o.outreach_status === 'scheduled').length || 0,
-      activeDeals: outreachData?.filter(o => o.outreach_status === 'meeting_scheduled').length || 0
+      positiveResponses: outreachData?.filter((o: any) => o.response_sentiment === 'positive').length || 0,
+      scheduledOutreach: outreachData?.filter((o: any) => o.outreach_status === 'scheduled').length || 0,
+      activeDeals: outreachData?.filter((o: any) => o.outreach_status === 'meeting_scheduled').length || 0
     }
 
     // Calculate response rate

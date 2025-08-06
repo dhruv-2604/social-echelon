@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       .eq('user_id', userId)
       .single()
 
-    if (!profile?.profile_data?.identity) {
+    if (!(profile as any)?.profile_data?.identity) {
       return NextResponse.json({ 
         error: 'Brand matching profile not completed',
         requiresOnboarding: true 
