@@ -1,10 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
 import { InstagramMedia } from '@/lib/instagram'
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { getSupabaseAdmin } from '@/lib/supabase-admin'
 
 export interface ContentSignal {
   user_id: string
@@ -204,6 +199,7 @@ export class ContentAnalyzer {
   async storeContentSignal(signal: ContentSignal): Promise<void> {
     console.log('Storing signal for post:', signal.instagram_post_id)
     
+    const supabaseAdmin = getSupabaseAdmin()
     const { data, error } = await supabaseAdmin
       .from('content_signals')
       .upsert(signal, { onConflict: 'instagram_post_id' })
@@ -222,6 +218,8 @@ export class ContentAnalyzer {
    */
   async analyzeUserContent(userId: string): Promise<void> {
     console.log(`Analyzing content for user ${userId}`)
+    
+    const supabaseAdmin = getSupabaseAdmin()
     
     // Get user's posts from last 30 days
     const thirtyDaysAgo = new Date()
@@ -271,6 +269,8 @@ export class ContentAnalyzer {
    */
   async generateUserInsights(userId: string): Promise<void> {
     console.log(`Generating insights for user ${userId}`)
+    
+    const supabaseAdmin = getSupabaseAdmin()
     
     // Get all content signals for this user
     const { data: signals } = await supabaseAdmin

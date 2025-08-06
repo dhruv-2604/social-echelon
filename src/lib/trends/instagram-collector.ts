@@ -1,11 +1,6 @@
 import { InstagramAPI } from '@/lib/instagram'
 import { TrendData, HashtagMetrics, NicheCompetitor } from './types'
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { getSupabaseAdmin } from '@/lib/supabase-admin'
 
 export class InstagramTrendCollector {
   private api: InstagramAPI
@@ -51,6 +46,7 @@ export class InstagramTrendCollector {
     console.log(`Analyzing competitors in ${niche} niche`)
     
     // Get competitors from database
+    const supabaseAdmin = getSupabaseAdmin()
     const { data: competitors } = await supabaseAdmin
       .from('niche_competitors')
       .select('*')

@@ -1,9 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { getSupabaseAdmin } from '@/lib/supabase-admin'
 
 export interface ContentPattern {
   pattern_type: string
@@ -125,6 +120,7 @@ export class PatternDetector {
   private async detectHashtagPatterns(): Promise<ContentPattern[]> {
     const patterns: ContentPattern[] = []
     
+    const supabaseAdmin = getSupabaseAdmin()
     const { data: signals } = await supabaseAdmin
       .from('content_signals')
       .select('hashtag_count, performance_score, user_niche')
@@ -179,6 +175,7 @@ export class PatternDetector {
   private async detectTimingPatterns(): Promise<ContentPattern[]> {
     const patterns: ContentPattern[] = []
     
+    const supabaseAdmin = getSupabaseAdmin()
     const { data: signals } = await supabaseAdmin
       .from('content_signals')
       .select('hour_of_day, day_of_week, performance_score, user_niche')
@@ -227,6 +224,7 @@ export class PatternDetector {
   private async detectFormatPatterns(): Promise<ContentPattern[]> {
     const patterns: ContentPattern[] = []
     
+    const supabaseAdmin = getSupabaseAdmin()
     const { data: signals } = await supabaseAdmin
       .from('content_signals')
       .select('has_carousel, has_reel, performance_score, user_niche')
@@ -270,6 +268,7 @@ export class PatternDetector {
   private async detectEmojiPatterns(): Promise<ContentPattern[]> {
     const patterns: ContentPattern[] = []
     
+    const supabaseAdmin = getSupabaseAdmin()
     const { data: signals } = await supabaseAdmin
       .from('content_signals')
       .select('emoji_count, performance_score, user_niche')
@@ -349,6 +348,7 @@ export class PatternDetector {
    * Store pattern in database
    */
   private async storePattern(pattern: ContentPattern): Promise<void> {
+    const supabaseAdmin = getSupabaseAdmin()
     const { error } = await supabaseAdmin
       .from('content_patterns')
       .insert({

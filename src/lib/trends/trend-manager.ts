@@ -1,10 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
+import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { TrendData, TrendAnalysis } from './types'
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
 
 export class TrendManager {
   /**
@@ -16,6 +11,7 @@ export class TrendManager {
     for (const trend of trends) {
       try {
         // Check if trend already exists
+        const supabaseAdmin = getSupabaseAdmin()
         const { data: existing } = await supabaseAdmin
           .from('trends')
           .select('id, confidence_score')
@@ -44,6 +40,7 @@ export class TrendManager {
    * Insert new trend
    */
   private static async insertTrend(trend: TrendData): Promise<void> {
+    const supabaseAdmin = getSupabaseAdmin()
     const { error } = await supabaseAdmin
       .from('trends')
       .insert({
@@ -70,6 +67,7 @@ export class TrendManager {
    * Update existing trend
    */
   private static async updateTrend(id: string, trend: TrendData): Promise<void> {
+    const supabaseAdmin = getSupabaseAdmin()
     const { error } = await supabaseAdmin
       .from('trends')
       .update({
@@ -94,6 +92,7 @@ export class TrendManager {
    * Record trend history for tracking changes
    */
   private static async recordTrendHistory(trendId: string, trend: TrendData): Promise<void> {
+    const supabaseAdmin = getSupabaseAdmin()
     const { error } = await supabaseAdmin
       .from('trend_history')
       .insert({
@@ -117,6 +116,7 @@ export class TrendManager {
     niche: string, 
     minConfidence: number = 60
   ): Promise<TrendData[]> {
+    const supabaseAdmin = getSupabaseAdmin()
     const { data: trends, error } = await supabaseAdmin
       .from('trends')
       .select('*')
@@ -140,6 +140,7 @@ export class TrendManager {
     niche: string, 
     limit: number = 10
   ): Promise<string[]> {
+    const supabaseAdmin = getSupabaseAdmin()
     const { data: trends, error } = await supabaseAdmin
       .from('trends')
       .select('trend_name, confidence_score')
@@ -212,6 +213,7 @@ export class TrendManager {
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
+    const supabaseAdmin = getSupabaseAdmin()
     const { error } = await supabaseAdmin
       .from('trends')
       .delete()
