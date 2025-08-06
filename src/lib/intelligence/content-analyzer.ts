@@ -254,7 +254,20 @@ export class ContentAnalyzer {
         saved: post.insights_saved || 0
       }
       
-      const signal = this.analyzePost(post, insights, profile)
+      // Cast post to InstagramMedia format
+      const instagramPost: InstagramMedia = {
+        id: post.id,
+        media_type: post.media_type,
+        media_url: post.media_url || '',
+        permalink: post.permalink || '',
+        caption: post.caption,
+        timestamp: post.timestamp,
+        like_count: post.like_count,
+        comments_count: post.comments_count,
+        thumbnail_url: post.thumbnail_url
+      }
+      
+      const signal = this.analyzePost(instagramPost, insights, profile)
       await this.storeContentSignal(signal)
     }
     
