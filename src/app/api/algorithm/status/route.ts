@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
       .select('*')
       .gte('detected_at', since.toISOString())
       .in('status', ['detected', 'monitoring', 'confirmed'])
-      .order('confidence_score', { ascending: false })
+      .order('confidence_score', { ascending: false }) as { data: any[] | null; error: any }
 
     if (changesError) {
       throw changesError
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       .from('niche_performance_trends')
       .select('*')
       .gte('week_start', new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString())
-      .order('week_start', { ascending: false })
+      .order('week_start', { ascending: false }) as { data: any[] | null; error: any }
 
     if (trendsError) {
       // Table might not exist yet, continue without trends
