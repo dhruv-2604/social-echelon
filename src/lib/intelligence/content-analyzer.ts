@@ -1,7 +1,7 @@
 import { InstagramMedia } from '@/lib/instagram'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 
-export interface ContentSignal {
+export interface ContentSignal extends Record<string, unknown> {
   user_id: string
   instagram_post_id: string
   caption_length: number
