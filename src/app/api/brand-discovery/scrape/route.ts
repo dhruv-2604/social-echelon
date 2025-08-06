@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
           .from('profiles')
           .select('role')
           .eq('id', userId)
-          .single()
+          .single() as { data: any; error: any }
         
         if (profile?.role !== 'admin') {
           return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     const { data: summary } = await supabaseAdmin
       .from('scraped_opportunities')
       .select('opportunity_type, status')
-      .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+      .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) as { data: any[] | null; error: any }
     
     const stats = {
       total_scraped: summary?.length || 0,
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
       .from('profiles')
       .select('role')
       .eq('id', userId)
-      .single()
+      .single() as { data: any; error: any }
     
     if (profile?.role !== 'admin') {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
       .select('*')
       .eq('status', 'qualified')
       .order('created_at', { ascending: false })
-      .limit(50)
+      .limit(50) as { data: any[] | null; error: any }
     
     // Get brands in queue
     const { data: brandQueue } = await supabaseAdmin
@@ -100,7 +100,7 @@ export async function GET(request: NextRequest) {
       .select('*')
       .eq('status', 'pending')
       .order('priority', { ascending: false })
-      .limit(20)
+      .limit(20) as { data: any[] | null; error: any }
     
     return NextResponse.json({
       opportunities,
