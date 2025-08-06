@@ -230,7 +230,7 @@ export class ContentAnalyzer {
       .select('*')
       .eq('profile_id', userId)
       .gte('timestamp', thirtyDaysAgo.toISOString())
-      .order('timestamp', { ascending: false })
+      .order('timestamp', { ascending: false }) as { data: any[] | null; error: any }
     
     if (!posts || posts.length === 0) {
       console.log('No recent posts to analyze')
@@ -242,7 +242,7 @@ export class ContentAnalyzer {
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single()
+      .single() as { data: any; error: any }
     
     if (!profile) return
     
@@ -290,7 +290,7 @@ export class ContentAnalyzer {
       .from('content_signals')
       .select('*')
       .eq('user_id', userId)
-      .order('performance_score', { ascending: false })
+      .order('performance_score', { ascending: false }) as { data: any[] | null; error: any }
     
     if (!signals || signals.length === 0) {
       console.log('No signals to generate insights from')
