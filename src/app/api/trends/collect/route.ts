@@ -84,6 +84,8 @@ export async function POST(request: NextRequest) {
 
 // Manual trigger for testing
 export async function GET(request: NextRequest) {
+  const supabaseAdmin = getSupabaseAdmin()
+  
   // Check if user is authenticated
   const url = new URL(request.url)
   const testMode = url.searchParams.get('test') === 'true'
