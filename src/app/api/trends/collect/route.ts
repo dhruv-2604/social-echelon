@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       .limit(1)
       .single()
     
-    const accessToken = tokenData?.instagram_access_token
+    const accessToken = tokenData?.instagram_access_token as string | undefined
     if (!accessToken) {
       console.error('No Instagram access token available for trend collection')
       return NextResponse.json({ error: 'No Instagram access token' }, { status: 500 })
@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
 
   // For testing, collect trends for a single niche
   const niche = url.searchParams.get('niche') || 'lifestyle'
-  const collector = new InstagramTrendCollector(tokenData.instagram_access_token)
+  const collector = new InstagramTrendCollector(tokenData.instagram_access_token as string)
   
   try {
     const trends = await collector.collectTrends(niche)
