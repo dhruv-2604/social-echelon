@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { InstagramTrendCollector } from '@/lib/trends/instagram-collector'
 import { TrendManager } from '@/lib/trends/trend-manager'
-import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { getSupabaseAdmin } from '@/lib/supabase-admin'
 
 // List of niches to collect trends for
 const SUPPORTED_NICHES = [
@@ -17,6 +12,7 @@ const SUPPORTED_NICHES = [
 
 export async function POST(request: NextRequest) {
   try {
+    const supabaseAdmin = getSupabaseAdmin()
     // This endpoint should be protected - only allow from cron jobs
     const authHeader = request.headers.get('authorization')
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
