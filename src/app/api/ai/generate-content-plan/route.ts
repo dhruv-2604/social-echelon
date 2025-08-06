@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single()
+      .single() as { data: any; error: any }
 
     if (profileError || !profile) {
       console.error('Profile error:', profileError)
@@ -81,6 +81,7 @@ export async function POST(request: NextRequest) {
     console.log('Found posts:', posts?.length || 0)
 
     // Map posts to InstagramPost format with calculated engagement rate
+    const followerCount = profile.follower_count || 0
     const formattedPosts: InstagramPost[] = (posts || []).map((post: any) => ({
       id: post.id,
       media_type: post.media_type,
@@ -88,15 +89,15 @@ export async function POST(request: NextRequest) {
       like_count: post.like_count || 0,
       comments_count: post.comments_count || 0,
       timestamp: post.timestamp,
-      engagement_rate: profile.follower_count > 0 
-        ? ((post.like_count || 0) + (post.comments_count || 0)) / profile.follower_count * 100
+      engagement_rate: followerCount > 0 
+        ? ((post.like_count || 0) + (post.comments_count || 0)) / followerCount * 100
         : 0
     }))
 
     // Analyze user's performance data
     const performanceData = ContentAnalyzer.analyzeUserPerformance(
       formattedPosts, 
-      profile.follower_count || 0
+      followerCount
     )
 
     console.log('Performance analysis complete:', {
