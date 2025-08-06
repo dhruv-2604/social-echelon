@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
     const results = await scraper.runDailyScraping()
     
     // Get summary of scraped opportunities
+    const supabaseAdmin = getSupabaseAdmin()
     const { data: summary } = await supabaseAdmin
       .from('scraped_opportunities')
       .select('opportunity_type, status')
@@ -74,6 +75,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Check if user is admin
+    const supabaseAdmin = getSupabaseAdmin()
     const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('role')
