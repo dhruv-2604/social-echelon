@@ -22,10 +22,10 @@ export async function GET(request: NextRequest) {
       .from('outreach_tracking')
       .select(`
         *,
-        match:brand_matches(
+        brand_matches!match_id(
           *,
-          brand:brands(*),
-          profile:profiles(*)
+          brands(*),
+          profiles(*)
         )
       `)
       .gte('created_at', startOfMonth.toISOString())
@@ -53,16 +53,16 @@ export async function GET(request: NextRequest) {
     // Get recent activity
     const recentActivity = outreachData
       ?.slice(0, 10)
-      .map(activity => ({
+      .map((activity: any) => ({
         id: activity.id,
-        brand_name: activity.match?.brand?.name || 'Unknown Brand',
-        brand_logo: activity.match?.brand?.logo_url,
+        brand_name: activity.brand_matches?.brands?.name || 'Unknown Brand',
+        brand_logo: activity.brand_matches?.brands?.logo_url,
         channel: activity.outreach_channel,
         status: activity.outreach_status,
         sent_at: activity.sent_at,
         response_sentiment: activity.response_sentiment,
-        creator_name: activity.match?.profile?.full_name || 'Unknown Creator',
-        match_score: activity.match?.match_score || 0
+        creator_name: activity.brand_matches?.profiles?.full_name || 'Unknown Creator',
+        match_score: activity.brand_matches?.match_score || 0
       })) || []
 
     return NextResponse.json({
