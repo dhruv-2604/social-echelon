@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single()
+      .single() as { data: any; error: any }
 
     if (profileError) {
       console.error('Profile error:', profileError)
@@ -35,7 +35,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    console.log('Found profile:', profile.instagram_username)
+    // Type the profile to avoid TypeScript errors
+    const typedProfile = profile as {
+      id: string
+      instagram_username: string
+      follower_count: number
+      posts_count: number
+      engagement_rate: number
+      [key: string]: any
+    }
+
+    console.log('Found profile:', typedProfile.instagram_username)
 
     // Get recent Instagram posts
     const { data: posts, error: postsError } = await supabaseAdmin
@@ -51,7 +61,7 @@ export async function GET(request: NextRequest) {
 
     // Calculate engagement rate from recent posts
     let calculatedEngagementRate = 0
-    if (posts && posts.length > 0 && profile.follower_count > 0) {
+    if (posts && posts.length > 0 && typedProfile.follower_count > 0) {
       // Filter posts within the selected time range
       let postsInRange = posts
       if (timeRange !== '30d') {
@@ -70,13 +80,13 @@ export async function GET(request: NextRequest) {
           return sum + (post.like_count || 0) + (post.comments_count || 0)
         }, 0)
         const avgEngagement = totalEngagement / postsInRange.length
-        calculatedEngagementRate = (avgEngagement / profile.follower_count) * 100
+        calculatedEngagementRate = (avgEngagement / typedProfile.follower_count) * 100
         
         console.log('Engagement calculation:', {
           timeRange,
           totalEngagement,
           avgEngagement,
-          followerCount: profile.follower_count,
+          followerCount: typedProfile.follower_count,
           engagementRate: calculatedEngagementRate,
           postsAnalyzed: postsInRange.length,
           totalPosts: posts.length
@@ -148,7 +158,7 @@ export async function GET(request: NextRequest) {
 
     let metrics = null
     if (historicalMetrics && historicalMetrics.length > 0) {
-      const oldFollowers = historicalMetrics[0].total_followers || profile.follower_count
+      const oldFollowers = historicalMetrics[0].total_followers || typedProfile.follower_count
       const oldEngagement = historicalMetrics[0].average_engagement_rate || calculatedEngagementRate
       const oldPosts = historicalMetrics[0].total_posts || 0
 
@@ -156,9 +166,9 @@ export async function GET(request: NextRequest) {
       const postsPublished = postsInTimeRange || 0
 
       metrics = {
-        followerChange: oldFollowers > 0 ? ((profile.follower_count - oldFollowers) / oldFollowers) * 100 : 0,
+        followerChange: oldFollowers > 0 ? ((typedProfile.follower_count - oldFollowers) / oldFollowers) * 100 : 0,
         engagementChange: oldEngagement > 0 ? ((calculatedEngagementRate - oldEngagement) / oldEngagement) * 100 : 0,
-        postsChange: oldPosts > 0 ? ((profile.posts_count - oldPosts) / oldPosts) * 100 : 0,
+        postsChange: oldPosts > 0 ? ((typedProfile.posts_count - oldPosts) / oldPosts) * 100 : 0,
         postsPublished,
         previousFollowers: oldFollowers,
         previousEngagement: oldEngagement,
@@ -171,15 +181,15 @@ export async function GET(request: NextRequest) {
         engagementChange: 0,
         postsChange: 0,
         postsPublished: postsInTimeRange || 0,
-        previousFollowers: profile.follower_count,
+        previousFollowers: typedProfile.follower_count,
         previousEngagement: calculatedEngagementRate,
-        previousPosts: profile.posts_count
+        previousPosts: typedProfile.posts_count
       }
     }
 
     return NextResponse.json({
       profile: {
-        ...profile,
+        ...typedProfile,
         engagement_rate: calculatedEngagementRate
       },
       posts: posts || [],
