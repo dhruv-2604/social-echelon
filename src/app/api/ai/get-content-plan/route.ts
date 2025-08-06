@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
       .eq('user_id', userId)
       .eq('week_starting', weekStarting)
       .order('created_at', { ascending: false })
-      .limit(1)
+      .limit(1) as { data: any[] | null; error: any }
 
     if (error) {
       console.error('Error fetching content plan:', error)
@@ -40,7 +40,8 @@ export async function GET(request: NextRequest) {
 
     if (contentPlans && contentPlans.length > 0) {
       const plan = contentPlans[0]
-      console.log('Found existing content plan:', plan.id, 'with', plan.suggestions?.length || 0, 'suggestions')
+      const suggestions = Array.isArray(plan.suggestions) ? plan.suggestions : []
+      console.log('Found existing content plan:', plan.id, 'with', suggestions.length, 'suggestions')
       return NextResponse.json({
         success: true,
         content_plan: {
