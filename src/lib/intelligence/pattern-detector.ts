@@ -72,6 +72,7 @@ export class PatternDetector {
     ]
     
     // Get performance by caption length
+    const supabaseAdmin = getSupabaseAdmin()
     const { data: signals } = await supabaseAdmin
       .from('content_signals')
       .select('caption_length, performance_score, user_niche')

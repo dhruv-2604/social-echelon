@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { XTwitterCollector } from '@/lib/trends/x-twitter-collector'
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { getSupabaseAdmin } from '@/lib/supabase-admin'
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,6 +14,7 @@ export async function GET(request: NextRequest) {
     
     // Store trends in database for historical tracking
     for (const trend of trends) {
+  const supabaseAdmin = getSupabaseAdmin()
       await supabaseAdmin
         .from('trends')
         .upsert({

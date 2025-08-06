@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { getSupabaseAdmin } from '@/lib/supabase-admin'
 
 // GET /api/algorithm/status - Get current algorithm status
 export async function GET(request: NextRequest) {
@@ -13,6 +8,7 @@ export async function GET(request: NextRequest) {
     const since = new Date()
     since.setHours(since.getHours() - 48)
 
+  const supabaseAdmin = getSupabaseAdmin()
     const { data: activeChanges, error: changesError } = await supabaseAdmin
       .from('algorithm_changes')
       .select('*')

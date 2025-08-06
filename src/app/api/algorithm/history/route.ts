@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { getSupabaseAdmin } from '@/lib/supabase-admin'
 
 // GET /api/algorithm/history - Get historical algorithm changes
 export async function GET(request: NextRequest) {
@@ -19,6 +14,7 @@ export async function GET(request: NextRequest) {
     since.setDate(since.getDate() - days)
 
     // Build query - explicitly select all fields to avoid issues
+  const supabaseAdmin = getSupabaseAdmin()
     let query = supabaseAdmin
       .from('algorithm_changes')
       .select(`

@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { cookies } from 'next/headers'
 import { BrandOpportunityScraper } from '@/lib/brand-discovery/web-scraper'
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
 
 // This endpoint should be called by a cron job (e.g., Vercel Cron)
 export async function POST(request: NextRequest) {
@@ -19,6 +14,7 @@ export async function POST(request: NextRequest) {
       const userId = cookieStore.get('user_id')?.value
       
       if (userId) {
+  const supabaseAdmin = getSupabaseAdmin()
         const { data: profile } = await supabaseAdmin
           .from('profiles')
           .select('role')

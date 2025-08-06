@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { AlertManager } from '@/lib/algorithm/alert-manager'
 import { AlgorithmInsightsProvider } from '@/lib/algorithm/algorithm-insights-provider'
 import { cookies } from 'next/headers'
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
 
 export async function GET(request: NextRequest) {
   try {
@@ -167,6 +162,7 @@ async function testContentIntegration(userId: string) {
   
   try {
     // Get user profile
+  const supabaseAdmin = getSupabaseAdmin()
     const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('niche')
