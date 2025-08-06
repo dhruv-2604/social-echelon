@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { ContentGenerator, UserProfile } from '@/lib/ai/content-generator'
-import { ContentAnalyzer } from '@/lib/ai/content-analyzer'
+import { ContentAnalyzer, InstagramPost } from '@/lib/ai/content-analyzer'
 import { InstagramAPI } from '@/lib/instagram'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
 
     // Analyze user's performance data
     const performanceData = ContentAnalyzer.analyzeUserPerformance(
-      posts || [], 
+      (posts || []) as InstagramPost[], 
       profile.follower_count || 0
     )
 
