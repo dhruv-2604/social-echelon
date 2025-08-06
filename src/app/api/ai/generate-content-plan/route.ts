@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
           preferences_set: true,
           updated_at: new Date().toISOString()
         })
-        .eq('id', userId)
+        .eq('id', userId) as { data: any; error: any }
 
       if (updateError) {
         console.error('Failed to update user preferences:', updateError)
@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
       .from('user_content_insights')
       .select('*')
       .eq('user_id', userId)
-      .single()
+      .single() as { data: any; error: any }
 
     // Get top patterns that work for this user's niche
     const { data: topPatterns } = await supabaseAdmin
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
       .contains('applicable_niches', [userProfile.niche])
       .gte('confidence_score', 70)
       .order('avg_performance_score', { ascending: false })
-      .limit(5)
+      .limit(5) as { data: any[] | null; error: any }
 
     // Combine insights into user patterns object
     const userPatterns = {
@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
         user_preferences: userProfile,
         performance_data: performanceData,
         generated_at: contentPlan.generated_at
-      })
+      }) as { data: any; error: any }
 
     if (insertError) {
       console.error('Failed to store content plan:', insertError)

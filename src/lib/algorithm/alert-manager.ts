@@ -30,6 +30,8 @@ export class AlertManager {
   async sendAlgorithmChangeAlerts(changes: AlgorithmChange[]): Promise<void> {
     console.log(`Sending alerts for ${changes.length} algorithm changes...`)
     
+    const supabaseAdmin = getSupabaseAdmin()
+    
     for (const change of changes) {
       // Only alert for significant changes
       if (change.confidence < 70) continue
@@ -41,7 +43,7 @@ export class AlertManager {
       const { data: affectedUsers } = await supabaseAdmin
         .from('profiles')
         .select('id, email')
-        .in('niche', change.niches)
+        .in('niche', change.niches) as { data: Array<{id: string; email: string}> | null; error: any }
       
       if (!affectedUsers || affectedUsers.length === 0) continue
       
@@ -117,6 +119,8 @@ export class AlertManager {
    * Get unread alerts for a user
    */
   async getUserAlerts(userId: string, unreadOnly = false): Promise<Alert[]> {
+    const supabaseAdmin = getSupabaseAdmin()
+    
     let query = supabaseAdmin
       .from('alerts')
       .select('*')
@@ -141,6 +145,8 @@ export class AlertManager {
    * Mark alerts as read
    */
   async markAlertsAsRead(alertIds: string[]): Promise<void> {
+    const supabaseAdmin = getSupabaseAdmin()
+    
     await supabaseAdmin
       .from('alerts')
       .update({ read: true })

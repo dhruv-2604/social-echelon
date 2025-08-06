@@ -11,6 +11,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
+    const supabaseAdmin = getSupabaseAdmin()
+
     // Check if user has completed brand matching profile
     const { data: creatorProfile, error } = await supabaseAdmin
       .from('creator_profiles')

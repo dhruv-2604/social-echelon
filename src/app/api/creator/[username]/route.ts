@@ -25,7 +25,7 @@ export async function GET(
         content_style
       `)
       .eq('instagram_username', username)
-      .single()
+      .single() as { data: any; error: any }
 
     if (error || !profile) {
       return NextResponse.json({ error: 'Creator not found' }, { status: 404 })
@@ -35,16 +35,16 @@ export async function GET(
     const { data: creatorProfile } = await supabaseAdmin
       .from('creator_profiles')
       .select('profile_data')
-      .eq('user_id', profile.id)
-      .single()
+      .eq('user_id', profile.id as string)
+      .single() as { data: any; error: any }
 
     // Get recent posts for portfolio
     const { data: recentPosts } = await supabaseAdmin
       .from('instagram_posts')
       .select('*')
-      .eq('profile_id', profile.id)
+      .eq('profile_id', profile.id as string)
       .order('timestamp', { ascending: false })
-      .limit(9)
+      .limit(9) as { data: any[] | null; error: any }
 
     // Combine all data
     const creatorData = {

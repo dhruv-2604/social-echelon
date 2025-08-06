@@ -13,6 +13,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user is admin
+    const supabaseAdmin = getSupabaseAdmin()
     const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('role')

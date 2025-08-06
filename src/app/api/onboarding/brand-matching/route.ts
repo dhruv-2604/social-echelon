@@ -14,12 +14,14 @@ export async function POST(request: NextRequest) {
 
     const data = await request.json()
 
+    const supabaseAdmin = getSupabaseAdmin()
+
     // Get existing profile data to pull follower count and engagement rate
     const { data: profile } = await supabaseAdmin
       .from('profiles')
       .select('instagram_username, follower_count, engagement_rate')
       .eq('id', userId)
-      .single()
+      .single() as { data: any; error: any }
 
     if (!profile) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
@@ -31,10 +33,10 @@ export async function POST(request: NextRequest) {
       .select('likes_count, comments_count')
       .eq('profile_id', userId)
       .order('timestamp', { ascending: false })
-      .limit(20)
+      .limit(20) as { data: Array<{likes_count: number; comments_count: number}> | null; error: any }
 
-    const avgLikes = recentPosts ? Math.round(recentPosts.reduce((sum, post) => sum + post.likes_count, 0) / recentPosts.length) : 0
-    const avgComments = recentPosts ? Math.round(recentPosts.reduce((sum, post) => sum + post.comments_count, 0) / recentPosts.length) : 0
+    const avgLikes = recentPosts && recentPosts.length > 0 ? Math.round(recentPosts.reduce((sum, post) => sum + (post.likes_count || 0), 0) / recentPosts.length) : 0
+    const avgComments = recentPosts && recentPosts.length > 0 ? Math.round(recentPosts.reduce((sum, post) => sum + (post.comments_count || 0), 0) / recentPosts.length) : 0
 
     // Transform the onboarding data to match our schema
     const creatorProfile: Partial<CreatorProfile> = {

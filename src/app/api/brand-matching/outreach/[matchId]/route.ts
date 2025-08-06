@@ -22,6 +22,8 @@ export async function GET(
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
+    const supabaseAdmin = getSupabaseAdmin()
+
     // Get match details from user_brand_matches
     const { data: match, error: matchError } = await supabaseAdmin
       .from('user_brand_matches')
@@ -31,7 +33,7 @@ export async function GET(
       `)
       .eq('id', params.matchId)
       .eq('user_id', userId)
-      .single()
+      .single() as { data: any; error: any }
 
     if (matchError || !match) {
       return NextResponse.json({ error: 'Match not found' }, { status: 404 })
@@ -42,32 +44,36 @@ export async function GET(
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single()
+      .single() as { data: any; error: any }
 
     const { data: creatorProfile } = await supabaseAdmin
       .from('creator_profiles')
       .select('profile_data')
       .eq('user_id', userId)
-      .single()
+      .single() as { data: any; error: any }
+
+    if (!profile) {
+      return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
+    }
 
     // Generate personalized outreach content using OpenAI
     const emailPrompt = `
       Generate a personalized brand outreach email using one of these three proven templates.
       
       Creator Info:
-      - Name: ${profile.full_name}
-      - Instagram: @${profile.instagram_username}
-      - Followers: ${profile.follower_count}
-      - Engagement Rate: ${profile.engagement_rate}%
-      - Content Focus: ${creatorProfile?.profile_data?.identity?.contentPillars?.join(', ')}
+      - Name: ${profile.full_name || 'Creator'}
+      - Instagram: @${profile.instagram_username || 'unknown'}
+      - Followers: ${profile.follower_count || 0}
+      - Engagement Rate: ${profile.engagement_rate || 0}%
+      - Content Focus: ${creatorProfile?.profile_data?.identity?.contentPillars?.join(', ') || 'Not specified'}
       - Audience: ${creatorProfile?.profile_data?.analytics?.audienceDemographics?.topLocations?.[0]?.country || 'Global'} based, ${creatorProfile?.profile_data?.analytics?.audienceDemographics?.ageRanges?.[0]?.range || '18-34'} age range
       
       Brand Info:
-      - Name: ${match.brand.display_name}
-      - Industry: ${match.brand.industry}
-      - Instagram: @${match.brand.instagram_handle || match.brand.brand_name.toLowerCase().replace(/\s+/g, '')}
-      - Recent Campaigns: ${match.brand.recent_campaigns || 'Not specified'}
-      - Influencer Strategy: ${match.brand.influencer_strategy || 'Standard partnerships'}
+      - Name: ${match.brand?.display_name || 'Brand'}
+      - Industry: ${match.brand?.industry || 'Not specified'}
+      - Instagram: @${match.brand?.instagram_handle || match.brand?.brand_name?.toLowerCase().replace(/\s+/g, '') || 'unknown'}
+      - Recent Campaigns: ${match.brand?.recent_campaigns || 'Not specified'}
+      - Influencer Strategy: ${match.brand?.influencer_strategy || 'Standard partnerships'}
       
       Choose ONE of these templates and fill in the bracketed parts:
       
@@ -190,7 +196,7 @@ export async function GET(
     dmDraft.message = dmDraft.message.replace('[link]', profileUrl)
 
     // Track that outreach was generated (helps with response rate tracking)
-    await matchingService.trackOutreachSent(userId, match.brand_id)
+    await matchingService.trackOutreachSent(userId, match.brand_id || match.brand?.id || '')
 
     return NextResponse.json({
       success: true,

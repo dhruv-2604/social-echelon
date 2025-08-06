@@ -27,6 +27,7 @@ export class AnomalyDetector {
     console.log('Running algorithm change detection...')
     
     const changes: AlgorithmChange[] = []
+    const supabaseAdmin = getSupabaseAdmin()
 
     // Get data from last 7 days
     const today = new Date()
@@ -323,6 +324,8 @@ export class AnomalyDetector {
    */
   private async saveChange(change: AlgorithmChange): Promise<void> {
     console.log('Saving algorithm change:', change)
+    
+    const supabaseAdmin = getSupabaseAdmin()
     
     const { data, error } = await supabaseAdmin
       .from('algorithm_changes')

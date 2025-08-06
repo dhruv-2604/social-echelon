@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user preferences
+    const supabaseAdmin = getSupabaseAdmin()
     const { data: profile, error } = await supabaseAdmin
       .from('profiles')
       .select('niche, primary_goal, content_style, target_audience, voice_tone, posting_frequency, preferences_set')
@@ -48,6 +49,7 @@ export async function PUT(request: NextRequest) {
     const { niche, primary_goal, content_style, target_audience, voice_tone, posting_frequency } = body
 
     // Update user preferences
+    const supabaseAdmin = getSupabaseAdmin()
     const { data: profile, error } = await supabaseAdmin
       .from('profiles')
       .update({

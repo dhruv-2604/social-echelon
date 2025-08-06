@@ -25,13 +25,15 @@ export class PerformanceCollector {
   async collectDailySummary(userId: string): Promise<DailyPerformance | null> {
     console.log(`Collecting daily summary for user ${userId}`)
     
+    const supabaseAdmin = getSupabaseAdmin()
+    
     try {
       // Get user's Instagram access token
       const { data: tokenData } = await supabaseAdmin
         .from('user_tokens')
         .select('instagram_access_token')
         .eq('user_id', userId)
-        .single()
+        .single() as { data: any; error: any }
 
       if (!tokenData?.instagram_access_token) {
         console.error(`No Instagram token for user ${userId}`)
@@ -43,7 +45,7 @@ export class PerformanceCollector {
         .from('profiles')
         .select('follower_count')
         .eq('id', userId)
-        .single()
+        .single() as { data: any; error: any }
 
       if (!profile) return null
 
@@ -140,7 +142,7 @@ export class PerformanceCollector {
       // Store in database (upsert to avoid duplicates)
       const { error } = await supabaseAdmin
         .from('user_performance_summary')
-        .upsert(summary, { onConflict: 'user_id,date' })
+        .upsert(summary as any, { onConflict: 'user_id,date' }) as { data: any; error: any }
 
       if (error) {
         console.error('Error storing summary:', error)
@@ -168,11 +170,13 @@ export class PerformanceCollector {
   async collectAllUsersSummaries(): Promise<void> {
     console.log('Starting daily performance collection')
     
+    const supabaseAdmin = getSupabaseAdmin()
+    
     // Get all users with Instagram tokens
     const { data: users } = await supabaseAdmin
       .from('user_tokens')
       .select('user_id')
-      .not('instagram_access_token', 'is', null)
+      .not('instagram_access_token', 'is', null) as { data: Array<{user_id: string}> | null; error: any }
 
     if (!users) return
 
@@ -204,12 +208,17 @@ export class PerformanceCollector {
     reachChange: number
     engagementChange: number
   }> {
+    const supabaseAdmin = getSupabaseAdmin()
+    
     const { data } = await supabaseAdmin
       .from('user_performance_summary')
       .select('date, avg_reach, avg_engagement_rate')
       .eq('user_id', userId)
       .gte('date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
-      .order('date', { ascending: true })
+      .order('date', { ascending: true }) as { 
+        data: Array<{date: string; avg_reach: number; avg_engagement_rate: number}> | null; 
+        error: any 
+      }
 
     if (!data || data.length < 2) {
       return { trend: 'stable', reachChange: 0, engagementChange: 0 }

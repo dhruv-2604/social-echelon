@@ -243,12 +243,14 @@ export class StatisticalAnalyzer {
     changeId: string,
     waitHours: number = 48
   ): Promise<boolean> {
+    const supabaseAdmin = getSupabaseAdmin()
+    
     // Get the original change
     const { data: change } = await supabaseAdmin
       .from('algorithm_changes')
       .select('*')
       .eq('id', changeId)
-      .single()
+      .single() as { data: any; error: any }
 
     if (!change) return false
 
@@ -264,8 +266,8 @@ export class StatisticalAnalyzer {
 
     // Re-analyze with new data
     const newData = await this.getMetricData(
-      change.metric_name,
-      change.niches_affected,
+      change.metric_name as string,
+      change.niches_affected as string[],
       detectedAt,
       now
     )
@@ -311,12 +313,14 @@ export class StatisticalAnalyzer {
     startDate: Date,
     endDate: Date
   ): Promise<number[]> {
+    const supabaseAdmin = getSupabaseAdmin()
+    
     const { data } = await supabaseAdmin
       .from('user_performance_summary')
       .select(`${metricName}, profiles!inner(niche)`)
       .gte('date', startDate.toISOString())
       .lte('date', endDate.toISOString())
-      .in('profiles.niche', niches)
+      .in('profiles.niche', niches) as { data: any[] | null; error: any }
 
     return data?.map(d => (d as any)[metricName]) || []
   }

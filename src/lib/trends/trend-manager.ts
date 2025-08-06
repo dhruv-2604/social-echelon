@@ -18,7 +18,7 @@ export class TrendManager {
           .eq('niche', trend.niche)
           .eq('trend_type', trend.trend_type)
           .eq('trend_name', trend.trend_name)
-          .single()
+          .single() as { data: { id: string; confidence_score: number } | null; error: any }
 
         if (existing) {
           // Update existing trend

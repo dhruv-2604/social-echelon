@@ -76,7 +76,10 @@ export class PatternDetector {
     const { data: signals } = await supabaseAdmin
       .from('content_signals')
       .select('caption_length, performance_score, user_niche')
-      .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+      .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()) as { 
+        data: Array<{caption_length: number; performance_score: number; user_niche: string}> | null; 
+        error: any 
+      }
     
     if (!signals || signals.length < this.MIN_SAMPLE_SIZE) return patterns
     
@@ -125,7 +128,10 @@ export class PatternDetector {
     const { data: signals } = await supabaseAdmin
       .from('content_signals')
       .select('hashtag_count, performance_score, user_niche')
-      .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+      .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()) as {
+        data: Array<{hashtag_count: number; performance_score: number; user_niche: string}> | null;
+        error: any
+      }
     
     if (!signals) return patterns
     
@@ -180,7 +186,10 @@ export class PatternDetector {
     const { data: signals } = await supabaseAdmin
       .from('content_signals')
       .select('hour_of_day, day_of_week, performance_score, user_niche')
-      .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+      .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()) as {
+        data: Array<{hour_of_day: number; day_of_week: number; performance_score: number; user_niche: string}> | null;
+        error: any
+      }
     
     if (!signals) return patterns
     
@@ -229,7 +238,10 @@ export class PatternDetector {
     const { data: signals } = await supabaseAdmin
       .from('content_signals')
       .select('has_carousel, has_reel, performance_score, user_niche')
-      .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+      .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()) as {
+        data: Array<{has_carousel: boolean; has_reel: boolean; performance_score: number; user_niche: string}> | null;
+        error: any
+      }
     
     if (!signals) return patterns
     
@@ -273,7 +285,10 @@ export class PatternDetector {
     const { data: signals } = await supabaseAdmin
       .from('content_signals')
       .select('emoji_count, performance_score, user_niche')
-      .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+      .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()) as {
+        data: Array<{emoji_count: number; performance_score: number; user_niche: string}> | null;
+        error: any
+      }
     
     if (!signals) return patterns
     

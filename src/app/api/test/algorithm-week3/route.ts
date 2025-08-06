@@ -167,7 +167,7 @@ async function testContentIntegration(userId: string) {
       .from('profiles')
       .select('niche')
       .eq('id', userId)
-      .single()
+      .single() as { data: { niche: string } | null; error: any }
     
     const niche = profile?.niche || 'lifestyle'
     

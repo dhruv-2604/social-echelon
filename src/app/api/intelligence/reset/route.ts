@@ -14,6 +14,7 @@ export async function POST(request: NextRequest) {
     console.log('Resetting insights for user:', userId)
     
     // Delete existing insights
+    const supabaseAdmin = getSupabaseAdmin()
     const { error: deleteError } = await supabaseAdmin
       .from('user_content_insights')
       .delete()

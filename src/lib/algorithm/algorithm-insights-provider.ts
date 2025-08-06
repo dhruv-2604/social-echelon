@@ -22,6 +22,8 @@ export class AlgorithmInsightsProvider {
    * Get current algorithm state for content generation
    */
   static async getCurrentAlgorithmState(niche: string): Promise<CurrentAlgorithmState> {
+    const supabaseAdmin = getSupabaseAdmin()
+    
     // Get latest algorithm changes
     const { data: recentChanges } = await supabaseAdmin
       .from('algorithm_changes')

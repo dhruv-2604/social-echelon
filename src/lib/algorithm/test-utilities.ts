@@ -12,6 +12,8 @@ export class AlgorithmTestUtilities {
   ) {
     console.log(`Simulating ${percentDrop}% reach drop for ${affectedUserCount} users...`)
     
+    const supabaseAdmin = getSupabaseAdmin()
+    
     // Get users from specified niches
     const { data: users } = await supabaseAdmin
       .from('profiles')
@@ -93,6 +95,8 @@ export class AlgorithmTestUtilities {
   ) {
     console.log(`Simulating ${preferredFormat} preference with ${performanceBoost}% boost...`)
     
+    const supabaseAdmin = getSupabaseAdmin()
+    
     const { data: users } = await supabaseAdmin
       .from('profiles')
       .select('id')
@@ -153,6 +157,8 @@ export class AlgorithmTestUtilities {
     const cutoffDate = new Date()
     cutoffDate.setDate(cutoffDate.getDate() - daysToKeep)
     
+    const supabaseAdmin = getSupabaseAdmin()
+    
     const { error } = await supabaseAdmin
       .from('user_performance_summary')
       .delete()
@@ -171,10 +177,12 @@ export class AlgorithmTestUtilities {
   static async generateRealisticData(dayCount: number = 14) {
     console.log(`Generating ${dayCount} days of realistic performance data...`)
     
+    const supabaseAdmin = getSupabaseAdmin()
+    
     const { data: users } = await supabaseAdmin
       .from('profiles')
       .select('id, follower_count')
-      .limit(100)
+      .limit(100) as { data: Array<{id: string; follower_count: number}> | null; error: any }
     
     if (!users || users.length === 0) {
       console.error('No users found')
