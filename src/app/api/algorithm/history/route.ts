@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
       query = query.contains('niches_affected', [niche])
     }
 
-    const { data: changes, error } = await query
+    const { data: changes, error } = await query as { data: any[] | null; error: any }
 
     if (error) {
       throw error
