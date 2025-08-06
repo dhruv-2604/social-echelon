@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
       .select('*')
       .eq('profile_id', userId)
       .order('timestamp', { ascending: false })
-      .limit(10)
+      .limit(10) as { data: any[] | null; error: any }
 
     if (postsError) {
       console.error('Posts fetch error:', postsError)
@@ -69,14 +69,14 @@ export async function GET(request: NextRequest) {
         const daysToSubtract = timeRange === '24h' ? 1 : timeRange === '7d' ? 7 : 30
         cutoffDate.setDate(cutoffDate.getDate() - daysToSubtract)
         
-        postsInRange = posts.filter(post => {
+        postsInRange = posts.filter((post: any) => {
           const postDate = new Date(post.timestamp)
           return postDate >= cutoffDate
         })
       }
       
       if (postsInRange.length > 0) {
-        const totalEngagement = postsInRange.reduce((sum, post) => {
+        const totalEngagement = postsInRange.reduce((sum: number, post: any) => {
           return sum + (post.like_count || 0) + (post.comments_count || 0)
         }, 0)
         const avgEngagement = totalEngagement / postsInRange.length
