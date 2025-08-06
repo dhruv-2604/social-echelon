@@ -126,7 +126,15 @@ export async function GET(request: NextRequest) {
       .eq('user_id', userId)
       .gte('date', historicalDate.toISOString().split('T')[0])
       .order('date', { ascending: true })
-      .limit(1)
+      .limit(1) as { 
+        data: Array<{
+          total_followers: number
+          average_engagement_rate: number
+          total_posts: number
+          date: string
+        }> | null
+        error: any
+      }
 
     console.log('Historical metrics query:', {
       userId,
