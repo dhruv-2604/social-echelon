@@ -131,7 +131,7 @@ export class AlertManager {
       query = query.eq('read', false)
     }
     
-    const { data, error } = await query
+    const { data, error } = await query as { data: Alert[] | null; error: any }
     
     if (error) {
       console.error('Error fetching alerts:', error)

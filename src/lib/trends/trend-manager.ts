@@ -123,7 +123,7 @@ export class TrendManager {
       .eq('niche', niche)
       .gte('confidence_score', minConfidence)
       .order('confidence_score', { ascending: false })
-      .limit(20)
+      .limit(20) as { data: TrendData[] | null; error: any }
 
     if (error) {
       console.error('Error fetching trends:', error)
@@ -149,7 +149,7 @@ export class TrendManager {
       .in('trend_phase', ['emerging', 'growing'])
       .gte('confidence_score', 70)
       .order('confidence_score', { ascending: false })
-      .limit(limit)
+      .limit(limit) as { data: Array<{trend_name: string; confidence_score: number}> | null; error: any }
 
     if (error || !trends) {
       console.error('Error fetching hashtags:', error)
