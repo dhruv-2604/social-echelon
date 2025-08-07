@@ -61,7 +61,18 @@ export async function GET(request: NextRequest) {
       query = query.contains('applicable_niches', [niche])
     }
 
-    const { data: patterns, error } = await query.limit(20)
+    const { data: patterns, error } = await query.limit(20) as { 
+      data: Array<{
+        pattern_type: string;
+        pattern_description: string;
+        pattern_value: any;
+        avg_performance_score: number;
+        confidence_score: number;
+        applicable_niches: string[];
+        is_active: boolean;
+      }> | null;
+      error: any;
+    }
 
     if (error) throw error
 
