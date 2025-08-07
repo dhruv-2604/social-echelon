@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createSupabaseBrowserClient } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { Send, Mail, Clock, CheckCircle, XCircle, TrendingUp, Calendar, Download, Eye } from 'lucide-react'
 import Link from 'next/link'
@@ -28,6 +28,7 @@ export default function OutreachTrackingPage() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'sent' | 'pending' | 'responded'>('all')
   const [dateRange, setDateRange] = useState('30') // days
+  const supabase = createSupabaseBrowserClient()
 
   useEffect(() => {
     if (user) fetchOutreachData()

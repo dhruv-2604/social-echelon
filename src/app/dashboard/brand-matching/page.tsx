@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
-import { supabase } from '@/lib/supabase'
+import { createSupabaseBrowserClient } from '@/lib/supabase'
 import { Sparkles, Mail, Copy, Filter, Search, Building2, MapPin, Target, TrendingUp, Plus } from 'lucide-react'
 import BrandRequest from '@/components/BrandRequest'
 import Link from 'next/link'
@@ -51,6 +51,7 @@ export default function BrandMatchingPage() {
   const [selectedMatch, setSelectedMatch] = useState<BrandMatch | null>(null)
   const [generatingOutreach, setGeneratingOutreach] = useState(false)
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(true)
+  const supabase = createSupabaseBrowserClient()
 
   useEffect(() => {
     if (user) {

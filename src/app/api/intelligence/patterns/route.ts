@@ -43,11 +43,8 @@ export async function GET(request: NextRequest) {
     const niche = url.searchParams.get('niche')
     const patternType = url.searchParams.get('type')
 
-    const { createClient } = await import('@supabase/supabase-js')
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    const { getSupabaseAdmin } = await import('@/lib/supabase-admin')
+    const supabase = getSupabaseAdmin()
 
     let query = supabase
       .from('content_patterns')

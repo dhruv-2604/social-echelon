@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createSupabaseBrowserClient } from '@/lib/supabase'
 import { Upload, Download, Plus, Search, Filter } from 'lucide-react'
 
 interface Brand {
@@ -24,6 +24,7 @@ export default function AdminBrandsPage() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [showBulkImport, setShowBulkImport] = useState(false)
   const [bulkImportData, setBulkImportData] = useState('')
+  const supabase = createSupabaseBrowserClient()
 
   const industries = [
     'Fashion', 'Beauty', 'Fitness', 'Food & Beverage', 'Technology',
@@ -41,7 +42,7 @@ export default function AdminBrandsPage() {
       .select('*')
       .order('created_at', { ascending: false })
 
-    if (data) setBrands(data)
+    if (data) setBrands(data as Brand[])
   }
 
   const handleBulkImport = async () => {

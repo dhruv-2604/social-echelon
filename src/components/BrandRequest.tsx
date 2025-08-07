@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createSupabaseBrowserClient } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { Send, Plus, Search } from 'lucide-react'
 
@@ -13,6 +13,7 @@ export default function BrandRequest({ onRequestSubmitted }: BrandRequestProps) 
   const { user } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const supabase = createSupabaseBrowserClient()
   const [formData, setFormData] = useState({
     brand_name: '',
     brand_instagram: '',

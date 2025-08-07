@@ -42,11 +42,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user's personalized insights
-    const { createClient } = await import('@supabase/supabase-js')
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    const { getSupabaseAdmin } = await import('@/lib/supabase-admin')
+    const supabase = getSupabaseAdmin()
 
     const { data: insights } = await supabase
       .from('user_content_insights')
