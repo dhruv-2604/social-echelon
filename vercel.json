@@ -5,16 +5,18 @@
       "schedule": "0 1 * * *"
     },
     {
-      "path": "/api/algorithm/collect",
-      "schedule": "0 2 * * *"
-    },
-    {
-      "path": "/api/algorithm/detect",
+      "path": "/api/algorithm/detect", 
       "schedule": "0 3 * * *"
-    },
-    {
-      "path": "/api/brand-discovery/scrape",
-      "schedule": "0 9 * * *"
     }
+    // Commented out for Hobby plan limit (2 cron jobs max)
+    // Uncomment these when upgrading to Pro:
+    // {
+    //   "path": "/api/algorithm/collect",
+    //   "schedule": "0 2 * * *"
+    // },
+    // {
+    //   "path": "/api/brand-discovery/scrape",
+    //   "schedule": "0 9 * * *"
+    // }
   ]
 }
