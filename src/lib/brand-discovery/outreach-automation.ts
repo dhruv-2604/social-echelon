@@ -1,16 +1,12 @@
-import { createClient } from '@supabase/supabase-js'
+import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { OutreachCampaign, OutreachTracking } from './types'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
 
 export class OutreachAutomationService {
   // Create personalized outreach campaigns for each creator
   async createPersonalizedCampaigns() {
     try {
       // Get all active creators
+      const supabase = getSupabaseAdmin()
       const { data: creators } = await supabase
         .from('profiles')
         .select(`
@@ -61,6 +57,7 @@ export class OutreachAutomationService {
     }
     
     // Save campaign
+    const supabase = getSupabaseAdmin()
     await supabase.from('outreach_campaigns').insert(campaign)
   }
   
@@ -68,10 +65,11 @@ export class OutreachAutomationService {
   async scheduleDailyOutreach() {
     try {
       // Get active campaigns
+      const supabase = getSupabaseAdmin()
       const { data: campaigns } = await supabase
         .from('outreach_campaigns')
         .select('*')
-        .eq('status', 'active')
+        .eq('status', 'active') as { data: OutreachCampaign[] | null; error: any }
       
       if (!campaigns) return
       
@@ -87,6 +85,7 @@ export class OutreachAutomationService {
   private async scheduleOutreachForCampaign(campaign: OutreachCampaign) {
     // Get today's scheduled outreach count
     const today = new Date().toISOString().split('T')[0]
+    const supabase = getSupabaseAdmin()
     const { count: todayCount } = await supabase
       .from('outreach_tracking')
       .select('*', { count: 'exact' })
@@ -118,6 +117,7 @@ export class OutreachAutomationService {
       const match = matches[i]
       const scheduledTime = this.calculateOptimalSendTime(match, i)
       
+      const supabase = getSupabaseAdmin()
       await supabase.from('outreach_tracking').insert({
         match_id: match.id,
         campaign_id: campaign.id,
@@ -134,6 +134,7 @@ export class OutreachAutomationService {
       const now = new Date()
       
       // Get outreach scheduled for now or earlier
+      const supabase = getSupabaseAdmin()
       const { data: scheduledOutreach } = await supabase
         .from('outreach_tracking')
         .select(`
@@ -171,6 +172,7 @@ export class OutreachAutomationService {
       }
       
       // Update status
+      const supabase = getSupabaseAdmin()
       await supabase
         .from('outreach_tracking')
         .update({
@@ -192,6 +194,7 @@ export class OutreachAutomationService {
       // This would integrate with email/Instagram APIs to check for responses
       // For now, we'll simulate the process
       
+      const supabase = getSupabaseAdmin()
       const { data: sentOutreach } = await supabase
         .from('outreach_tracking')
         .select('*')
@@ -218,6 +221,7 @@ export class OutreachAutomationService {
     const analysis = await this.analyzeResponse(response)
     
     // Update tracking
+    const supabase = getSupabaseAdmin()
     await supabase
       .from('outreach_tracking')
       .update({
@@ -252,6 +256,7 @@ export class OutreachAutomationService {
       const followUpDate = new Date()
       followUpDate.setDate(followUpDate.getDate() + daysUntilFollowUp)
       
+      const supabase = getSupabaseAdmin()
       await supabase
         .from('outreach_tracking')
         .update({

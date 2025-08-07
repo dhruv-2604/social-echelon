@@ -1,21 +1,17 @@
-import { createClient } from '@supabase/supabase-js'
+import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { BrandDiscoverySource, DiscoveredBrand } from './types'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
 
 export class BrandDiscoveryService {
   // Find brands that other creators in the same niche have worked with
   async discoverFromNichePeers(creatorId: string) {
     try {
       // Get the creator's niches using the indexed column
+      const supabase = getSupabaseAdmin()
       const { data: creatorProfile } = await supabase
         .from('creator_profiles')
         .select('creator_niches, past_brands')
         .eq('user_id', creatorId)
-        .single()
+        .single() as { data: { creator_niches: string[]; past_brands: string[] } | null; error: any }
 
       if (!creatorProfile || !creatorProfile.creator_niches || creatorProfile.creator_niches.length === 0) {
         console.log('Creator profile or niches not found')
@@ -30,7 +26,7 @@ export class BrandDiscoveryService {
         .from('creator_brand_collaborations')
         .select('brand_name, instagram_username, follower_count')
         .overlaps('creator_niches', creatorNiches)
-        .neq('user_id', creatorId)
+        .neq('user_id', creatorId) as { data: Array<{brand_name: string; instagram_username: string | null; follower_count: number}> | null; error: any }
 
       if (!peerBrands || peerBrands.length === 0) {
         return []
@@ -111,11 +107,12 @@ export class BrandDiscoveryService {
   // Get brands that the current creator has already worked with (to exclude from discovery)
   async getCreatorExistingBrands(creatorId: string): Promise<string[]> {
     try {
+      const supabase = getSupabaseAdmin()
       const { data: profile } = await supabase
         .from('creator_profiles')
         .select('past_brands')
         .eq('user_id', creatorId)
-        .single()
+        .single() as { data: { past_brands: string[] | null } | null; error: any }
 
       if (!profile?.past_brands) {
         return []

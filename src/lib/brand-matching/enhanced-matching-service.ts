@@ -1,11 +1,6 @@
-import { createClient } from '@supabase/supabase-js'
 import { BrandMatchingEngine } from './matching-algorithm'
 import { CreatorProfile } from './creator-profile-schema'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { getSupabaseAdmin } from '@/lib/supabase-admin'
 
 export class EnhancedBrandMatchingService {
   private matchingEngine: BrandMatchingEngine
@@ -25,12 +20,14 @@ export class EnhancedBrandMatchingService {
     const { limit = 100, minScore = 50, excludeMatched = true } = options
 
     try {
+      const supabase = getSupabaseAdmin()
+      
       // Get creator profile
       const { data: creatorProfile, error: profileError } = await supabase
         .from('creator_profiles')
         .select('*')
         .eq('user_id', creatorId)
-        .single()
+        .single() as { data: any; error: any }
 
       if (profileError || !creatorProfile) {
         throw new Error('Creator profile not found')
@@ -44,7 +41,7 @@ export class EnhancedBrandMatchingService {
         .eq('works_with_influencers', true)
 
       // Filter by creator's location - brands must ship to at least one of creator's audience locations
-      const creatorLocations = creatorProfile.audience_demographics?.topLocations || []
+      const creatorLocations = (creatorProfile.audience_demographics as any)?.topLocations || []
       const creatorCountries = creatorLocations.map((loc: any) => loc.country)
       const creatorCities = creatorLocations.map((loc: any) => loc.city).filter(Boolean)
       
@@ -70,7 +67,7 @@ export class EnhancedBrandMatchingService {
         const { data: matches } = await supabase
           .from('user_brand_matches')
           .select('brand_id')
-          .eq('user_id', creatorId)
+          .eq('user_id', creatorId) as { data: Array<{ brand_id: string }> | null; error: any }
 
         matchedBrandIds = matches?.map(m => m.brand_id) || []
       }
@@ -79,13 +76,13 @@ export class EnhancedBrandMatchingService {
       const brandMatches = []
       for (const brand of brands) {
         // Skip if already matched
-        if (matchedBrandIds.includes(brand.id)) continue
+        if (matchedBrandIds.includes(brand.id as string)) continue
 
         // Convert database brand to enhanced brand format for matching
         const enhancedBrand = this.convertToEnhancedBrand(brand)
         
         // Calculate match score
-        const match = this.matchingEngine.calculateMatch(creatorProfile, enhancedBrand)
+        const match = this.matchingEngine.calculateMatch(creatorProfile as any, enhancedBrand)
         
         // Only include if above minimum score
         if (match.overallScore >= minScore) {
@@ -147,12 +144,14 @@ export class EnhancedBrandMatchingService {
    */
   async getSimilarBrandMatches(creatorId: string) {
     try {
+      const supabase = getSupabaseAdmin()
+      
       // Get creator's past brands
       const { data: profile } = await supabase
         .from('creator_profiles')
         .select('past_brands')
         .eq('user_id', creatorId)
-        .single()
+        .single() as { data: { past_brands: string[] } | null; error: any }
 
       if (!profile?.past_brands || profile.past_brands.length === 0) {
         return []
@@ -162,7 +161,7 @@ export class EnhancedBrandMatchingService {
       const { data: knownBrands } = await supabase
         .from('brands')
         .select('id, brand_name')
-        .in('brand_name', profile.past_brands.map((b: string) => b.toLowerCase()))
+        .in('brand_name', profile.past_brands.map((b: string) => b.toLowerCase())) as { data: Array<{ id: string; brand_name: string }> | null; error: any }
 
       if (!knownBrands || knownBrands.length === 0) {
         return []
@@ -200,6 +199,8 @@ export class EnhancedBrandMatchingService {
    */
   async getUserRequestedBrands(creatorId: string) {
     try {
+      const supabase = getSupabaseAdmin()
+      
       const { data: requests } = await supabase
         .from('brand_requests')
         .select('*')
@@ -317,6 +318,8 @@ export class EnhancedBrandMatchingService {
    */
   async trackOutreachSent(userId: string, brandId: string) {
     try {
+      const supabase = getSupabaseAdmin()
+      
       // Update user_brand_matches
       await supabase
         .from('user_brand_matches')
@@ -340,6 +343,8 @@ export class EnhancedBrandMatchingService {
    */
   async trackResponseReceived(userId: string, brandId: string, responseType: 'positive' | 'negative' | 'negotiating') {
     try {
+      const supabase = getSupabaseAdmin()
+      
       // Update user_brand_matches
       await supabase
         .from('user_brand_matches')

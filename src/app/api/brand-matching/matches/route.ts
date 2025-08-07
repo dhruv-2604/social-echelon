@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
       stats: matchData.matchStats,
       totalAnalyzed: matchData.totalBrandsAnalyzed,
       similarBrandSuggestions: similarBrands,
-      pendingRequests: brandRequests.filter(r => r.status === 'pending').length
+      pendingRequests: brandRequests.filter((r: any) => r.status === 'pending').length
     })
 
   } catch (error) {

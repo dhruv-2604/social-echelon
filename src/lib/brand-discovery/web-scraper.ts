@@ -1,11 +1,6 @@
-import { createClient } from '@supabase/supabase-js'
+import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import * as cheerio from 'cheerio'
 import { ScrapingSource, ScrapedOpportunity } from './scraper-types'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
 
 export class BrandOpportunityScraper {
   private userAgent = 'Mozilla/5.0 (compatible; SocialEchelonBot/1.0; +https://socialechelon.com/bot)'
@@ -18,11 +13,12 @@ export class BrandOpportunityScraper {
     
     try {
       // Get active scraping sources
+      const supabase = getSupabaseAdmin()
       const { data: sources } = await supabase
         .from('scraping_sources')
         .select('*')
         .eq('is_active', true)
-        .lte('next_scrape_at', new Date().toISOString())
+        .lte('next_scrape_at', new Date().toISOString()) as { data: ScrapingSource[] | null; error: any }
       
       if (!sources || sources.length === 0) {
         console.log('No sources ready for scraping')
@@ -32,7 +28,7 @@ export class BrandOpportunityScraper {
       const results = []
       
       for (const source of sources) {
-        const logId = await this.startScrapingLog(source.id)
+        const logId = await this.startScrapingLog(source.id as string)
         
         try {
           const opportunities = await this.scrapeSource(source)
@@ -40,7 +36,7 @@ export class BrandOpportunityScraper {
           results.push({ source: source.source_name, opportunities: opportunities.length })
           
           // Update next scrape time
-          await this.updateNextScrapeTime(source.id, source.scraping_frequency)
+          await this.updateNextScrapeTime(source.id as string, source.scraping_frequency as string)
           
         } catch (error) {
           await this.failScrapingLog(logId, error instanceof Error ? error.message : 'Unknown error')
@@ -113,8 +109,8 @@ export class BrandOpportunityScraper {
         const date = $(element).find('.news-release-date').text().trim()
         
         // Check if title contains any of our keywords
-        const matchedKeyword = keywords.find(kw => 
-          title.toLowerCase().includes(kw.keyword.toLowerCase())
+        const matchedKeyword = keywords.find((kw: any) => 
+          title.toLowerCase().includes((kw.keyword as string).toLowerCase())
         )
         
         if (matchedKeyword) {
@@ -352,6 +348,7 @@ export class BrandOpportunityScraper {
    */
   private async saveOpportunity(sourceId: string, opportunity: any) {
     try {
+      const supabase = getSupabaseAdmin()
       const { error } = await supabase
         .from('scraped_opportunities')
         .insert({
@@ -397,25 +394,27 @@ export class BrandOpportunityScraper {
    * Process new opportunities and queue brands for research
    */
   private async processNewOpportunities() {
+    const supabase = getSupabaseAdmin()
     const { data: newOpps } = await supabase
       .from('scraped_opportunities')
       .select('*')
       .eq('status', 'new')
       .order('relevance_score', { ascending: false })
-      .limit(50)
+      .limit(50) as { data: any[] | null; error: any }
     
     if (!newOpps || newOpps.length === 0) return
     
     for (const opp of newOpps) {
       // Queue brand for research if not already in our database
-      await this.queueBrandForResearch(opp.brand_name, opp.brand_website)
+      await this.queueBrandForResearch(opp.brand_name as string, opp.brand_website as string)
       
       // Update status to qualified or irrelevant
-      const status = opp.relevance_score > 0.5 ? 'qualified' : 'irrelevant'
+      const status = (opp.relevance_score as number) > 0.5 ? 'qualified' : 'irrelevant'
+      const supabase = getSupabaseAdmin()
       await supabase
         .from('scraped_opportunities')
         .update({ status })
-        .eq('id', opp.id)
+        .eq('id', opp.id as string)
     }
   }
   
@@ -426,6 +425,7 @@ export class BrandOpportunityScraper {
     if (!brandName || brandName === 'Unknown Brand') return
     
     try {
+      const supabase = getSupabaseAdmin()
       await supabase
         .from('scraping_brand_queue')
         .insert({
@@ -441,6 +441,7 @@ export class BrandOpportunityScraper {
   // Helper methods
   
   private async getActiveKeywords() {
+    const supabase = getSupabaseAdmin()
     const { data } = await supabase
       .from('scraping_keywords')
       .select('*')
@@ -503,6 +504,7 @@ export class BrandOpportunityScraper {
   }
   
   private async startScrapingLog(sourceId: string): Promise<string> {
+    const supabase = getSupabaseAdmin()
     const { data } = await supabase
       .from('scraping_logs')
       .insert({
@@ -511,12 +513,13 @@ export class BrandOpportunityScraper {
         status: 'running'
       })
       .select('id')
-      .single()
+      .single() as { data: { id: string } | null; error: any }
     
     return data?.id || ''
   }
   
   private async completeScrapingLog(logId: string, opportunitiesFound: number) {
+    const supabase = getSupabaseAdmin()
     await supabase
       .from('scraping_logs')
       .update({
@@ -528,6 +531,7 @@ export class BrandOpportunityScraper {
   }
   
   private async failScrapingLog(logId: string, error: string) {
+    const supabase = getSupabaseAdmin()
     await supabase
       .from('scraping_logs')
       .update({
@@ -555,6 +559,7 @@ export class BrandOpportunityScraper {
         nextTime.setDate(nextTime.getDate() + 1)
     }
     
+    const supabase = getSupabaseAdmin()
     await supabase
       .from('scraping_sources')
       .update({
