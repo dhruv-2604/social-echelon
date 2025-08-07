@@ -4,10 +4,6 @@ import { cookies } from 'next/headers'
 import OpenAI from 'openai'
 import { EnhancedBrandMatchingService } from '@/lib/brand-matching/enhanced-matching-service'
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!
-})
-
 const matchingService = new EnhancedBrandMatchingService()
 
 export async function GET(
@@ -164,6 +160,11 @@ export async function GET(
         "personalizationPoints": ["specific thing you referenced"]
       }
     `
+
+    // Initialize OpenAI client
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY!
+    })
 
     const [emailResponse, dmResponse] = await Promise.all([
       openai.chat.completions.create({

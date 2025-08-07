@@ -40,10 +40,6 @@ export interface WeeklyContentPlan {
   generated_at: string
 }
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-})
-
 export class ContentGenerator {
   static async generateWeeklyPlan(
     userProfile: UserProfile,
@@ -161,6 +157,11 @@ export class ContentGenerator {
       userPatterns,
       algorithmState
     )
+
+    // Initialize OpenAI client
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY
+    })
 
     try {
       const response = await openai.chat.completions.create({
@@ -399,6 +400,11 @@ ${suggestions.map(s => `Day ${s.day}: ${s.post_type} - ${s.content_topic}`).join
 
 Provide a 2-3 sentence strategy overview explaining how this week's content works together to achieve their goals.
 `
+
+    // Initialize OpenAI client  
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY
+    })
 
     try {
       const response = await openai.chat.completions.create({
