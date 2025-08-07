@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { InstagramTrendCollector } from '@/lib/trends/instagram-collector'
 import { TrendManager } from '@/lib/trends/trend-manager'
 import { cookies } from 'next/headers'
+
+export const dynamic = 'force-dynamic'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 
 // List of niches to collect trends for

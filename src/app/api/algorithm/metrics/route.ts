@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PerformanceCollector } from '@/lib/algorithm/performance-collector'
+
+export const dynamic = 'force-dynamic'
 import { cookies } from 'next/headers'
 
 // POST /api/algorithm/metrics - Collect daily summary for current user

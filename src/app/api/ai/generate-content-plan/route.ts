@@ -3,6 +3,8 @@ import { cookies } from 'next/headers'
 import { ContentGenerator, UserProfile } from '@/lib/ai/content-generator'
 import { ContentAnalyzer, InstagramPost } from '@/lib/ai/content-analyzer'
 import { InstagramAPI } from '@/lib/instagram'
+
+export const dynamic = 'force-dynamic'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 
 export async function POST(request: NextRequest) {

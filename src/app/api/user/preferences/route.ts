@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
+
+export const dynamic = 'force-dynamic'
 import { cookies } from 'next/headers'
 
 // Create admin client for server-side operations

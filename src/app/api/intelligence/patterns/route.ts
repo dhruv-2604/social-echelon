@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PatternDetector } from '@/lib/intelligence/pattern-detector'
 
+export const dynamic = 'force-dynamic'
+
 // POST /api/intelligence/patterns - Detect patterns (scheduled job)
 export async function POST(request: NextRequest) {
   try {

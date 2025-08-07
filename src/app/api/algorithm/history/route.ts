@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/algorithm/history - Get historical algorithm changes
 export async function GET(request: NextRequest) {
   try {

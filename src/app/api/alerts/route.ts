@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
+
+export const dynamic = 'force-dynamic'
 import { AlertManager } from '@/lib/algorithm/alert-manager'
 
 // GET /api/alerts - Get user's alerts

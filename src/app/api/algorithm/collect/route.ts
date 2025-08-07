@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+
+export const dynamic = 'force-dynamic'
 import { PerformanceCollector } from '@/lib/algorithm/performance-collector'
 
 // POST /api/algorithm/collect - Daily performance collection (runs once per day)

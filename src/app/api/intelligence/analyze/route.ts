@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { ContentAnalyzer } from '@/lib/intelligence/content-analyzer'
 import { cookies } from 'next/headers'
 
+export const dynamic = 'force-dynamic'
+
 // POST /api/intelligence/analyze - Analyze current user's content
 export async function POST(request: NextRequest) {
   try {

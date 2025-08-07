@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { TikTokCollector } from '@/lib/trends/tiktok-collector'
+
+export const dynamic = 'force-dynamic'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 
 export async function GET(request: NextRequest) {

@@ -4,6 +4,8 @@ import { cookies } from 'next/headers'
 import OpenAI from 'openai'
 import { EnhancedBrandMatchingService } from '@/lib/brand-matching/enhanced-matching-service'
 
+export const dynamic = 'force-dynamic'
+
 const matchingService = new EnhancedBrandMatchingService()
 
 export async function GET(

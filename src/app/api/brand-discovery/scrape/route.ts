@@ -3,6 +3,8 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { cookies } from 'next/headers'
 import { BrandOpportunityScraper } from '@/lib/brand-discovery/web-scraper'
 
+export const dynamic = 'force-dynamic'
+
 // This endpoint should be called by a cron job (e.g., Vercel Cron)
 export async function POST(request: NextRequest) {
   try {

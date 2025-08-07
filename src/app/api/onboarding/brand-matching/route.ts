@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { cookies } from 'next/headers'
+
+export const dynamic = 'force-dynamic'
 import { CreatorProfile } from '@/lib/brand-matching/creator-profile-schema'
 
 export async function POST(request: NextRequest) {

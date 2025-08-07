@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+
+export const dynamic = 'force-dynamic'
 import { TrendManager } from '@/lib/trends/trend-manager'
 
 export async function GET(

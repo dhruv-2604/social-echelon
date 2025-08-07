@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { AnomalyDetector } from '@/lib/algorithm/anomaly-detector'
+
+export const dynamic = 'force-dynamic'
 import { AlertManager } from '@/lib/algorithm/alert-manager'
 
 // POST /api/algorithm/detect - Run anomaly detection (protected endpoint)

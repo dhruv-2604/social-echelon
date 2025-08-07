@@ -3,6 +3,8 @@ import { cookies } from 'next/headers'
 import { BrandDiscoveryService } from '@/lib/brand-discovery/discovery-service'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const supabaseAdmin = getSupabaseAdmin()
