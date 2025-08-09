@@ -123,15 +123,15 @@ export async function GET(request: NextRequest) {
     historicalDate.setDate(historicalDate.getDate() - daysAgo)
 
     const { data: historicalMetrics, error: historicalError } = await supabaseAdmin
-      .from('user_performance_metrics')
-      .select('total_followers, average_engagement_rate, total_posts, date')
+      .from('user_performance_summary')
+      .select('follower_count, avg_engagement_rate, total_posts, date')
       .eq('user_id', userId)
       .gte('date', historicalDate.toISOString().split('T')[0])
       .order('date', { ascending: true })
       .limit(1) as { 
         data: Array<{
-          total_followers: number
-          average_engagement_rate: number
+          follower_count: number
+          avg_engagement_rate: number
           total_posts: number
           date: string
         }> | null
@@ -148,8 +148,8 @@ export async function GET(request: NextRequest) {
 
     // Also check if ANY historical data exists
     const { data: anyHistoricalData } = await supabaseAdmin
-      .from('user_performance_metrics')
-      .select('date, total_followers, average_engagement_rate, total_posts')
+      .from('user_performance_summary')
+      .select('date, follower_count, avg_engagement_rate, total_posts')
       .eq('user_id', userId)
       .order('date', { ascending: false })
       .limit(5)
@@ -168,8 +168,8 @@ export async function GET(request: NextRequest) {
 
     let metrics = null
     if (historicalMetrics && historicalMetrics.length > 0) {
-      const oldFollowers = historicalMetrics[0].total_followers || typedProfile.follower_count
-      const oldEngagement = historicalMetrics[0].average_engagement_rate || calculatedEngagementRate
+      const oldFollowers = historicalMetrics[0].follower_count || typedProfile.follower_count
+      const oldEngagement = historicalMetrics[0].avg_engagement_rate || calculatedEngagementRate
       const oldPosts = historicalMetrics[0].total_posts || 0
 
       // Calculate posts published in this time period
