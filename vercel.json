@@ -1,8 +1,8 @@
 {
   "crons": [
     {
-      "path": "/api/trends/collect",
-      "schedule": "0 1 * * *"
+      "path": "/api/algorithm/collect",
+      "schedule": "0 2 * * *"
     },
     {
       "path": "/api/algorithm/detect",

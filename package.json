@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "seed:brands": "tsx scripts/seed-brands.ts"
+    "seed:brands": "tsx scripts/seed-brands.ts",
+    "test:queue": "tsx scripts/test-queue.ts"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.14",

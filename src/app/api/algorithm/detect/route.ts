@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { AnomalyDetector } from '@/lib/algorithm/anomaly-detector'
+import { JobQueue } from '@/lib/queue/job-queue'
+import { getSupabaseAdmin } from '@/lib/supabase-admin'
 
 export const dynamic = 'force-dynamic'
 import { AlertManager } from '@/lib/algorithm/alert-manager'
@@ -13,35 +15,76 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    console.log('Starting algorithm detection...')
+    console.log('Starting algorithm detection via queue...')
 
-    // Run detection on aggregated daily data
-    const detector = new AnomalyDetector()
-    const changes = await detector.detectChanges()
+    const queue = JobQueue.getInstance()
+    const supabase = getSupabaseAdmin()
 
-    console.log(`Detection complete. Found ${changes.length} changes`)
-    
-    // Send alerts for significant changes
-    if (changes.length > 0) {
-      const alertManager = new AlertManager()
-      await alertManager.sendAlgorithmChangeAlerts(changes)
-      console.log('Alerts sent successfully')
+    // Get all active users to create performance collection jobs
+    const { data: users } = await supabase
+      .from('profiles')
+      .select('id')
+      .not('instagram_username', 'is', null)
+      .limit(100) // Process up to 100 users per run
+
+    if (users && users.length > 0) {
+      // Queue performance collection for each user
+      const jobs = users.map(user => ({
+        type: 'performance_collection' as const,
+        userId: user.id,
+        priority: 5
+      }))
+
+      await queue.batchEnqueue(jobs)
+      console.log(`Queued performance collection for ${users.length} users`)
+
+      // Queue the algorithm detection job to run after performance collection
+      // Schedule it for 5 minutes from now to allow collection to complete
+      const detectionJobId = await queue.enqueue(
+        'algorithm_detection',
+        { runDate: new Date().toISOString() },
+        {
+          priority: 8,
+          scheduledFor: new Date(Date.now() + 5 * 60 * 1000) // 5 minutes
+        }
+      )
+
+      return NextResponse.json({
+        success: true,
+        message: 'Algorithm detection queued',
+        jobs_queued: users.length + 1,
+        detection_job_id: detectionJobId,
+        timestamp: new Date().toISOString()
+      })
+    } else {
+      // No users, run detection directly on existing data
+      const detector = new AnomalyDetector()
+      const changes = await detector.detectChanges()
+
+      console.log(`Detection complete. Found ${changes.length} changes`)
+      
+      // Send alerts for significant changes
+      if (changes.length > 0) {
+        const alertManager = new AlertManager()
+        await alertManager.sendAlgorithmChangeAlerts(changes)
+        console.log('Alerts sent successfully')
+      }
+
+      return NextResponse.json({
+        success: true,
+        changes_detected: changes.length,
+        changes: changes.map(c => ({
+          type: c.type,
+          metric: c.metric,
+          change: `${c.percentChange > 0 ? '+' : ''}${c.percentChange}%`,
+          affected_users: c.affectedUsers,
+          confidence: c.confidence,
+          before: c.beforeValue,
+          after: c.afterValue
+        })),
+        timestamp: new Date().toISOString()
+      })
     }
-
-    return NextResponse.json({
-      success: true,
-      changes_detected: changes.length,
-      changes: changes.map(c => ({
-        type: c.type,
-        metric: c.metric,
-        change: `${c.percentChange > 0 ? '+' : ''}${c.percentChange}%`,
-        affected_users: c.affectedUsers,
-        confidence: c.confidence,
-        before: c.beforeValue,
-        after: c.afterValue
-      })),
-      timestamp: new Date().toISOString()
-    })
 
   } catch (error) {
     console.error('Algorithm detection error:', error)
