@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { JobQueue } from '@/lib/queue/job-queue'
 import { CacheService } from '@/lib/queue/cache-service'
-import { AlgorithmDetector } from '@/lib/algorithm/detector'
+import { AnomalyDetector } from '@/lib/algorithm/anomaly-detector'
 import { PerformanceCollector } from '@/lib/algorithm/performance-collector'
 import { InstagramTrendCollector } from '@/lib/trends/instagram-collector'
 import { TrendManager } from '@/lib/trends/trend-manager'
-import { ContentGenerator } from '@/lib/content/content-generator'
+import { ContentGenerator } from '@/lib/ai/content-generator'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 
 export const dynamic = 'force-dynamic'
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
 
 // Individual job processors
 async function processAlgorithmDetection(payload: any, userId?: string) {
-  const detector = new AlgorithmDetector()
+  const detector = new AnomalyDetector()
   const result = await detector.detectChanges()
   
   // Store insights if significant changes detected
