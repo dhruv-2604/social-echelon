@@ -1,5 +1,13 @@
 # CLAUDE.md - Critical Development Guidelines
 
+## 🎯 MISSION CRITICAL - READ FIRST
+**Social Echelon is a WELLNESS platform, not just a tool.**
+See MISSION.md for core philosophy. Every feature MUST:
+- Reduce cognitive load (not add to it)
+- Run without user intervention  
+- Help creators disconnect and rest
+- Solve a burnout trigger
+
 ## 🚨 IMPORTANT RULES FOR MAINTAINING THIS CODEBASE
 
 ### 1. **NO REDUNDANT FILES - EVER**
@@ -29,18 +37,22 @@ After implementing any feature:
 - OpenAI for content generation
 - TypeScript for type safety
 
-### 5. **TESTING COMMANDS**
-Before marking any feature as complete:
+### 5. **TESTING COMMANDS - MANDATORY**
+Before marking ANY feature as complete:
 ```bash
-# Lint check
+# 1. ALWAYS run build test FIRST (catches 90% of issues)
+npm run build
+
+# If build fails, FIX IMMEDIATELY before proceeding
+
+# 2. Then run lint check
 npm run lint
 
-# Type check (if available)
+# 3. Type check (if available)
 npm run typecheck
-
-# Build test
-npm run build
 ```
+
+**⚠️ CRITICAL: Never commit code without running `npm run build` successfully!**
 
 ### 6. **INSTAGRAM API LIMITATIONS**
 What we CAN get:
@@ -77,3 +89,67 @@ Before deployment:
 - Instagram hashtag API doesn't provide the metrics we need
 - Need to deploy to Vercel for cron jobs to work
 - Algorithm detection needs 30+ users to be meaningful
+- Vercel Hobby plan: Max 2 cron jobs, once per day only
+
+### 11. **PREVENTING BUILD FAILURES**
+
+#### Common TypeScript Issues & Solutions:
+```typescript
+// ❌ BAD: Assuming Supabase returns typed data
+const { data } = await supabase.from('table').select()
+return data.someField  // Type error!
+
+// ✅ GOOD: Handle unknown types from Supabase
+const { data } = await supabase.from('table').select()
+return (data as any).someField  // Or use proper type assertion
+```
+
+#### Import Path Issues:
+```typescript
+// ❌ BAD: Wrong import paths
+import { AlgorithmDetector } from '@/lib/algorithm/detector'  // File doesn't exist!
+
+// ✅ GOOD: Verify file exists first
+import { AnomalyDetector } from '@/lib/algorithm/anomaly-detector'  // Correct file name
+```
+
+#### Method Type Issues:
+```typescript
+// ❌ BAD: Using instance method as static
+const generator = new ContentGenerator()
+await generator.generateWeeklyPlan()  // Error if it's static!
+
+// ✅ GOOD: Check if method is static or instance
+await ContentGenerator.generateWeeklyPlan()  // For static methods
+```
+
+#### ALWAYS Before Writing Code:
+1. Check if imported files exist: `ls src/lib/...`
+2. Verify method signatures: grep for the function name
+3. Test imports in isolation before using
+4. Run `npm run build` after EVERY file change
+5. Fix TypeScript errors immediately, don't accumulate them
+
+### 12. **VERCEL DEPLOYMENT CONSTRAINTS**
+- **Hobby Plan Limits:**
+  - 2 cron jobs maximum
+  - Crons run once per day max
+  - 10-second function timeout
+  - No background jobs
+  
+- **Pro Plan ($20/month) Benefits:**
+  - Unlimited cron jobs
+  - Crons can run every minute
+  - 60-second function timeout
+  - Better for production
+
+### 13. **BEFORE EVERY COMMIT CHECKLIST**
+```bash
+# 1. Build must pass
+npm run build  # MUST succeed
+
+# 2. Check for unused imports
+# 3. Verify all file paths are correct
+# 4. Ensure JSON files have no comments
+# 5. Exclude test/script files from tsconfig.json if needed
+```
