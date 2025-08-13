@@ -33,18 +33,22 @@ export function WellnessCard({
       transition={{ duration: 0.4, ease: "easeOut" }}
       whileHover={hover ? { y: -4 } : {}}
       className={cn(
-        'bg-white rounded-2xl shadow-sm',
-        'border border-gray-100/50',
+        'glass-card rounded-2xl',
         'transition-all duration-300',
-        hover && 'hover:shadow-lg',
+        hover && 'hover:shadow-xl',
         glow && 'wellness-gradient p-[1px]',
         paddings[padding],
         className
       )}
+      style={{
+        background: glow 
+          ? 'linear-gradient(white, white) padding-box, linear-gradient(135deg, rgba(139, 127, 191, 0.2), rgba(94, 205, 195, 0.2)) border-box'
+          : undefined
+      }}
     >
       {glow ? (
         <div className={cn(
-          'bg-white rounded-2xl',
+          'glass-card rounded-2xl',
           paddings[padding]
         )}>
           {children}

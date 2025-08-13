@@ -80,8 +80,150 @@
   }
 }
 
+/* Nature Background Implementation */
+.nature-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  z-index: -2;
+  background-image: url('https://images.pexels.com/photos/1166209/pexels-photo-1166209.jpeg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  filter: opacity(0.4) blur(2px) brightness(1.1);
+  transform: scale(1.1);
+  will-change: transform;
+}
+
+/* Parallax effect */
+.parallax-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 120vh;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Gradient overlays for depth */
+.gradient-overlay-top {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 40vh;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(255, 255, 255, 0.6) 50%,
+    transparent 100%
+  );
+  z-index: -1;
+  pointer-events: none;
+}
+
+.gradient-overlay-bottom {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 30vh;
+  background: linear-gradient(
+    0deg,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(255, 255, 255, 0.7) 30%,
+    transparent 100%
+  );
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Colorful gradient mesh overlay */
+.gradient-mesh {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  z-index: -1;
+  background: 
+    radial-gradient(circle at 20% 30%, rgba(139, 127, 191, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(94, 205, 195, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 40% 70%, rgba(255, 214, 98, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 90% 80%, rgba(255, 180, 162, 0.12) 0%, transparent 50%),
+    radial-gradient(circle at 10% 90%, rgba(165, 216, 255, 0.15) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* Glass morphism cards with backdrop blur */
+.glass-card {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 
+    0 8px 32px rgba(31, 38, 135, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 
+    0 12px 48px rgba(31, 38, 135, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  transform: translateY(-2px);
+}
+
+/* Enhanced glass effect for main content areas */
+.glass-panel {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(255, 255, 255, 0.7) 100%
+  );
+  backdrop-filter: blur(30px) brightness(1.05);
+  -webkit-backdrop-filter: blur(30px) brightness(1.05);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.08),
+    0 0 100px rgba(139, 127, 191, 0.1),
+    inset 0 0 20px rgba(255, 255, 255, 0.5);
+}
+
+/* Subtle animation for background on scroll */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) scale(1.1); }
+  50% { transform: translateY(-20px) scale(1.12); }
+}
+
+.nature-background.floating {
+  animation: float 20s ease-in-out infinite;
+}
+
 body {
   font-family: Arial, Helvetica, sans-serif;
+  position: relative;
+  min-height: 100vh;
+}
+
+/* Apply glass effect to existing wellness cards */
+.wellness-card {
+  background: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(15px) saturate(150%);
+  -webkit-backdrop-filter: blur(15px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+/* Navigation glass effect */
+nav, header {
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 /* Ensure the variables are accessible */
