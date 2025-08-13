@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       // Queue performance collection for each user
       const jobs = users.map(user => ({
         type: 'performance_collection' as const,
-        userId: user.id,
+        userId: user.id as string,
         priority: 5
       }))
 

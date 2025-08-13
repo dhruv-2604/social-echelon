@@ -73,7 +73,7 @@ export class JobQueue {
     }
 
     console.log(`Job ${data.id} enqueued: ${type}`)
-    return data.id
+    return data.id as string
   }
 
   async batchEnqueue(
@@ -104,7 +104,7 @@ export class JobQueue {
       throw error
     }
 
-    return data.map(job => job.id)
+    return data.map((job: any) => job.id as string)
   }
 
   async getNextJob(): Promise<Job | null> {
@@ -116,7 +116,7 @@ export class JobQueue {
       return null
     }
 
-    return data as Job | null
+    return data as unknown as Job | null
   }
 
   async completeJob(jobId: string, result?: any): Promise<void> {
@@ -161,7 +161,7 @@ export class JobQueue {
       return null
     }
 
-    return data as Job
+    return data as unknown as Job
   }
 
   async getUserJobs(userId: string, limit = 10): Promise<Job[]> {
@@ -177,7 +177,7 @@ export class JobQueue {
       return []
     }
 
-    return data as Job[]
+    return data as unknown as Job[]
   }
 
   async getPendingJobsCount(): Promise<number> {
@@ -244,7 +244,7 @@ export class JobQueue {
 
     const jobs = chunks.map(chunk => ({
       ...chunk,
-      userId: originalJob?.user_id,
+      userId: originalJob?.user_id as string | undefined,
       priority: chunk.priority ?? 5
     }))
 

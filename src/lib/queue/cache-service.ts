@@ -73,9 +73,9 @@ export class CacheService {
       .from('cache_results')
       .update({
         accessed_at: new Date().toISOString(),
-        access_count: data.access_count + 1
+        access_count: (data as any).access_count + 1
       })
-      .eq('id', data.id)
+      .eq('id', (data as any).id)
 
     console.log(`Cache hit: ${type}:${identifier}`)
     return data.data as T
@@ -191,8 +191,9 @@ export class CacheService {
     let totalAccesses = 0
 
     for (const entry of data || []) {
-      byType[entry.cache_type] = (byType[entry.cache_type] || 0) + 1
-      totalHits += entry.access_count > 1 ? 1 : 0
+      const e = entry as any
+      byType[e.cache_type] = (byType[e.cache_type] || 0) + 1
+      totalHits += e.access_count > 1 ? 1 : 0
       totalAccesses += 1
     }
 

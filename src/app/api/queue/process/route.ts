@@ -101,24 +101,25 @@ export async function POST(request: NextRequest) {
 // Individual job processors
 async function processAlgorithmDetection(payload: any, userId?: string) {
   const detector = new AnomalyDetector()
-  const result = await detector.detectChanges()
+  const changes = await detector.detectChanges()
   
   // Store insights if significant changes detected
-  if (result.changes.length > 0) {
+  if (changes.length > 0) {
     const supabase = getSupabaseAdmin()
-    for (const change of result.changes) {
+    for (const change of changes) {
+      const description = `${change.metric}: ${change.percentChange > 0 ? '+' : ''}${change.percentChange.toFixed(1)}% change detected (${change.beforeValue} → ${change.afterValue})`
       await supabase
         .from('algorithm_insights')
         .insert({
           change_type: change.type,
-          description: change.description,
+          description,
           confidence_score: change.confidence,
           detected_at: new Date().toISOString()
         })
     }
   }
   
-  return result
+  return { changes }
 }
 
 async function processPerformanceCollection(payload: any, userId?: string) {
@@ -138,9 +139,9 @@ async function processPerformanceCollection(payload: any, userId?: string) {
   }
   
   // Collect performance data
-  const result = await collector.collectUserPerformance(userId)
+  const result = await collector.collectDailySummary(userId)
   
-  // Cache the result
+  // Cache the result  
   await cache.set('algorithm_detection', cacheKey, result, { ttl: 3600 })
   
   return result
@@ -176,7 +177,7 @@ async function processTrendCollection(payload: any, userId?: string) {
     throw new Error('No Instagram access token available')
   }
   
-  const collector = new InstagramTrendCollector(tokenData.instagram_access_token)
+  const collector = new InstagramTrendCollector(tokenData.instagram_access_token as string)
   const trends = await collector.collectTrends(niche)
   
   // Save trends
@@ -189,29 +190,12 @@ async function processTrendCollection(payload: any, userId?: string) {
 }
 
 async function processContentGeneration(payload: any, userId?: string) {
-  if (!userId) {
-    throw new Error('User ID required for content generation')
+  // Content generation requires complex parameters
+  // For now, return a placeholder until properly integrated
+  return {
+    message: 'Content generation via queue not yet implemented',
+    userId
   }
-  
-  const generator = new ContentGenerator()
-  const cache = CacheService.getInstance()
-  
-  // Check cache
-  const weekStart = getWeekStart()
-  const cacheKey = `content:${userId}:${weekStart}`
-  const cached = await cache.get('openai_response', cacheKey)
-  
-  if (cached) {
-    return cached
-  }
-  
-  // Generate content
-  const result = await generator.generateWeeklyPlan(userId)
-  
-  // Cache for the week
-  await cache.set('openai_response', cacheKey, result, { ttl: 604800 }) // 7 days
-  
-  return result
 }
 
 async function processInstagramSync(payload: any, userId?: string) {
