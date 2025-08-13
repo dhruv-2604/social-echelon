@@ -42,18 +42,27 @@ export function WellnessHub({ profile, metrics }: WellnessHubProps) {
   const tasksAutomated = 24
   const stressPrevented = 89 // percentage
 
-  // Real metrics from props
-  const followers = metrics?.followers_count || profile?.followers_count || 0
-  const following = metrics?.follows_count || profile?.follows_count || 0
-  const engagementRate = metrics?.engagement_rate || 0
-  const avgLikes = metrics?.avg_likes || 0
-  const avgComments = metrics?.avg_comments || 0
-  const totalPosts = metrics?.media_count || profile?.media_count || 0
+  // Real metrics from props - using correct property names
+  const followers = profile?.follower_count || 0
+  const following = profile?.following_count || 0
+  const engagementRate = profile?.engagement_rate || 0
+  const totalPosts = profile?.posts_count || 0
   
-  // Calculate changes (mock data for now if not available)
-  const followersChange = metrics?.followers_change || 234
-  const engagementChange = metrics?.engagement_change || 0.3
-  const reachChange = metrics?.reach_change || 1250
+  // Calculate average likes and comments from posts if available
+  const posts = metrics?.posts || []
+  const avgLikes = posts.length > 0 
+    ? Math.round(posts.reduce((sum: number, post: any) => sum + (post.like_count || 0), 0) / posts.length)
+    : 0
+  const avgComments = posts.length > 0
+    ? Math.round(posts.reduce((sum: number, post: any) => sum + (post.comments_count || 0), 0) / posts.length)
+    : 0
+  
+  // Use actual change data from metrics
+  const followersChange = metrics?.followerChange 
+    ? Math.round((metrics.followerChange / 100) * metrics.previousFollowers)
+    : 0
+  const engagementChange = metrics?.engagementChange || 0
+  const reachChange = Math.round(followers * 0.1) // Estimate 10% weekly reach growth
 
   useEffect(() => {
     const handleScroll = () => {

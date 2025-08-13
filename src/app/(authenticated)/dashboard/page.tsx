@@ -104,5 +104,5 @@ export default function Dashboard() {
     )
   }
 
-  return <WellnessHub profile={profile} metrics={metrics} />
+  return <WellnessHub profile={profile} metrics={{ ...metrics, posts }} />
 }
