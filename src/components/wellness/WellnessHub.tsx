@@ -19,7 +19,9 @@ import {
   Activity,
   BarChart3,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  Calendar,
+  Clock
 } from 'lucide-react'
 
 interface WellnessHubProps {
@@ -27,9 +29,13 @@ interface WellnessHubProps {
   metrics?: any
 }
 
-export function WellnessHub({ profile, metrics }: WellnessHubProps) {
+export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }: WellnessHubProps) {
   const [showRealMetrics, setShowRealMetrics] = useState(false)
   const [scrolledDown, setScrolledDown] = useState(false)
+  const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d'>('7d')
+  const [loading, setLoading] = useState(false)
+  const [profile, setProfile] = useState(initialProfile)
+  const [metrics, setMetrics] = useState(initialMetrics)
   
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
@@ -38,8 +44,8 @@ export function WellnessHub({ profile, metrics }: WellnessHubProps) {
                 <Moon className="w-6 h-6 text-indigo-500" />
 
   // Mock data for wellness metrics
-  const hoursReclaimed = 18
-  const tasksAutomated = 24
+  const hoursReclaimed = timeRange === '24h' ? 3 : timeRange === '7d' ? 18 : 72
+  const tasksAutomated = timeRange === '24h' ? 4 : timeRange === '7d' ? 24 : 96
   const stressPrevented = 89 // percentage
 
   // Real metrics from props - using correct property names
@@ -64,6 +70,68 @@ export function WellnessHub({ profile, metrics }: WellnessHubProps) {
   const engagementChange = metrics?.engagementChange || 0
   const reachChange = Math.round(followers * 0.1) // Estimate 10% weekly reach growth
 
+  // Performance Trends - Calculate from actual data
+  const calculatePerformanceTrends = () => {
+    // Best posting time - analyze post engagement by hour
+    let bestTime = '7:00 PM'
+    if (posts.length > 0) {
+      const hourEngagement: { [key: number]: { total: number; count: number } } = {}
+      posts.forEach((post: any) => {
+        const hour = new Date(post.timestamp).getHours()
+        if (!hourEngagement[hour]) {
+          hourEngagement[hour] = { total: 0, count: 0 }
+        }
+        hourEngagement[hour].total += (post.like_count || 0) + (post.comments_count || 0)
+        hourEngagement[hour].count++
+      })
+      
+      let maxEngagement = 0
+      let bestHour = 19
+      Object.entries(hourEngagement).forEach(([hour, data]) => {
+        const avgEng = data.total / data.count
+        if (avgEng > maxEngagement) {
+          maxEngagement = avgEng
+          bestHour = parseInt(hour)
+        }
+      })
+      
+      const period = bestHour >= 12 ? 'PM' : 'AM'
+      const displayHour = bestHour > 12 ? bestHour - 12 : bestHour === 0 ? 12 : bestHour
+      bestTime = `${displayHour}:00 ${period}`
+    }
+
+    // Top content type - analyze by media type
+    let topType = 'Reels'
+    if (posts.length > 0) {
+      const typeEngagement: { [key: string]: { total: number; count: number } } = {}
+      posts.forEach((post: any) => {
+        const type = post.media_type || 'IMAGE'
+        if (!typeEngagement[type]) {
+          typeEngagement[type] = { total: 0, count: 0 }
+        }
+        typeEngagement[type].total += (post.like_count || 0) + (post.comments_count || 0)
+        typeEngagement[type].count++
+      })
+      
+      let maxTypeEngagement = 0
+      Object.entries(typeEngagement).forEach(([type, data]) => {
+        const avgEng = data.total / data.count
+        if (avgEng > maxTypeEngagement) {
+          maxTypeEngagement = avgEng
+          topType = type === 'VIDEO' ? 'Reels' : type === 'CAROUSEL_ALBUM' ? 'Carousels' : 'Photos'
+        }
+      })
+    }
+
+    // Story views and profile visits estimates based on follower count
+    const avgStoryViews = Math.round(followers * 0.15) // 15% of followers view stories
+    const profileVisits = Math.round(followers * 0.08) // 8% daily profile visits
+
+    return { bestTime, topType, avgStoryViews, profileVisits }
+  }
+
+  const performanceTrends = calculatePerformanceTrends()
+
   useEffect(() => {
     const handleScroll = () => {
       setScrolledDown(window.scrollY > 100)
@@ -71,6 +139,29 @@ export function WellnessHub({ profile, metrics }: WellnessHubProps) {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  // Fetch data when time range changes
+  useEffect(() => {
+    async function fetchDataForTimeRange() {
+      if (timeRange === initialMetrics?.timeRange) return // Don't refetch same data
+      
+      setLoading(true)
+      try {
+        const response = await fetch(`/api/user/profile?timeRange=${timeRange}`)
+        if (response.ok) {
+          const data = await response.json()
+          setProfile(data.profile)
+          setMetrics({ ...data.metrics, posts: data.posts, timeRange })
+        }
+      } catch (error) {
+        console.error('Error fetching metrics:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchDataForTimeRange()
+  }, [timeRange])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50/30 via-white to-blue-50/30">
@@ -92,8 +183,55 @@ export function WellnessHub({ profile, metrics }: WellnessHubProps) {
           </p>
         </motion.div>
 
-        {/* Toggle for Real Metrics */}
-        <div className="flex justify-end mb-6">
+        {/* Controls Section - Time Range and View Toggle */}
+        <div className="flex justify-between items-center mb-6">
+          {/* Time Range Selector */}
+          <div className="flex items-center gap-2 bg-white/80 backdrop-blur rounded-full p-1 border border-gray-200">
+            <button
+              onClick={() => setTimeRange('24h')}
+              className={`px-4 py-2 rounded-full text-sm transition-all ${
+                timeRange === '24h'
+                  ? 'bg-gradient-to-r from-purple-400 to-pink-400 text-white'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+              disabled={loading}
+            >
+              <span className="flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                24h
+              </span>
+            </button>
+            <button
+              onClick={() => setTimeRange('7d')}
+              className={`px-4 py-2 rounded-full text-sm transition-all ${
+                timeRange === '7d'
+                  ? 'bg-gradient-to-r from-purple-400 to-pink-400 text-white'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+              disabled={loading}
+            >
+              <span className="flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
+                7 days
+              </span>
+            </button>
+            <button
+              onClick={() => setTimeRange('30d')}
+              className={`px-4 py-2 rounded-full text-sm transition-all ${
+                timeRange === '30d'
+                  ? 'bg-gradient-to-r from-purple-400 to-pink-400 text-white'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+              disabled={loading}
+            >
+              <span className="flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
+                30 days
+              </span>
+            </button>
+          </div>
+
+          {/* View Toggle */}
           <button
             onClick={() => setShowRealMetrics(!showRealMetrics)}
             className="flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur rounded-full border border-gray-200 hover:bg-gray-50 transition-all"
@@ -122,6 +260,12 @@ export function WellnessHub({ profile, metrics }: WellnessHubProps) {
               exit={{ opacity: 0, scale: 0.95 }}
               className="space-y-6"
             >
+              {loading && (
+                <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 flex items-center justify-center">
+                  <div className="text-purple-600">Loading...</div>
+                </div>
+              )}
+              
               {/* Main Stats */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <WellnessCard className="bg-gradient-to-br from-purple-50 to-white">
@@ -134,11 +278,11 @@ export function WellnessHub({ profile, metrics }: WellnessHubProps) {
                       <div className="flex items-center gap-1 mt-1">
                         {followersChange > 0 ? (
                           <ArrowUp className="w-3 h-3 text-green-500" />
-                        ) : (
-                          <ArrowDown className="w-3 h-3 text-red-500" />
-                        )}
+                        ) : followersChange < 0 ? (
+                          <ArrowDown className="w-3 h-3 text-coral-500" />
+                        ) : null}
                         <p className="text-xs text-gray-500">
-                          {followersChange > 0 ? '+' : ''}{followersChange} this week
+                          {followersChange > 0 ? '+' : ''}{followersChange} this {timeRange === '24h' ? 'day' : timeRange === '7d' ? 'week' : 'month'}
                         </p>
                       </div>
                     </div>
@@ -156,11 +300,11 @@ export function WellnessHub({ profile, metrics }: WellnessHubProps) {
                       <div className="flex items-center gap-1 mt-1">
                         {engagementChange > 0 ? (
                           <ArrowUp className="w-3 h-3 text-green-500" />
-                        ) : (
-                          <ArrowDown className="w-3 h-3 text-red-500" />
-                        )}
+                        ) : engagementChange < 0 ? (
+                          <ArrowDown className="w-3 h-3 text-coral-500" />
+                        ) : null}
                         <p className="text-xs text-gray-500">
-                          {engagementChange > 0 ? '+' : ''}{engagementChange}% change
+                          {engagementChange > 0 ? '+' : ''}{engagementChange.toFixed(1)}% change
                         </p>
                       </div>
                     </div>
@@ -190,7 +334,7 @@ export function WellnessHub({ profile, metrics }: WellnessHubProps) {
                       </p>
                       <div className="flex items-center gap-1 mt-1">
                         <ArrowUp className="w-3 h-3 text-green-500" />
-                        <p className="text-xs text-gray-500">+{reachChange} this week</p>
+                        <p className="text-xs text-gray-500">+{reachChange} this {timeRange === '24h' ? 'day' : timeRange === '7d' ? 'week' : 'month'}</p>
                       </div>
                     </div>
                     <BarChart3 className="w-5 h-5 text-yellow-400" />
@@ -219,6 +363,10 @@ export function WellnessHub({ profile, metrics }: WellnessHubProps) {
                       <span className="text-gray-600">Following</span>
                       <span className="font-medium text-gray-800">{following.toLocaleString()}</span>
                     </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Posts in Period</span>
+                      <span className="font-medium text-gray-800">{metrics?.postsPublished || 0}</span>
+                    </div>
                   </div>
                 </WellnessCard>
 
@@ -227,19 +375,24 @@ export function WellnessHub({ profile, metrics }: WellnessHubProps) {
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600">Best Posting Time</span>
-                      <span className="font-medium text-gray-800">7:00 PM</span>
+                      <span className="font-medium text-gray-800">{performanceTrends.bestTime}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600">Top Content Type</span>
-                      <span className="font-medium text-gray-800">Reels</span>
+                      <span className="font-medium text-gray-800">{performanceTrends.topType}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600">Avg. Story Views</span>
-                      <span className="font-medium text-gray-800">{Math.round(followers * 0.15).toLocaleString()}</span>
+                      <span className="font-medium text-gray-800">{performanceTrends.avgStoryViews.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600">Profile Visits</span>
-                      <span className="font-medium text-gray-800">{Math.round(followers * 0.08).toLocaleString()}/day</span>
+                      <span className="font-medium text-gray-800">{performanceTrends.profileVisits.toLocaleString()}/day</span>
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <p className="text-xs text-gray-500">
+                        Data from last {timeRange === '24h' ? '24 hours' : timeRange === '7d' ? '7 days' : '30 days'}
+                      </p>
                     </div>
                   </div>
                 </WellnessCard>
@@ -261,7 +414,7 @@ export function WellnessHub({ profile, metrics }: WellnessHubProps) {
                     <div>
                       <p className="text-gray-500 text-sm mb-1">Time Reclaimed</p>
                       <p className="text-3xl font-light text-purple-600">{hoursReclaimed} hrs</p>
-                      <p className="text-xs text-gray-500 mt-1">this week</p>
+                      <p className="text-xs text-gray-500 mt-1">this {timeRange === '24h' ? 'day' : timeRange === '7d' ? 'week' : 'month'}</p>
                     </div>
                     <div className="p-3 bg-purple-100 rounded-full">
                       <Zap className="w-5 h-5 text-purple-600" />
@@ -373,6 +526,10 @@ export function WellnessHub({ profile, metrics }: WellnessHubProps) {
                 <div className="text-center">
                   <p className="text-xs text-gray-500">Growth</p>
                   <p className="text-lg font-medium text-green-600">+{followersChange}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-gray-500">Period</p>
+                  <p className="text-lg font-medium text-purple-600">{timeRange}</p>
                 </div>
               </div>
             </div>
