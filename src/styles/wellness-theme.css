@@ -1,37 +1,65 @@
-/* Wellness-First Design System */
+/* Wellness-First Design System - Vibrant & Alive */
 
 :root {
-  /* Core Wellness Palette - Calm, not corporate */
-  --wellness-purple: #6B5B95;
-  --wellness-purple-soft: #8B7BAF;
-  --wellness-purple-light: #F0EBFA;
+  /* Core Wellness Palette - Vibrant but Calming */
+  --wellness-purple: #8B7FBF;
+  --wellness-purple-soft: #B8ADE8;
+  --wellness-purple-light: #F3F0FF;
   
-  --wellness-blue: #88B0D3;
-  --wellness-blue-soft: #A8C5E1;
-  --wellness-blue-light: #EEF5FB;
+  --wellness-blue: #6BB6D6;
+  --wellness-blue-soft: #9BD4ED;
+  --wellness-blue-light: #E8F6FC;
   
-  --wellness-green: #82B366;
-  --wellness-green-soft: #9FC486;
-  --wellness-green-light: #F0F8ED;
+  --wellness-green: #7BC96F;
+  --wellness-green-soft: #A3E599;
+  --wellness-green-light: #EDFAEB;
+  
+  --wellness-yellow: #FFD662;
+  --wellness-yellow-soft: #FFE593;
+  --wellness-yellow-light: #FFF9E6;
+  
+  --wellness-teal: #5ECDC3;
+  --wellness-teal-soft: #8EDDD6;
+  --wellness-teal-light: #E5FAF8;
+  
+  --wellness-coral: #FFB4A2;
+  --wellness-coral-soft: #FFCFC5;
+  --wellness-coral-light: #FFF5F3;
+  
+  --wellness-mint: #B2F2BB;
+  --wellness-mint-soft: #D3F9D8;
+  --wellness-mint-light: #F0FDF2;
+  
+  --wellness-sky: #A5D8FF;
+  --wellness-sky-soft: #C5E8FF;
+  --wellness-sky-light: #F0F9FF;
+  
+  --wellness-lavender: #C5B9E3;
+  --wellness-lavender-soft: #DDD6F3;
+  --wellness-lavender-light: #FAF8FF;
   
   --wellness-neutral-900: #2C2C2C;
   --wellness-neutral-700: #4A4A4A;
   --wellness-neutral-500: #717171;
   --wellness-neutral-300: #B3B3B3;
-  --wellness-neutral-100: #F5F5F5;
-  --wellness-white: #FAFAFA;
+  --wellness-neutral-100: #F8F9FA;
+  --wellness-white: #FFFFFF;
   
   /* Semantic Colors */
   --color-primary: var(--wellness-purple);
-  --color-secondary: var(--wellness-blue);
+  --color-secondary: var(--wellness-teal);
   --color-success: var(--wellness-green);
+  --color-joy: var(--wellness-yellow);
+  --color-energy: var(--wellness-coral);
+  --color-calm: var(--wellness-sky);
   --color-background: var(--wellness-white);
   --color-text: var(--wellness-neutral-700);
   --color-text-soft: var(--wellness-neutral-500);
   
-  /* NO harsh colors - these are intentionally muted */
-  --color-error: #C589A8; /* Soft pink instead of red */
-  --color-warning: #E6C584; /* Soft gold instead of yellow */
+  /* Gentle Status Colors */
+  --color-error: #FFB4A2; /* Soft coral instead of red */
+  --color-warning: #FFD662; /* Warm yellow instead of harsh orange */
+  --color-info: #6BB6D6; /* Soft blue */
   
   /* Spacing System - Generous breathing room */
   --space-xs: 0.5rem;   /* 8px */
@@ -63,11 +91,11 @@
   --transition-normal: 300ms ease;
   --transition-slow: 500ms ease;
   
-  /* Shadows - Soft and subtle */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.05);
-  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.08);
-  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
+  /* Shadows - Soft and colorful */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(139, 127, 191, 0.08);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(107, 182, 214, 0.08);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.08), 0 4px 6px rgba(94, 205, 195, 0.1);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1), 0 8px 10px rgba(123, 201, 111, 0.1);
   
   /* Borders - Soft edges */
   --radius-sm: 0.5rem;   /* 8px */
@@ -77,7 +105,7 @@
   --radius-full: 9999px;
 }
 
-/* Dark mode support - Still calm */
+/* Dark mode support - Still vibrant */
 @media (prefers-color-scheme: dark) {
   :root {
     --color-background: #1A1A2E;
@@ -108,30 +136,33 @@ body {
   line-height: var(--line-height-normal);
   transition: background-color var(--transition-normal);
   
-  /* Subtle gradient overlay for calmness */
+  /* Vibrant gradient overlay */
   background-image: 
     linear-gradient(
       135deg,
-      rgba(107, 91, 149, 0.03) 0%,
-      rgba(136, 176, 211, 0.03) 100%
+      rgba(139, 127, 191, 0.05) 0%,
+      rgba(107, 182, 214, 0.05) 25%,
+      rgba(94, 205, 195, 0.05) 50%,
+      rgba(123, 201, 111, 0.05) 75%,
+      rgba(255, 214, 98, 0.05) 100%
     );
   min-height: 100vh;
 }
 
-/* Remove all aggressive states */
+/* Colorful selection */
 ::selection {
-  background-color: var(--wellness-purple-light);
+  background-color: var(--wellness-lavender-soft);
   color: var(--wellness-purple);
 }
 
-/* Focus states - gentle, not harsh */
+/* Focus states - colorful */
 :focus {
-  outline: 2px solid var(--wellness-purple-soft);
+  outline: 2px solid var(--wellness-teal);
   outline-offset: 2px;
   transition: outline var(--transition-fast);
 }
 
-/* Scrollbar - subtle */
+/* Scrollbar - subtle with color */
 ::-webkit-scrollbar {
   width: 12px;
 }
@@ -141,12 +172,20 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--wellness-neutral-300);
+  background: linear-gradient(
+    180deg,
+    var(--wellness-purple-soft) 0%,
+    var(--wellness-teal-soft) 100%
+  );
   border-radius: var(--radius-full);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--wellness-neutral-500);
+  background: linear-gradient(
+    180deg,
+    var(--wellness-purple) 0%,
+    var(--wellness-teal) 100%
+  );
 }
 
 /* Breathing animation for loading states */
@@ -172,9 +211,36 @@ body {
   animation: celebrate 0.5s ease-in-out;
 }
 
+/* Rainbow gradient animation */
+@keyframes rainbow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 /* Utility classes for wellness */
 .wellness-gradient {
-  background: linear-gradient(135deg, var(--wellness-purple) 0%, var(--wellness-blue) 100%);
+  background: linear-gradient(
+    135deg, 
+    var(--wellness-purple) 0%, 
+    var(--wellness-blue) 25%,
+    var(--wellness-teal) 50%,
+    var(--wellness-green) 75%,
+    var(--wellness-yellow) 100%
+  );
+  background-size: 200% 200%;
+  animation: rainbow 8s ease infinite;
+}
+
+.wellness-gradient-subtle {
+  background: linear-gradient(
+    135deg,
+    var(--wellness-purple-light) 0%,
+    var(--wellness-sky-light) 25%,
+    var(--wellness-mint-light) 50%,
+    var(--wellness-yellow-light) 75%,
+    var(--wellness-coral-light) 100%
+  );
 }
 
 .soft-shadow {
@@ -197,19 +263,46 @@ body {
   filter: none;
 }
 
-/* Calm cards */
+/* Calm cards with color accents */
 .wellness-card {
   background: white;
   border-radius: var(--radius-lg);
   padding: var(--space-lg);
   box-shadow: var(--shadow-sm);
   transition: all var(--transition-normal);
-  border: 1px solid rgba(0, 0, 0, 0.04);
+  border: 1px solid transparent;
+  background: linear-gradient(white, white) padding-box,
+              linear-gradient(135deg, 
+                var(--wellness-purple-soft) 0%, 
+                var(--wellness-teal-soft) 50%,
+                var(--wellness-yellow-soft) 100%) border-box;
 }
 
 .wellness-card:hover {
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
+  border-width: 2px;
+}
+
+/* Color variants for cards */
+.wellness-card-purple {
+  background: linear-gradient(135deg, var(--wellness-purple-light) 0%, white 100%);
+}
+
+.wellness-card-blue {
+  background: linear-gradient(135deg, var(--wellness-blue-light) 0%, white 100%);
+}
+
+.wellness-card-green {
+  background: linear-gradient(135deg, var(--wellness-green-light) 0%, white 100%);
+}
+
+.wellness-card-yellow {
+  background: linear-gradient(135deg, var(--wellness-yellow-light) 0%, white 100%);
+}
+
+.wellness-card-teal {
+  background: linear-gradient(135deg, var(--wellness-teal-light) 0%, white 100%);
 }
 
 /* Remove all notification badges */
@@ -217,24 +310,42 @@ body {
   display: none !important;
 }
 
-/* Calm loading dots */
+/* Colorful loading dots */
 .loading-dots {
   display: inline-flex;
-  gap: 4px;
+  gap: 6px;
 }
 
 .loading-dots span {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  background: var(--wellness-purple);
   animation: breathe 1.4s ease-in-out infinite;
 }
 
+.loading-dots span:nth-child(1) {
+  background: var(--wellness-purple);
+}
+
 .loading-dots span:nth-child(2) {
+  background: var(--wellness-teal);
   animation-delay: 0.2s;
 }
 
 .loading-dots span:nth-child(3) {
+  background: var(--wellness-yellow);
   animation-delay: 0.4s;
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(
+    135deg,
+    var(--wellness-purple) 0%,
+    var(--wellness-teal) 50%,
+    var(--wellness-green) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
