@@ -1,10 +1,10 @@
 'use client'
 
-import { Instagram, TrendingUp, Target, Calendar, DollarSign, Users, Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { formatNumber } from '@/lib/utils'
-import WeeklyContentPlan from '@/components/WeeklyContentPlan'
-import AlertBell from '@/components/alerts/alert-bell'
+import { WellnessHub } from '@/components/wellness/WellnessHub'
+import { BreathingLoader } from '@/components/wellness/BreathingLoader'
+import { WellnessCard } from '@/components/wellness/WellnessCard'
+import { WellnessButton } from '@/components/wellness/WellnessButton'
 
 interface UserProfile {
   id: string
@@ -36,21 +36,15 @@ export default function Dashboard() {
   const [posts, setPosts] = useState<InstagramPost[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d' | 'custom'>('30d')
-  const [metrics, setMetrics] = useState<{
-    followerChange: number
-    engagementChange: number
-    postsChange: number
-    postsPublished: number
-    previousFollowers: number
-    previousEngagement: number
-    previousPosts: number
-  } | null>(null)
+  const [metrics, setMetrics] = useState<any>(null)
 
   useEffect(() => {
     async function fetchUserData() {
       try {
-        const response = await fetch(`/api/user/profile?timeRange=${timeRange}`)
+        // Add slight delay for smoother loading experience
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
+        const response = await fetch(`/api/user/profile?timeRange=30d`)
         
         if (!response.ok) {
           if (response.status === 401) {
@@ -63,11 +57,7 @@ export default function Dashboard() {
         const data = await response.json()
         setProfile(data.profile)
         setPosts(data.posts)
-        
-        // Calculate metrics changes
-        if (data.metrics) {
-          setMetrics(data.metrics)
-        }
+        setMetrics(data.metrics)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred')
       } finally {
@@ -76,365 +66,43 @@ export default function Dashboard() {
     }
 
     fetchUserData()
-  }, [timeRange])
+  }, [])
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-purple-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading your dashboard...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[var(--wellness-purple-light)] via-white to-[var(--wellness-blue-light)]">
+        <BreathingLoader 
+          text="Preparing your wellness space..." 
+          size="lg"
+        />
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">Error: {error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-          >
-            Retry
-          </button>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[var(--wellness-purple-light)] via-white to-[var(--wellness-blue-light)]">
+        <WellnessCard className="max-w-md mx-auto text-center">
+          <div className="space-y-4">
+            <div className="text-6xl">🌿</div>
+            <h2 className="text-xl font-light text-[var(--wellness-neutral-700)]">
+              Let's take a breath
+            </h2>
+            <p className="text-[var(--wellness-neutral-500)]">
+              Something needs a moment to reconnect. This is perfectly normal.
+            </p>
+            <WellnessButton 
+              onClick={() => window.location.reload()} 
+              variant="calm"
+              size="md"
+            >
+              Try again gently
+            </WellnessButton>
+          </div>
+        </WellnessCard>
       </div>
     )
   }
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">SE</span>
-              </div>
-              <span className="font-bold text-xl text-gray-900">Social Echelon</span>
-            </div>
-            
-            <div className="flex items-center space-x-6">
-              <a 
-                href="/intelligence" 
-                className="text-sm font-medium text-gray-600 hover:text-purple-600 transition-colors"
-              >
-                Intelligence
-              </a>
-              <a 
-                href="/algorithm" 
-                className="text-sm font-medium text-gray-600 hover:text-purple-600 transition-colors"
-              >
-                Algorithm
-              </a>
-              <a 
-                href="/dashboard/brand-matching" 
-                className="text-sm font-medium text-gray-600 hover:text-purple-600 transition-colors"
-              >
-                Brand Matching
-              </a>
-              <a 
-                href="/dashboard/brand-outreach" 
-                className="text-sm font-medium text-gray-600 hover:text-purple-600 transition-colors"
-              >
-                Outreach
-              </a>
-              <a 
-                href="/dashboard/outreach-tracking" 
-                className="text-sm font-medium text-gray-600 hover:text-purple-600 transition-colors"
-              >
-                Tracking
-              </a>
-              <a 
-                href="/trends" 
-                className="text-sm font-medium text-gray-600 hover:text-purple-600 transition-colors"
-              >
-                Trends
-              </a>
-              <AlertBell />
-              <div className="flex items-center space-x-2">
-                <Instagram className="w-5 h-5 text-pink-500" />
-                <span className="text-sm text-gray-600">@{profile?.instagram_username}</span>
-              </div>
-              <a href="/settings" className="cursor-pointer">
-                <img 
-                  src={profile?.avatar_url || '/default-avatar.png'} 
-                  alt={profile?.full_name || 'Profile'} 
-                  className="w-8 h-8 rounded-full object-cover hover:ring-2 hover:ring-purple-500 transition-all"
-                  onError={(e) => {
-                    e.currentTarget.src = '/default-avatar.png'
-                  }}
-                />
-              </a>
-            </div>
-          </div>
-        </div>
-      </nav>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Welcome Header */}
-        <div className="mb-8 flex justify-between items-start">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back, {profile?.full_name || profile?.instagram_username}! 👋</h1>
-            <p className="text-gray-600">Here's what's happening with your Instagram growth today.</p>
-          </div>
-          <select
-            value={timeRange}
-            onChange={(e) => setTimeRange(e.target.value as any)}
-            className="px-4 py-2 border border-gray-300 rounded-lg bg-white shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-          >
-            <option value="24h">Last 24 hours</option>
-            <option value="7d">Last 7 days</option>
-            <option value="30d">Last 30 days</option>
-          </select>
-        </div>
-
-        {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl p-6 shadow-sm border">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Users className="w-6 h-6 text-blue-600" />
-              </div>
-              {metrics?.followerChange !== undefined && (
-                <span className={`text-sm font-medium ${
-                  metrics.previousFollowers === profile?.follower_count 
-                    ? 'text-gray-500' 
-                    : metrics.followerChange >= 0 ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {metrics.previousFollowers === profile?.follower_count 
-                    ? `${timeRange === '24h' ? '24h' : timeRange === '7d' ? '7d' : '30d'} data pending`
-                    : `${metrics.followerChange >= 0 ? '+' : ''}${metrics.followerChange.toFixed(1)}%`
-                  }
-                </span>
-              )}
-            </div>
-            <div className="text-2xl font-bold text-gray-900 mb-1">{formatNumber(profile?.follower_count || 0)}</div>
-            <div className="text-sm text-gray-600">Followers</div>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 shadow-sm border">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-pink-100 rounded-lg">
-                <TrendingUp className="w-6 h-6 text-pink-600" />
-              </div>
-              {metrics?.engagementChange !== undefined && (
-                <span className={`text-sm font-medium ${
-                  metrics.engagementChange === 0 && metrics.previousEngagement === profile?.engagement_rate
-                    ? 'text-gray-500' 
-                    : metrics.engagementChange >= 0 ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {metrics.engagementChange === 0 && metrics.previousEngagement === profile?.engagement_rate
-                    ? `${timeRange === '24h' ? '24h' : timeRange === '7d' ? '7d' : '30d'} data pending`
-                    : `${metrics.engagementChange >= 0 ? '+' : ''}${metrics.engagementChange.toFixed(1)}%`
-                  }
-                </span>
-              )}
-            </div>
-            <div className="text-2xl font-bold text-gray-900 mb-1">{(profile?.engagement_rate || 0).toFixed(2)}%</div>
-            <div className="text-sm text-gray-600">Engagement Rate</div>
-            <div className="text-xs text-gray-500 mt-1">(Likes + Comments) / Followers</div>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 shadow-sm border">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Target className="w-6 h-6 text-purple-600" />
-              </div>
-              {metrics?.postsPublished !== undefined ? (
-                <span className="text-sm font-medium text-purple-600">
-                  {metrics.postsPublished} in {timeRange === '24h' ? '24h' : timeRange === '7d' ? '7 days' : '30 days'}
-                </span>
-              ) : (
-                <span className="text-sm font-medium text-gray-500">Total</span>
-              )}
-            </div>
-            <div className="text-2xl font-bold text-gray-900 mb-1">{profile?.posts_count || 0}</div>
-            <div className="text-sm text-gray-600">Posts Published</div>
-            {metrics?.postsChange !== undefined && metrics.postsChange !== 0 && (
-              <div className={`text-xs mt-1 ${metrics.postsChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {metrics.postsChange >= 0 ? '+' : ''}{metrics.postsChange.toFixed(1)}% vs previous period
-              </div>
-            )}
-          </div>
-
-          <div className="bg-white rounded-xl p-6 shadow-sm border">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Users className="w-6 h-6 text-blue-600" />
-              </div>
-              <span className="text-sm font-medium text-blue-600">Following</span>
-            </div>
-            <div className="text-2xl font-bold text-gray-900 mb-1">{formatNumber(profile?.following_count || 0)}</div>
-            <div className="text-sm text-gray-600">Following</div>
-          </div>
-        </div>
-
-        {/* Weekly Content Plan */}
-        <WeeklyContentPlan />
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* AI Action Center */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-900">Today's AI Recommendations</h2>
-                <span className="px-3 py-1 bg-purple-100 text-purple-700 text-sm font-medium rounded-full">
-                  3 tasks
-                </span>
-              </div>
-              
-              <div className="space-y-4">
-                <div className="flex items-start space-x-4 p-4 bg-gradient-to-r from-pink-50 to-purple-50 rounded-lg border border-pink-100">
-                  <div className="w-2 h-2 bg-pink-500 rounded-full mt-2"></div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 mb-1">Post a carousel about your morning routine</h3>
-                    <p className="text-sm text-gray-600 mb-2">
-                      Based on your audience engagement, lifestyle content performs 23% better on Thursdays.
-                    </p>
-                    <div className="flex items-center space-x-2">
-                      <span className="px-2 py-1 bg-pink-100 text-pink-700 text-xs font-medium rounded">High Priority</span>
-                      <span className="text-xs text-gray-500">Best time: 2:30 PM</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-start space-x-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 mb-1">Engage with @fitnessbrand's latest post</h3>
-                    <p className="text-sm text-gray-600 mb-2">
-                      This brand aligns with your niche and has 89% compatibility for partnerships.
-                    </p>
-                    <div className="flex items-center space-x-2">
-                      <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded">Partnership</span>
-                      <span className="text-xs text-gray-500">Est. value: $200-400</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-start space-x-4 p-4 bg-green-50 rounded-lg border border-green-100">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 mb-1">Update your bio with trending keywords</h3>
-                    <p className="text-sm text-gray-600 mb-2">
-                      Add "wellness coach" and "mindful living" to improve discoverability by 15%.
-                    </p>
-                    <div className="flex items-center space-x-2">
-                      <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded">SEO</span>
-                      <span className="text-xs text-gray-500">2 min task</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Content Calendar */}
-            <div className="bg-white rounded-xl shadow-sm border p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-gray-900">This Week's Content</h2>
-                <button className="text-purple-600 hover:text-purple-700 font-medium text-sm">
-                  View Full Calendar
-                </button>
-              </div>
-              
-              <div className="space-y-3">
-                <div className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
-                  <div className="w-12 h-12 bg-gradient-to-r from-pink-400 to-purple-400 rounded-lg flex items-center justify-center">
-                    <Calendar className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-medium text-gray-900">Morning Workout Routine</div>
-                    <div className="text-sm text-gray-600">Today, 2:30 PM • Carousel Post</div>
-                  </div>
-                  <span className="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded">Scheduled</span>
-                </div>
-
-                <div className="flex items-center space-x-4 p-3 border border-dashed border-gray-200 rounded-lg">
-                  <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
-                    <Calendar className="w-6 h-6 text-gray-400" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-medium text-gray-600">Weekend Meal Prep Tips</div>
-                    <div className="text-sm text-gray-500">Tomorrow, 11:00 AM • Video Post</div>
-                  </div>
-                  <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded">Draft</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Growth Chart */}
-            <div className="bg-white rounded-xl shadow-sm border p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Growth This Month</h3>
-              <div className="h-32 bg-gradient-to-r from-pink-100 to-purple-100 rounded-lg flex items-center justify-center">
-                <span className="text-gray-500 text-sm">Chart visualization would go here</span>
-              </div>
-              <div className="mt-4 text-center">
-                <div className="text-2xl font-bold text-green-600">+847</div>
-                <div className="text-sm text-gray-600">New followers this month</div>
-              </div>
-            </div>
-
-            {/* Brand Opportunities */}
-            <div className="bg-white rounded-xl shadow-sm border p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Brand Opportunities</h3>
-              <div className="space-y-3">
-                <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
-                  <div className="w-8 h-8 bg-blue-500 rounded-full"></div>
-                  <div className="flex-1">
-                    <div className="font-medium text-gray-900 text-sm">FitnessBrand</div>
-                    <div className="text-xs text-gray-600">89% match</div>
-                  </div>
-                  <span className="text-xs font-medium text-blue-600">$200-400</span>
-                </div>
-
-                <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
-                  <div className="w-8 h-8 bg-green-500 rounded-full"></div>
-                  <div className="flex-1">
-                    <div className="font-medium text-gray-900 text-sm">WellnessApp</div>
-                    <div className="text-xs text-gray-600">76% match</div>
-                  </div>
-                  <span className="text-xs font-medium text-green-600">$150-300</span>
-                </div>
-              </div>
-              
-              <a 
-                href="/dashboard/brand-matching"
-                className="block w-full mt-4 px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-sm font-medium rounded-lg hover:from-pink-600 hover:to-purple-700 transition-all text-center"
-              >
-                View All Opportunities
-              </a>
-            </div>
-
-            {/* Subscription Status */}
-            <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl p-6 text-white">
-              <h3 className="text-lg font-bold mb-2">
-                {profile?.subscription_tier === 'pro' ? 'Pro Manager Plan' : 'Growth Starter Plan'}
-              </h3>
-              <p className="text-purple-100 text-sm mb-4">
-                {profile?.subscription_tier === 'pro' 
-                  ? 'You have access to all premium features including brand matching and 1:1 calls.'
-                  : 'You\'re making great progress! Upgrade to Pro for advanced brand matching.'
-                }
-              </p>
-              {profile?.subscription_tier !== 'pro' && (
-                <button className="w-full px-4 py-2 bg-white text-purple-600 font-medium rounded-lg hover:bg-gray-50 transition-colors">
-                  Upgrade to Pro
-                </button>
-              )}
-              <div className="mt-2 text-xs text-purple-100">
-                Status: {profile?.subscription_status || 'inactive'}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
+  return <WellnessHub profile={profile} metrics={metrics} />
 }

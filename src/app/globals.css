@@ -2,14 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import Wellness Theme - This is our new design system */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;700&display=swap');
+@import '../styles/wellness-theme.css';
+
+/* Legacy color variables - will be phased out */
 :root {
-  /* Brand Colors */
-  --primary: #8B5CF6; /* Purple */
-  --primary-dark: #7C3AED;
-  --primary-light: #A78BFA;
-  --secondary: #EC4899; /* Pink */
-  --secondary-dark: #DB2777;
-  --secondary-light: #F472B6;
+  /* DEPRECATED - Moving to wellness palette */
+  --primary: var(--wellness-purple);
+  --primary-dark: var(--wellness-purple);
+  --primary-light: var(--wellness-purple-light);
+  --secondary: var(--wellness-blue);
+  --secondary-dark: var(--wellness-blue);
+  --secondary-light: var(--wellness-blue-light);
   
   /* Neutral Colors */
   --background: #ffffff;
