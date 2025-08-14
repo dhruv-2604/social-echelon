@@ -124,11 +124,10 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }
       })
     }
 
-    // Story views and profile visits estimates based on follower count
-    const avgStoryViews = Math.round(followers * 0.15) // 15% of followers view stories
-    const profileVisits = Math.round(followers * 0.08) // 8% daily profile visits
+    // Profile visits - now using real data if available, otherwise show as "Limited data"
+    const profileVisits = 0 // Will be updated when profile_views API is available
 
-    return { bestTime, topType, avgStoryViews, profileVisits }
+    return { bestTime, topType, profileVisits }
   }
 
   const performanceTrends = calculatePerformanceTrends()
@@ -463,16 +462,16 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }
                       <span className="font-medium text-gray-800">{performanceTrends.topType}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Avg. Story Views</span>
-                      <span className="font-medium text-gray-800">{performanceTrends.avgStoryViews.toLocaleString()}</span>
+                      <span className="text-gray-600">Engagement Rate</span>
+                      <span className="font-medium text-gray-800">{engagementRate.toFixed(2)}%</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Profile Visits</span>
-                      <span className="font-medium text-gray-800">{performanceTrends.profileVisits.toLocaleString()}/day</span>
+                      <span className="text-gray-600">Avg. Engagement</span>
+                      <span className="font-medium text-gray-800">{(avgLikes + avgComments).toLocaleString()}</span>
                     </div>
                     <div className="mt-3 pt-3 border-t border-gray-200">
                       <p className="text-xs text-gray-500">
-                        Data from last {timeRange === '24h' ? '24 hours' : timeRange === '7d' ? '7 days' : '30 days'}
+                        Calculated from {posts.length} posts • {timeRange === '24h' ? 'Last 24 hours' : timeRange === '7d' ? 'Last 7 days' : 'Last 30 days'}
                       </p>
                     </div>
                   </div>
