@@ -202,15 +202,17 @@ export async function GET(request: NextRequest) {
     let insights = null
     try {
       const { data: tokenData } = await supabaseAdmin
-        .from('profiles')
-        .select('instagram_token')
-        .eq('id', userId)
-        .single() as { data: { instagram_token: string } | null; error: any }
+        .from('user_tokens')
+        .select('instagram_access_token')
+        .eq('user_id', userId)
+        .single() as { data: { instagram_access_token: string } | null; error: any }
 
-      if (tokenData?.instagram_token) {
-        const instagramApi = new InstagramAPI(tokenData.instagram_token)
+      if (tokenData?.instagram_access_token) {
+        const instagramApi = new InstagramAPI(tokenData.instagram_access_token)
         insights = await instagramApi.getAccountInsights()
         console.log('Fetched Instagram insights:', insights)
+      } else {
+        console.log('No Instagram token found for user:', userId)
       }
     } catch (insightsError) {
       console.error('Failed to fetch Instagram insights:', insightsError)
