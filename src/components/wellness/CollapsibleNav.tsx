@@ -51,7 +51,7 @@ export function CollapsibleNav() {
     { href: '/intelligence', label: 'Creative Space', icon: <Sparkles className="w-4 h-4" /> },
     { href: '/trends', label: 'Trend Garden', icon: <TrendingUp className="w-4 h-4" /> },
     { href: '/dashboard/brand-opportunities', label: 'Partnerships', icon: <Users className="w-4 h-4" /> },
-    { href: '/settings', label: 'Your Boundaries', icon: <Settings className="w-4 h-4" /> },
+    { href: '/settings', label: 'Boundaries', icon: <Settings className="w-4 h-4" /> },
   ]
   
   return (

@@ -1,9 +1,33 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ArrowLeft, User, Instagram, Bell, CreditCard, Shield, HelpCircle, LogOut, Save, Loader2 } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { 
+  User, 
+  Palette, 
+  Bell, 
+  Shield, 
+  HelpCircle, 
+  LogOut, 
+  Check,
+  Loader2,
+  Moon,
+  Sun,
+  Zap,
+  Heart,
+  Sparkles,
+  Clock,
+  Target,
+  Feather,
+  Volume2,
+  VolumeX,
+  Pause,
+  Play,
+  Coffee
+} from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import AlertBell from '@/components/alerts/alert-bell'
+import { WellnessCard } from '@/components/wellness/WellnessCard'
+import { WellnessButton } from '@/components/wellness/WellnessButton'
 
 interface UserProfile {
   id: string
@@ -29,9 +53,9 @@ interface UserPreferences {
   posting_frequency: number
 }
 
-export default function SettingsPage() {
+export default function BoundariesPage() {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState('profile')
+  const [activeTab, setActiveTab] = useState('energy')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [profile, setProfile] = useState<UserProfile | null>(null)
@@ -47,8 +71,9 @@ export default function SettingsPage() {
     full_name: '',
     email: ''
   })
-  const [hasProfileChanges, setHasProfileChanges] = useState(false)
-  const [hasPreferenceChanges, setHasPreferenceChanges] = useState(false)
+  const [vacationMode, setVacationMode] = useState(false)
+  const [quietHours, setQuietHours] = useState({ enabled: true, start: '21:00', end: '09:00' })
+  const [weekendMode, setWeekendMode] = useState(true)
 
   useEffect(() => {
     fetchUserData()
@@ -115,15 +140,8 @@ export default function SettingsPage() {
 
       const data = await response.json()
       setProfile(data.profile)
-      // Update the form with the new data to show it was saved
-      setProfileForm({
-        full_name: data.profile.full_name || '',
-        email: data.profile.email
-      })
-      alert('Profile updated successfully!')
-      setHasProfileChanges(false)
     } catch (err) {
-      alert('Failed to update profile')
+      console.error('Failed to update profile:', err)
     } finally {
       setSaving(false)
     }
@@ -143,8 +161,6 @@ export default function SettingsPage() {
       if (!response.ok) {
         throw new Error('Failed to save preferences')
       }
-
-      alert('Preferences saved successfully!')
       
       // Generate new content plan in the background
       fetch('/api/ai/generate-content-plan', {
@@ -156,482 +172,508 @@ export default function SettingsPage() {
           userId: profile?.id,
           ...preferences
         })
-      }).then(res => {
-        if (res.ok) {
-          console.log('New content plan generated successfully')
-        } else {
-          console.error('Failed to generate new content plan')
-        }
-      }).catch(err => {
-        console.error('Error generating content plan:', err)
       })
       
     } catch (err) {
-      alert('Failed to save preferences')
+      console.error('Failed to save preferences:', err)
     } finally {
       setSaving(false)
     }
   }
 
   async function handleLogout() {
-    if (confirm('Are you sure you want to log out?')) {
-      document.cookie = 'user_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
-      router.push('/')
-    }
+    document.cookie = 'user_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+    router.push('/')
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-purple-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading settings...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <motion.div 
+          className="text-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+          >
+            <Sparkles className="w-8 h-8 text-purple-400 mx-auto mb-4" />
+          </motion.div>
+          <p className="text-gray-600">Setting up your space...</p>
+        </motion.div>
       </div>
     )
   }
 
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => router.push('/dashboard')}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-purple-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">SE</span>
-                </div>
-                <span className="font-bold text-xl text-gray-900">Social Echelon</span>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-6">
-              <a href="/intelligence" className="text-sm font-medium text-gray-600 hover:text-purple-600 transition-colors">
-                Intelligence
-              </a>
-              <a href="/algorithm" className="text-sm font-medium text-gray-600 hover:text-purple-600 transition-colors">
-                Algorithm
-              </a>
-              <a href="/trends" className="text-sm font-medium text-gray-600 hover:text-purple-600 transition-colors">
-                Trends
-              </a>
-              <AlertBell />
-              <img 
-                src={profile?.avatar_url || '/default-avatar.png'} 
-                alt={profile?.full_name || 'Profile'} 
-                className="w-8 h-8 rounded-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.src = '/default-avatar.png'
-                }}
-              />
-            </div>
+    <div className="min-h-screen">
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-12 text-center"
+        >
+          <h1 className="text-4xl font-light text-gray-800 mb-4">
+            Your Boundaries
+          </h1>
+          <p className="text-gray-600 text-lg">
+            Create space for what matters most
+          </p>
+        </motion.div>
+
+        {/* Tab Navigation */}
+        <motion.div 
+          className="flex justify-center mb-12"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+        >
+          <div className="inline-flex gap-2 p-1 bg-white/80 backdrop-blur rounded-full border border-gray-200/50">
+            {[
+              { id: 'energy', label: 'Energy', icon: Zap },
+              { id: 'focus', label: 'Focus', icon: Target },
+              { id: 'peace', label: 'Peace', icon: Heart },
+              { id: 'identity', label: 'Identity', icon: User },
+              { id: 'protection', label: 'Protection', icon: Shield }
+            ].map((tab) => {
+              const Icon = tab.icon
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-6 py-3 rounded-full transition-all ${
+                    activeTab === tab.id
+                      ? 'bg-gradient-to-r from-purple-400 to-pink-400 text-white'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="text-sm font-medium">{tab.label}</span>
+                </button>
+              )
+            })}
           </div>
-        </div>
-      </nav>
+        </motion.div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Settings</h1>
-          <p className="text-gray-600">Manage your account settings and preferences</p>
-        </div>
-
-        <div className="flex gap-8">
-          {/* Sidebar */}
-          <div className="w-64">
-            <nav className="space-y-1">
-              {[
-                { id: 'profile', label: 'Profile', icon: User },
-                { id: 'preferences', label: 'Content Preferences', icon: Instagram },
-                { id: 'notifications', label: 'Notifications', icon: Bell },
-                { id: 'billing', label: 'Billing & Plans', icon: CreditCard },
-                { id: 'privacy', label: 'Privacy & Security', icon: Shield },
-                { id: 'help', label: 'Help & Support', icon: HelpCircle }
-              ].map((item) => {
-                const Icon = item.icon
-                return (
+        {/* Content */}
+        <AnimatePresence mode="wait">
+          {activeTab === 'energy' && (
+            <motion.div
+              key="energy"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-6"
+            >
+              {/* Vacation Mode */}
+              <WellnessCard glow={vacationMode}>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h3 className="text-xl font-medium text-gray-800 mb-2">
+                      Vacation Mode
+                    </h3>
+                    <p className="text-gray-600 mb-4">
+                      Take a complete break. We'll handle everything while you recharge.
+                    </p>
+                    {vacationMode && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        className="p-4 bg-green-50 rounded-lg"
+                      >
+                        <p className="text-green-700 text-sm">
+                          🌴 Vacation mode active! All automated posting is running. Enjoy your time off!
+                        </p>
+                      </motion.div>
+                    )}
+                  </div>
                   <button
-                    key={item.id}
-                    onClick={() => setActiveTab(item.id)}
-                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                      activeTab === item.id
-                        ? 'bg-purple-50 text-purple-600'
-                        : 'hover:bg-gray-100 text-gray-700'
+                    onClick={() => setVacationMode(!vacationMode)}
+                    className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
+                      vacationMode ? 'bg-green-500' : 'bg-gray-300'
                     }`}
                   >
-                    <Icon className="w-5 h-5" />
-                    <span className="font-medium">{item.label}</span>
-                  </button>
-                )
-              })}
-            </nav>
-
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center space-x-3 px-4 py-3 mt-8 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            >
-              <LogOut className="w-5 h-5" />
-              <span className="font-medium">Log Out</span>
-            </button>
-          </div>
-
-          {/* Main Content */}
-          <div className="flex-1">
-            <div className="bg-white rounded-xl shadow-sm border p-6">
-              {activeTab === 'profile' && (
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-6">Profile Information</h2>
-                  
-                  <div className="space-y-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Full Name
-                      </label>
-                      <input
-                        type="text"
-                        value={profileForm.full_name}
-                        onChange={(e) => {
-                          setProfileForm({ ...profileForm, full_name: e.target.value })
-                          setHasProfileChanges(true)
-                        }}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Email Address
-                      </label>
-                      <input
-                        type="email"
-                        value={profileForm.email}
-                        onChange={(e) => {
-                          setProfileForm({ ...profileForm, email: e.target.value })
-                          setHasProfileChanges(true)
-                        }}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Instagram Account
-                      </label>
-                      <div className="flex items-center space-x-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                        <Instagram className="w-5 h-5 text-pink-500" />
-                        <span className="text-gray-700">@{profile?.instagram_username}</span>
-                        <span className="ml-auto text-sm text-gray-500">Connected</span>
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={handleSaveProfile}
-                      disabled={saving || !hasProfileChanges}
-                      className={`flex items-center space-x-2 px-6 py-3 text-white rounded-lg transition-all disabled:opacity-50 ${
-                        hasProfileChanges 
-                          ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600' 
-                          : 'bg-gray-400 cursor-not-allowed'
+                    <span
+                      className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                        vacationMode ? 'translate-x-7' : 'translate-x-1'
                       }`}
-                    >
-                      {saving ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Save className="w-4 h-4" />
-                      )}
-                      <span>{saving ? 'Saving...' : hasProfileChanges ? 'Save Changes' : 'Saved'}</span>
-                    </button>
-                  </div>
+                    />
+                  </button>
                 </div>
-              )}
+              </WellnessCard>
 
-              {activeTab === 'preferences' && (
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-6">Content Preferences</h2>
-                  
-                  <div className="space-y-6">
-                    {/* Niche */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Your Niche
-                      </label>
-                      <select
-                        value={preferences.niche}
-                        onChange={(e) => setPreferences({ ...preferences, niche: e.target.value })}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
-                      >
-                        <option value="lifestyle">Lifestyle</option>
-                        <option value="fitness">Fitness & Health</option>
-                        <option value="business">Business & Entrepreneurship</option>
-                        <option value="fashion">Fashion & Style</option>
-                        <option value="food">Food & Cooking</option>
-                        <option value="travel">Travel</option>
-                        <option value="beauty">Beauty & Skincare</option>
-                        <option value="tech">Technology</option>
-                        <option value="parenting">Parenting</option>
-                        <option value="education">Education</option>
-                        <option value="entertainment">Entertainment</option>
-                        <option value="other">Other</option>
-                      </select>
-                    </div>
+              {/* Quiet Hours */}
+              <WellnessCard>
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h3 className="text-xl font-medium text-gray-800 mb-2">
+                      Quiet Hours
+                    </h3>
+                    <p className="text-gray-600">
+                      No notifications during your rest time
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setQuietHours({ ...quietHours, enabled: !quietHours.enabled })}
+                    className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
+                      quietHours.enabled ? 'bg-purple-500' : 'bg-gray-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                        quietHours.enabled ? 'translate-x-7' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+                {quietHours.enabled && (
+                  <div className="flex gap-4 items-center">
+                    <Moon className="w-5 h-5 text-purple-500" />
+                    <input
+                      type="time"
+                      value={quietHours.start}
+                      onChange={(e) => setQuietHours({ ...quietHours, start: e.target.value })}
+                      className="px-3 py-2 border border-gray-200 rounded-lg text-gray-700"
+                    />
+                    <span className="text-gray-500">to</span>
+                    <Sun className="w-5 h-5 text-yellow-500" />
+                    <input
+                      type="time"
+                      value={quietHours.end}
+                      onChange={(e) => setQuietHours({ ...quietHours, end: e.target.value })}
+                      className="px-3 py-2 border border-gray-200 rounded-lg text-gray-700"
+                    />
+                  </div>
+                )}
+              </WellnessCard>
 
-                    {/* Primary Goal */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Primary Goal
-                      </label>
-                      <select
-                        value={preferences.primary_goal}
-                        onChange={(e) => setPreferences({ ...preferences, primary_goal: e.target.value as any })}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
-                      >
-                        <option value="growth">Grow Followers</option>
-                        <option value="engagement">Boost Engagement</option>
-                        <option value="brand_partnerships">Brand Partnerships</option>
-                        <option value="sales">Drive Sales</option>
-                      </select>
-                    </div>
+              {/* Weekend Mode */}
+              <WellnessCard>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="text-xl font-medium text-gray-800 mb-2">
+                      Weekend Sanctuary
+                    </h3>
+                    <p className="text-gray-600">
+                      Weekends are yours. We'll pause all non-essential activities.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setWeekendMode(!weekendMode)}
+                    className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
+                      weekendMode ? 'bg-purple-500' : 'bg-gray-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                        weekendMode ? 'translate-x-7' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </WellnessCard>
+            </motion.div>
+          )}
 
-                    {/* Content Style */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Content Style
-                      </label>
-                      <select
-                        value={preferences.content_style}
-                        onChange={(e) => setPreferences({ ...preferences, content_style: e.target.value as any })}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
-                      >
-                        <option value="educational">Educational</option>
-                        <option value="entertaining">Entertaining</option>
-                        <option value="aspirational">Aspirational</option>
-                        <option value="authentic">Authentic</option>
-                      </select>
-                    </div>
-
-                    {/* Target Audience */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Target Audience
-                      </label>
-                      <input
-                        type="text"
-                        value={preferences.target_audience}
-                        onChange={(e) => setPreferences({ ...preferences, target_audience: e.target.value })}
-                        placeholder="e.g., young professionals, moms, fitness enthusiasts"
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
-                      />
-                    </div>
-
-                    {/* Voice Tone */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Voice Tone
-                      </label>
-                      <select
-                        value={preferences.voice_tone}
-                        onChange={(e) => setPreferences({ ...preferences, voice_tone: e.target.value as any })}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
-                      >
-                        <option value="professional">Professional</option>
-                        <option value="casual">Casual</option>
-                        <option value="inspirational">Inspirational</option>
-                        <option value="humorous">Humorous</option>
-                      </select>
-                    </div>
-
-                    {/* Posting Frequency */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Posts per Week: {preferences.posting_frequency}
-                      </label>
+          {activeTab === 'focus' && (
+            <motion.div
+              key="focus"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-6"
+            >
+              <WellnessCard>
+                <h3 className="text-xl font-medium text-gray-800 mb-6">
+                  Content Rhythm
+                </h3>
+                
+                <div className="space-y-6">
+                  {/* Posting Frequency */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Posts per week: {preferences.posting_frequency}
+                    </label>
+                    <div className="relative">
                       <input
                         type="range"
                         min="1"
                         max="7"
                         value={preferences.posting_frequency}
                         onChange={(e) => setPreferences({ ...preferences, posting_frequency: parseInt(e.target.value) })}
-                        className="w-full accent-purple-600"
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-500"
                       />
+                      <div className="flex justify-between mt-2 text-xs text-gray-500">
+                        <span>Minimal</span>
+                        <span>Balanced</span>
+                        <span>Active</span>
+                      </div>
                     </div>
+                  </div>
 
-                    <button
-                      onClick={handleSavePreferences}
-                      disabled={saving}
-                      className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all disabled:opacity-50"
+                  {/* Content Style */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Your Voice
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        { value: 'authentic', label: 'Authentic', icon: Heart },
+                        { value: 'educational', label: 'Educational', icon: Coffee },
+                        { value: 'entertaining', label: 'Entertaining', icon: Sparkles },
+                        { value: 'aspirational', label: 'Aspirational', icon: Zap }
+                      ].map((style) => {
+                        const Icon = style.icon
+                        return (
+                          <button
+                            key={style.value}
+                            onClick={() => setPreferences({ ...preferences, content_style: style.value as any })}
+                            className={`flex items-center gap-3 p-4 rounded-lg border-2 transition-all ${
+                              preferences.content_style === style.value
+                                ? 'border-purple-400 bg-purple-50'
+                                : 'border-gray-200 hover:border-gray-300'
+                            }`}
+                          >
+                            <Icon className={`w-5 h-5 ${
+                              preferences.content_style === style.value ? 'text-purple-600' : 'text-gray-400'
+                            }`} />
+                            <span className={`font-medium ${
+                              preferences.content_style === style.value ? 'text-purple-700' : 'text-gray-700'
+                            }`}>
+                              {style.label}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Primary Goal */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Your Intention
+                    </label>
+                    <select
+                      value={preferences.primary_goal}
+                      onChange={(e) => setPreferences({ ...preferences, primary_goal: e.target.value as any })}
+                      className="w-full p-4 bg-white border border-gray-200 rounded-lg text-gray-700 focus:border-purple-400 focus:outline-none"
                     >
-                      {saving ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Save className="w-4 h-4" />
-                      )}
-                      <span>{saving ? 'Saving...' : 'Save Preferences'}</span>
+                      <option value="growth">Organic Growth</option>
+                      <option value="engagement">Deep Connections</option>
+                      <option value="brand_partnerships">Meaningful Partnerships</option>
+                      <option value="sales">Sustainable Business</option>
+                    </select>
+                  </div>
+
+                  <WellnessButton 
+                    onClick={handleSavePreferences}
+                    disabled={saving}
+                    variant="calm"
+                    className="w-full"
+                  >
+                    {saving ? 'Saving...' : 'Save Preferences'}
+                  </WellnessButton>
+                </div>
+              </WellnessCard>
+            </motion.div>
+          )}
+
+          {activeTab === 'peace' && (
+            <motion.div
+              key="peace"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-6"
+            >
+              <WellnessCard>
+                <h3 className="text-xl font-medium text-gray-800 mb-6">
+                  Notification Wellness
+                </h3>
+                
+                <div className="space-y-4">
+                  {[
+                    { 
+                      id: 'essential', 
+                      label: 'Essential Updates Only', 
+                      desc: 'Critical algorithm changes and urgent matters',
+                      icon: Bell
+                    },
+                    { 
+                      id: 'weekly', 
+                      label: 'Weekly Digest', 
+                      desc: 'A calm summary of your progress, delivered Sundays',
+                      icon: Clock
+                    },
+                    { 
+                      id: 'opportunities', 
+                      label: 'Mindful Opportunities', 
+                      desc: 'Curated brand partnerships that align with your values',
+                      icon: Sparkles
+                    },
+                    { 
+                      id: 'silence', 
+                      label: 'Complete Silence', 
+                      desc: 'No notifications. Check when you\'re ready.',
+                      icon: VolumeX
+                    }
+                  ].map((notification) => {
+                    const Icon = notification.icon
+                    return (
+                      <div key={notification.id} className="flex items-center justify-between p-5 bg-gray-50 rounded-lg">
+                        <div className="flex items-start gap-4">
+                          <Icon className="w-5 h-5 text-purple-500 mt-0.5" />
+                          <div>
+                            <div className="font-medium text-gray-800">{notification.label}</div>
+                            <div className="text-sm text-gray-600 mt-1">{notification.desc}</div>
+                          </div>
+                        </div>
+                        <button
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            notification.id === 'weekly' ? 'bg-purple-500' : 'bg-gray-300'
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              notification.id === 'weekly' ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              </WellnessCard>
+            </motion.div>
+          )}
+
+          {activeTab === 'identity' && (
+            <motion.div
+              key="identity"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-6"
+            >
+              <WellnessCard>
+                <h3 className="text-xl font-medium text-gray-800 mb-6">
+                  Your Authentic Self
+                </h3>
+                
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Name
+                    </label>
+                    <input
+                      type="text"
+                      value={profileForm.full_name}
+                      onChange={(e) => setProfileForm({ ...profileForm, full_name: e.target.value })}
+                      className="w-full p-4 bg-white border border-gray-200 rounded-lg text-gray-700 focus:border-purple-400 focus:outline-none"
+                      placeholder="How you'd like to be known"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Email Sanctuary
+                    </label>
+                    <input
+                      type="email"
+                      value={profileForm.email}
+                      onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+                      className="w-full p-4 bg-white border border-gray-200 rounded-lg text-gray-700 focus:border-purple-400 focus:outline-none"
+                      placeholder="Your private space"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Your Niche
+                    </label>
+                    <select
+                      value={preferences.niche}
+                      onChange={(e) => setPreferences({ ...preferences, niche: e.target.value })}
+                      className="w-full p-4 bg-white border border-gray-200 rounded-lg text-gray-700 focus:border-purple-400 focus:outline-none"
+                    >
+                      <option value="lifestyle">Lifestyle</option>
+                      <option value="wellness">Wellness & Mindfulness</option>
+                      <option value="creativity">Creative Expression</option>
+                      <option value="education">Knowledge Sharing</option>
+                      <option value="business">Conscious Business</option>
+                      <option value="parenting">Mindful Parenting</option>
+                      <option value="travel">Slow Travel</option>
+                      <option value="food">Nourishment</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+
+                  <WellnessButton 
+                    onClick={handleSaveProfile}
+                    disabled={saving}
+                    variant="calm"
+                    className="w-full"
+                  >
+                    {saving ? 'Saving...' : 'Update Identity'}
+                  </WellnessButton>
+                </div>
+              </WellnessCard>
+            </motion.div>
+          )}
+
+          {activeTab === 'protection' && (
+            <motion.div
+              key="protection"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-6"
+            >
+              <WellnessCard>
+                <h3 className="text-xl font-medium text-gray-800 mb-6">
+                  Your Safe Space
+                </h3>
+                
+                <div className="space-y-6">
+                  <div className="p-4 bg-blue-50 rounded-lg">
+                    <p className="text-sm text-blue-800">
+                      Your data is sacred. We protect it with enterprise-grade encryption and never share it without your explicit consent.
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between py-3">
+                      <span className="text-gray-700">Two-factor authentication</span>
+                      <span className="text-green-600 text-sm font-medium">Active</span>
+                    </div>
+                    <div className="flex items-center justify-between py-3">
+                      <span className="text-gray-700">Data encryption</span>
+                      <span className="text-green-600 text-sm font-medium">256-bit AES</span>
+                    </div>
+                    <div className="flex items-center justify-between py-3">
+                      <span className="text-gray-700">Last security review</span>
+                      <span className="text-gray-600 text-sm">2 days ago</span>
+                    </div>
+                  </div>
+
+                  <div className="pt-6 border-t border-gray-200">
+                    <button 
+                      onClick={handleLogout}
+                      className="text-gray-600 hover:text-gray-800 font-medium transition-colors"
+                    >
+                      Sign out peacefully
                     </button>
                   </div>
                 </div>
-              )}
-
-              {activeTab === 'notifications' && (
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-6">Notification Settings</h2>
-                  
-                  <div className="space-y-4">
-                    {[
-                      { id: 'algorithm', label: 'Algorithm Changes', desc: 'Get notified when Instagram algorithm changes are detected' },
-                      { id: 'trends', label: 'Trending Topics', desc: 'Weekly digest of trending topics in your niche' },
-                      { id: 'partnerships', label: 'Brand Opportunities', desc: 'New brand partnership matches' },
-                      { id: 'performance', label: 'Performance Updates', desc: 'Weekly performance reports' }
-                    ].map((notification) => (
-                      <div key={notification.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                        <div>
-                          <div className="font-medium text-gray-900">{notification.label}</div>
-                          <div className="text-sm text-gray-600">{notification.desc}</div>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input type="checkbox" className="sr-only peer" defaultChecked />
-                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {activeTab === 'billing' && (
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-6">Billing & Plans</h2>
-                  
-                  <div className="space-y-6">
-                    <div className="p-6 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg">
-                      <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <h3 className="font-bold text-lg text-gray-900">
-                            {profile?.subscription_tier === 'pro' ? 'Pro Manager Plan' : 'Growth Starter Plan'}
-                          </h3>
-                          <p className="text-gray-600">
-                            {profile?.subscription_tier === 'pro' ? '$49/month' : '$19/month'}
-                          </p>
-                        </div>
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          profile?.subscription_status === 'active' 
-                            ? 'bg-green-100 text-green-700' 
-                            : 'bg-gray-100 text-gray-700'
-                        }`}>
-                          {profile?.subscription_status || 'Inactive'}
-                        </span>
-                      </div>
-                      
-                      <div className="space-y-2 text-sm text-gray-600">
-                        <div className="flex items-center space-x-2">
-                          <span>✓</span>
-                          <span>AI-generated content plans</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <span>✓</span>
-                          <span>Real-time trend monitoring</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <span>✓</span>
-                          <span>Algorithm change detection</span>
-                        </div>
-                        {profile?.subscription_tier === 'pro' && (
-                          <>
-                            <div className="flex items-center space-x-2">
-                              <span>✓</span>
-                              <span>Advanced brand matching</span>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <span>✓</span>
-                              <span>1:1 monthly strategy calls</span>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    {profile?.subscription_tier !== 'pro' && (
-                      <button className="w-full px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all">
-                        Upgrade to Pro
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {activeTab === 'privacy' && (
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-6">Privacy & Security</h2>
-                  
-                  <div className="space-y-6">
-                    <div>
-                      <h3 className="font-medium text-gray-900 mb-3">Instagram Permissions</h3>
-                      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                        <p className="text-sm text-blue-800">
-                          Social Echelon has access to your Instagram Business Account data including posts, insights, and basic profile information. 
-                          This data is used solely to provide personalized content recommendations and analytics.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h3 className="font-medium text-gray-900 mb-3">Data Usage</h3>
-                      <ul className="space-y-2 text-sm text-gray-600">
-                        <li>• Your data is never shared with third parties</li>
-                        <li>• All data is encrypted in transit and at rest</li>
-                        <li>• You can request data deletion at any time</li>
-                        <li>• We comply with GDPR and privacy regulations</li>
-                      </ul>
-                    </div>
-
-                    <div className="border-t pt-6">
-                      <button className="text-red-600 hover:text-red-700 font-medium">
-                        Delete My Account
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === 'help' && (
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-6">Help & Support</h2>
-                  
-                  <div className="space-y-6">
-                    <div>
-                      <h3 className="font-medium text-gray-900 mb-3">Get Help</h3>
-                      <div className="space-y-3">
-                        <a href="#" className="block p-4 border border-gray-200 rounded-lg hover:border-purple-300 transition-colors">
-                          <div className="font-medium text-gray-900">Documentation</div>
-                          <div className="text-sm text-gray-600">Learn how to use Social Echelon</div>
-                        </a>
-                        <a href="#" className="block p-4 border border-gray-200 rounded-lg hover:border-purple-300 transition-colors">
-                          <div className="font-medium text-gray-900">FAQs</div>
-                          <div className="text-sm text-gray-600">Find answers to common questions</div>
-                        </a>
-                        <a href="mailto:support@socialechelon.com" className="block p-4 border border-gray-200 rounded-lg hover:border-purple-300 transition-colors">
-                          <div className="font-medium text-gray-900">Email Support</div>
-                          <div className="text-sm text-gray-600">support@socialechelon.com</div>
-                        </a>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h3 className="font-medium text-gray-900 mb-3">Feature Requests</h3>
-                      <p className="text-sm text-gray-600">
-                        Have an idea for a new feature? We'd love to hear from you! Send your suggestions to feedback@socialechelon.com
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+              </WellnessCard>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   )

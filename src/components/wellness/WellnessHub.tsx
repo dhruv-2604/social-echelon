@@ -32,6 +32,7 @@ interface WellnessHubProps {
 export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }: WellnessHubProps) {
   const [showRealMetrics, setShowRealMetrics] = useState(false)
   const [scrolledDown, setScrolledDown] = useState(false)
+  const [scrollProgress, setScrollProgress] = useState(0)
   const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d'>('7d')
   const [loading, setLoading] = useState(false)
   const [profile, setProfile] = useState(initialProfile)
@@ -135,6 +136,9 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }
   useEffect(() => {
     const handleScroll = () => {
       setScrolledDown(window.scrollY > 100)
+      // Calculate scroll progress for progressive reveal
+      const scrollPercentage = Math.min(window.scrollY / 500, 1)
+      setScrollProgress(scrollPercentage)
     }
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
@@ -166,61 +170,52 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }
   return (
     <div className="min-h-screen">
       <div className="max-w-6xl mx-auto px-4 py-4">
-        {/* Ultra Minimal Hero - Just the essentials */}
+        {/* Minimal Hero - Just greeting */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1, ease: "easeOut" }}
-          className="mb-20 text-center pt-16"
+          className="min-h-[60vh] flex items-center justify-center text-center"
         >
-          <motion.div 
-            className="mb-8"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.8 }}
-          >
-            <h1 className="text-3xl font-light text-gray-700 mb-2">
+          <div>
+            <motion.h1 
+              className="text-5xl font-light text-gray-700 mb-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.8 }}
+            >
               {greeting}, <span className="text-gray-900">{profile?.instagram_username || 'Creator'}</span>
-            </h1>
+            </motion.h1>
             <motion.p 
-              className="text-gray-500 text-lg"
+              className="text-gray-500 text-xl"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5, duration: 0.8 }}
             >
-              Everything is handled
+              Scroll to see your wellness dashboard
             </motion.p>
-          </motion.div>
-          
-          {/* Single focus metric - the most important one */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.8, duration: 0.6 }}
-            className="inline-block"
-          >
-            <div className="glass-card px-8 py-6 rounded-2xl">
-              <div className="flex items-center gap-6">
-                <div className="text-left">
-                  <p className="text-sm text-gray-500 mb-1">Growth today</p>
-                  <p className="text-2xl font-light text-green-600">+{followersChange > 0 ? followersChange : 12}</p>
-                </div>
-                <div className="w-px h-12 bg-gray-200" />
-                <div className="text-left">
-                  <p className="text-sm text-gray-500 mb-1">Time saved</p>
-                  <p className="text-2xl font-light text-purple-600">{hoursReclaimed}h</p>
-                </div>
-              </div>
-            </div>
-          </motion.div>
+            
+            {/* Subtle scroll indicator */}
+            <motion.div
+              className="mt-12"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.5, y: [0, 10, 0] }}
+              transition={{ 
+                opacity: { delay: 1.2, duration: 0.5 },
+                y: { delay: 1.5, repeat: Infinity, duration: 1.5 }
+              }}
+            >
+              <ChevronDown className="w-6 h-6 text-gray-400 mx-auto" />
+            </motion.div>
+          </div>
         </motion.div>
 
-        {/* Subtle Time Control - Appears after hero */}
+        {/* Time Control - Appears on scroll */}
         <motion.div 
           className="flex justify-center items-center mb-12"
           initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.5, duration: 0.6 }}
+          animate={{ opacity: scrollProgress > 0.3 ? 1 : 0 }}
+          transition={{ duration: 0.6 }}
         >
           <div className="flex items-center gap-1 text-sm">
             <button
@@ -300,17 +295,23 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }
                 </div>
               )}
               
-              {/* Main Stats - Delayed appearance with smooth fade */}
+              {/* Main Stats - Appear on scroll */}
               <motion.div 
                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 1.8, duration: 0.8 }}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ 
+                  opacity: scrollProgress > 0.2 ? 1 : 0,
+                  y: scrollProgress > 0.2 ? 0 : 30
+                }}
+                transition={{ duration: 0.8 }}
               >
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 2.0, duration: 0.6 }}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ 
+                    opacity: scrollProgress > 0.25 ? 1 : 0,
+                    y: scrollProgress > 0.25 ? 0 : 20
+                  }}
+                  transition={{ duration: 0.6 }}
                 >
                 <WellnessCard className="bg-gradient-to-br from-purple-50 to-white">
                   <div className="flex items-start justify-between">
@@ -336,9 +337,12 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }
                 </motion.div>
 
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 2.2, duration: 0.6 }}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ 
+                    opacity: scrollProgress > 0.3 ? 1 : 0,
+                    y: scrollProgress > 0.3 ? 0 : 20
+                  }}
+                  transition={{ duration: 0.6 }}
                 >
                 <WellnessCard className="bg-gradient-to-br from-blue-50 to-white">
                   <div className="flex items-start justify-between">
@@ -364,9 +368,12 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }
                 </motion.div>
 
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 2.4, duration: 0.6 }}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ 
+                    opacity: scrollProgress > 0.35 ? 1 : 0,
+                    y: scrollProgress > 0.35 ? 0 : 20
+                  }}
+                  transition={{ duration: 0.6 }}
                 >
                 <WellnessCard className="bg-gradient-to-br from-green-50 to-white">
                   <div className="flex items-start justify-between">
@@ -383,9 +390,12 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }
                 </motion.div>
 
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 2.6, duration: 0.6 }}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ 
+                    opacity: scrollProgress > 0.4 ? 1 : 0,
+                    y: scrollProgress > 0.4 ? 0 : 20
+                  }}
+                  transition={{ duration: 0.6 }}
                 >
                 <WellnessCard className="bg-gradient-to-br from-yellow-50 to-white">
                   <div className="flex items-start justify-between">
@@ -405,8 +415,16 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }
                 </motion.div>
               </motion.div>
 
-              {/* Detailed Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Detailed Stats - Appear later on scroll */}
+              <motion.div 
+                className="grid grid-cols-1 md:grid-cols-2 gap-6"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ 
+                  opacity: scrollProgress > 0.5 ? 1 : 0,
+                  y: scrollProgress > 0.5 ? 0 : 30
+                }}
+                transition={{ duration: 0.8 }}
+              >
                 <WellnessCard>
                   <h3 className="text-lg font-medium text-gray-800 mb-4">Engagement Breakdown</h3>
                   <div className="space-y-3">
@@ -459,7 +477,7 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }
                     </div>
                   </div>
                 </WellnessCard>
-              </div>
+              </motion.div>
             </motion.div>
           ) : (
             /* Wellness View - Cleaner and more spacious */
@@ -470,12 +488,15 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }
               exit={{ opacity: 0 }}
               className="space-y-12"
             >
-              {/* Wellness Stats - Gentle fade in after scroll */}
+              {/* Wellness Stats - Shows time saved prominently */}
               <motion.div 
                 className="grid grid-cols-1 md:grid-cols-3 gap-8"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 2.0, duration: 1 }}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ 
+                  opacity: scrollProgress > 0.15 ? 1 : 0,
+                  y: scrollProgress > 0.15 ? 0 : 30
+                }}
+                transition={{ duration: 0.8 }}
               >
                 <WellnessCard className="bg-gradient-to-br from-purple-50 to-white">
                   <div className="flex items-start justify-between">
@@ -517,11 +538,14 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }
                 </WellnessCard>
               </motion.div>
 
-              {/* Today's Summary - Appears last */}
+              {/* Today's Summary - Appears on deeper scroll */}
               <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 2.5, duration: 0.8 }}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ 
+                  opacity: scrollProgress > 0.6 ? 1 : 0,
+                  y: scrollProgress > 0.6 ? 0 : 30
+                }}
+                transition={{ duration: 0.8 }}
               >
               <WellnessCard className="bg-gradient-to-br from-white to-purple-50/30" glow>
                 <h2 className="text-xl font-light text-gray-800 mb-4">
@@ -557,24 +581,7 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }
           )}
         </AnimatePresence>
 
-        {/* Scroll Indicator - Only shows on wellness view */}
-        {!showRealMetrics && !scrolledDown && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed bottom-8 left-1/2 transform -translate-x-1/2"
-          >
-            <motion.div
-              animate={{ y: [0, 10, 0] }}
-              transition={{ repeat: Infinity, duration: 1.5 }}
-              className="flex flex-col items-center gap-2 text-gray-500"
-            >
-              <span className="text-sm">Scroll for quick metrics</span>
-              <ChevronDown className="w-5 h-5" />
-            </motion.div>
-          </motion.div>
-        )}
+        {/* Remove old scroll indicator - we have one in the hero now */}
 
         {/* Quick Metrics Bar - Shows on scroll */}
         {scrolledDown && !showRealMetrics && (
@@ -610,12 +617,14 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }
           </motion.div>
         )}
 
-        {/* Minimal Action - Appears very last */}
+        {/* Action section - Appears on full scroll */}
         <motion.div 
           className="text-center mt-16 mb-8"
           initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 3, duration: 0.8 }}
+          animate={{ 
+            opacity: scrollProgress > 0.8 ? 1 : 0
+          }}
+          transition={{ duration: 0.8 }}
         >
           <div className="flex gap-4 justify-center">
             <WellnessButton variant="ghost" size="md">
