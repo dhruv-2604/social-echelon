@@ -205,7 +205,7 @@ export async function GET(request: NextRequest) {
         .from('profiles')
         .select('instagram_token')
         .eq('id', userId)
-        .single()
+        .single() as { data: { instagram_token: string } | null; error: any }
 
       if (tokenData?.instagram_token) {
         const instagramApi = new InstagramAPI(tokenData.instagram_token)
