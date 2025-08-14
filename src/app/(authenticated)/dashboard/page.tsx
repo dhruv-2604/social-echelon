@@ -70,7 +70,7 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[var(--wellness-purple-light)] via-white to-[var(--wellness-blue-light)]">
+      <div className="min-h-screen flex items-center justify-center">
         <BreathingLoader 
           text="Preparing your wellness space..." 
           size="lg"
@@ -81,7 +81,7 @@ export default function Dashboard() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[var(--wellness-purple-light)] via-white to-[var(--wellness-blue-light)]">
+      <div className="min-h-screen flex items-center justify-center">
         <WellnessCard className="max-w-md mx-auto text-center">
           <div className="space-y-4">
             <div className="text-6xl">🌿</div>

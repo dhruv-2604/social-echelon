@@ -164,7 +164,7 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }
   }, [timeRange])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50/30 via-white to-blue-50/30">
+    <div className="min-h-screen">
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Greeting Section */}
         <motion.div

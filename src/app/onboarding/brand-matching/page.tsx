@@ -201,7 +201,7 @@ export default function BrandMatchingOnboarding() {
   )
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50/30 via-white to-blue-50/30 py-12">
+    <div className="min-h-screen py-12">
       <div className="max-w-3xl mx-auto px-6">
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
