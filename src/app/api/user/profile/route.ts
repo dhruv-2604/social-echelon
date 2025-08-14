@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 
 export const dynamic = 'force-dynamic'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { InstagramAPI } from '@/lib/instagram'
 
 export async function GET(request: NextRequest) {
   try {
@@ -197,13 +198,33 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Try to fetch Instagram insights if token is available
+    let insights = null
+    try {
+      const { data: tokenData } = await supabaseAdmin
+        .from('profiles')
+        .select('instagram_token')
+        .eq('id', userId)
+        .single()
+
+      if (tokenData?.instagram_token) {
+        const instagramApi = new InstagramAPI(tokenData.instagram_token)
+        insights = await instagramApi.getAccountInsights()
+        console.log('Fetched Instagram insights:', insights)
+      }
+    } catch (insightsError) {
+      console.error('Failed to fetch Instagram insights:', insightsError)
+      // Don't fail the whole request if insights fail
+    }
+
     return NextResponse.json({
       profile: {
         ...typedProfile,
         engagement_rate: calculatedEngagementRate
       },
       posts: posts || [],
-      metrics
+      metrics,
+      insights
     })
 
   } catch (error) {

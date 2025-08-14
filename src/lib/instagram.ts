@@ -198,19 +198,40 @@ export class InstagramAPI {
     }
   }
 
-  async getAccountInsights(): Promise<any> {
+  async getAccountInsights(): Promise<{
+    impressions: number
+    reach: number
+    profile_views: number
+    period: string
+  }> {
     const instagramAccountId = await this.getInstagramBusinessAccount()
     
+    // Get insights for the last 2 days to ensure we have data
     const response = await fetch(
-      `${FACEBOOK_GRAPH_URL}/${instagramAccountId}/insights?metric=impressions,reach,profile_views&period=day&since=30&access_token=${this.accessToken}`
+      `${FACEBOOK_GRAPH_URL}/${instagramAccountId}/insights?metric=impressions,reach,profile_views&period=day&access_token=${this.accessToken}`
     )
 
     const data = await response.json()
     
     if (!response.ok) {
+      console.error('Account insights error:', data)
       throw new Error(data.error?.message || 'Failed to fetch account insights')
     }
 
-    return data.data || []
+    // Parse the response to extract the latest values
+    const insights: any = {
+      impressions: 0,
+      reach: 0,
+      profile_views: 0,
+      period: 'day'
+    }
+
+    data.data?.forEach((metric: any) => {
+      // Get the most recent value (last element in values array)
+      const latestValue = metric.values?.[metric.values.length - 1]?.value || 0
+      insights[metric.name] = latestValue
+    })
+
+    return insights
   }
 }

@@ -37,6 +37,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [metrics, setMetrics] = useState<any>(null)
+  const [insights, setInsights] = useState<any>(null)
 
   useEffect(() => {
     async function fetchUserData() {
@@ -58,6 +59,7 @@ export default function Dashboard() {
         setProfile(data.profile)
         setPosts(data.posts)
         setMetrics(data.metrics)
+        setInsights(data.insights)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred')
       } finally {
@@ -104,5 +106,5 @@ export default function Dashboard() {
     )
   }
 
-  return <WellnessHub profile={profile} metrics={{ ...metrics, posts }} />
+  return <WellnessHub profile={profile} metrics={{ ...metrics, posts }} insights={insights} />
 }

@@ -27,9 +27,15 @@ import {
 interface WellnessHubProps {
   profile: any
   metrics?: any
+  insights?: {
+    impressions: number
+    reach: number
+    profile_views: number
+    period: string
+  }
 }
 
-export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }: WellnessHubProps) {
+export function WellnessHub({ profile: initialProfile, metrics: initialMetrics, insights }: WellnessHubProps) {
   const [showRealMetrics, setShowRealMetrics] = useState(false)
   const [scrolledDown, setScrolledDown] = useState(false)
   const [scrollProgress, setScrollProgress] = useState(0)
@@ -37,6 +43,7 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }
   const [loading, setLoading] = useState(false)
   const [profile, setProfile] = useState(initialProfile)
   const [metrics, setMetrics] = useState(initialMetrics)
+  const [currentInsights, setCurrentInsights] = useState(insights)
   
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
@@ -124,8 +131,8 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }
       })
     }
 
-    // Profile visits - now using real data if available, otherwise show as "Limited data"
-    const profileVisits = 0 // Will be updated when profile_views API is available
+    // Profile visits - use real data from Instagram insights if available
+    const profileVisits = currentInsights?.profile_views || 0
 
     return { bestTime, topType, profileVisits }
   }
@@ -155,6 +162,7 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }
           const data = await response.json()
           setProfile(data.profile)
           setMetrics({ ...data.metrics, posts: data.posts, timeRange })
+          setCurrentInsights(data.insights)
         }
       } catch (error) {
         console.error('Error fetching metrics:', error)
@@ -462,12 +470,20 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }
                       <span className="font-medium text-gray-800">{performanceTrends.topType}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Engagement Rate</span>
-                      <span className="font-medium text-gray-800">{engagementRate.toFixed(2)}%</span>
+                      <span className="text-gray-600">Profile Views</span>
+                      <span className="font-medium text-gray-800">
+                        {performanceTrends.profileVisits > 0 
+                          ? `${performanceTrends.profileVisits.toLocaleString()}/day` 
+                          : 'No data yet'}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Avg. Engagement</span>
-                      <span className="font-medium text-gray-800">{(avgLikes + avgComments).toLocaleString()}</span>
+                      <span className="text-gray-600">Daily Reach</span>
+                      <span className="font-medium text-gray-800">
+                        {currentInsights?.reach 
+                          ? currentInsights.reach.toLocaleString() 
+                          : 'No data yet'}
+                      </span>
                     </div>
                     <div className="mt-3 pt-3 border-t border-gray-200">
                       <p className="text-xs text-gray-500">
