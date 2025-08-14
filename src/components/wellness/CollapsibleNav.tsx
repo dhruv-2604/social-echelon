@@ -18,33 +18,27 @@ import {
 
 export function CollapsibleNav() {
   const [isExpanded, setIsExpanded] = useState(false)
-  const [greeting, setGreeting] = useState('')
-  const [icon, setIcon] = useState<React.ReactNode>(null)
+  const [isVisible, setIsVisible] = useState(true)
+  const [lastScrollY, setLastScrollY] = useState(0)
   const pathname = usePathname()
   
   useEffect(() => {
-    const updateGreeting = () => {
-      const hour = new Date().getHours()
-      if (hour < 12) {
-        setGreeting('Good morning')
-        setIcon(<Sun className="w-4 h-4" />)
-      } else if (hour < 17) {
-        setGreeting('Good afternoon')
-        setIcon(<Coffee className="w-4 h-4" />)
-      } else if (hour < 21) {
-        setGreeting('Good evening')
-        setIcon(<Moon className="w-4 h-4" />)
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY
+      
+      // Show nav when scrolling up, hide when scrolling down
+      if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        setIsVisible(false) // Scrolling down
       } else {
-        setGreeting('Good night')
-        setIcon(<Sparkles className="w-4 h-4" />)
+        setIsVisible(true) // Scrolling up
       }
+      
+      setLastScrollY(currentScrollY)
     }
     
-    updateGreeting()
-    const interval = setInterval(updateGreeting, 60000) // Update every minute
-    
-    return () => clearInterval(interval)
-  }, [])
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [lastScrollY])
   
   const navItems = [
     { href: '/dashboard', label: 'Wellness Hub', icon: <Home className="w-4 h-4" /> },
@@ -55,107 +49,100 @@ export function CollapsibleNav() {
   ]
   
   return (
-    <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50">
+    <motion.div 
+      className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50"
+      initial={{ y: 0 }}
+      animate={{ 
+        y: isVisible ? 0 : -100,
+        transition: { duration: 0.3, ease: 'easeInOut' }
+      }}
+    >
       <motion.div
         onMouseEnter={() => setIsExpanded(true)}
         onMouseLeave={() => setIsExpanded(false)}
         initial={false}
-        animate={{
-          width: isExpanded ? 'auto' : 'auto',
-          transition: { duration: 0.3, ease: 'easeInOut' }
-        }}
         className="relative"
       >
         <motion.div
-          className="glass-card px-6 py-3 rounded-full flex items-center gap-3 cursor-pointer"
+          className="glass-card rounded-full flex items-center cursor-pointer"
           style={{
             background: 'rgba(255, 255, 255, 0.95)',
             backdropFilter: 'blur(10px)',
             border: '1px solid rgba(255, 255, 255, 0.8)',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08), 0 0 40px rgba(139, 127, 191, 0.1)'
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08), 0 0 40px rgba(139, 127, 191, 0.1)',
+            minHeight: '48px',
+            paddingLeft: '24px',
+            paddingRight: '24px',
+            paddingTop: '12px',
+            paddingBottom: '12px'
           }}
         >
-          {/* Always visible greeting */}
-          <div className="flex items-center gap-2 text-gray-700">
-            <motion.div
-              animate={{ rotate: isExpanded ? 180 : 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              {icon}
-            </motion.div>
-            <span className="font-light">{greeting}</span>
-          </div>
-          
-          {/* Expandable menu items */}
-          <AnimatePresence>
-            {isExpanded && (
-              <motion.div
-                initial={{ opacity: 0, width: 0 }}
-                animate={{ opacity: 1, width: 'auto' }}
-                exit={{ opacity: 0, width: 0 }}
-                transition={{ duration: 0.3, ease: 'easeInOut' }}
-                className="flex items-center gap-1 overflow-hidden"
-              >
-                <div className="w-px h-6 bg-gray-300 mx-2" />
-                {navItems.map((item, index) => (
-                  <motion.div
-                    key={item.href}
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ delay: index * 0.05 }}
-                  >
-                    <Link
-                      href={item.href}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
-                        pathname === item.href
-                          ? 'bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700'
-                          : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
-                      }`}
-                    >
-                      {item.icon}
-                      <span className="text-sm font-medium whitespace-nowrap">{item.label}</span>
-                    </Link>
-                  </motion.div>
-                ))}
-                
-                {/* Logout button */}
+          {/* Always visible - Social Echelon branding */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-gradient-to-r from-purple-400 to-pink-400 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">SE</span>
+              </div>
+              <span className="font-medium text-gray-800 whitespace-nowrap">Social Echelon</span>
+            </div>
+            
+            {/* Expandable menu items */}
+            <AnimatePresence>
+              {isExpanded && (
                 <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ delay: navItems.length * 0.05 }}
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={{ opacity: 1, width: 'auto' }}
+                  exit={{ opacity: 0, width: 0 }}
+                  transition={{ duration: 0.3, ease: 'easeInOut' }}
+                  className="flex items-center gap-1 overflow-hidden"
                 >
-                  <button
-                    onClick={() => {
-                      document.cookie = 'user_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
-                      window.location.href = '/'
-                    }}
-                    className="flex items-center gap-2 px-4 py-2 rounded-full hover:bg-red-50 text-gray-600 hover:text-red-600 transition-all ml-2"
+                  <div className="w-px h-6 bg-gray-300 mx-3" />
+                  {navItems.map((item, index) => (
+                    <motion.div
+                      key={item.href}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={{ delay: index * 0.03 }}
+                    >
+                      <Link
+                        href={item.href}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all ${
+                          pathname === item.href
+                            ? 'bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700'
+                            : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
+                        }`}
+                      >
+                        {item.icon}
+                        <span className="text-sm font-medium whitespace-nowrap">{item.label}</span>
+                      </Link>
+                    </motion.div>
+                  ))}
+                  
+                  {/* Logout button */}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{ delay: navItems.length * 0.03 }}
                   >
-                    <LogOut className="w-4 h-4" />
-                    <span className="text-sm font-medium">Logout</span>
-                  </button>
+                    <button
+                      onClick={() => {
+                        document.cookie = 'user_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+                        window.location.href = '/'
+                      }}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-red-50 text-gray-600 hover:text-red-600 transition-all ml-2"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span className="text-sm font-medium">Logout</span>
+                    </button>
+                  </motion.div>
                 </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              )}
+            </AnimatePresence>
+          </div>
         </motion.div>
-        
-        {/* Subtle hint on first visit */}
-        <AnimatePresence>
-          {!isExpanded && (
-            <motion.div
-              initial={{ opacity: 0, y: -5 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -5 }}
-              className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs text-gray-400 whitespace-nowrap"
-            >
-              Hover for menu
-            </motion.div>
-          )}
-        </AnimatePresence>
       </motion.div>
-    </div>
+    </motion.div>
   )
 }
