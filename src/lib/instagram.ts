@@ -204,14 +204,19 @@ export class InstagramAPI {
     profile_views: number
     period: string
   }> {
+    console.log('Getting account insights...')
     const instagramAccountId = await this.getInstagramBusinessAccount()
+    console.log('Instagram Business Account ID:', instagramAccountId)
     
     // Get insights for the last 2 days to ensure we have data
-    const response = await fetch(
-      `${FACEBOOK_GRAPH_URL}/${instagramAccountId}/insights?metric=impressions,reach,profile_views&period=day&access_token=${this.accessToken}`
-    )
-
+    const url = `${FACEBOOK_GRAPH_URL}/${instagramAccountId}/insights?metric=impressions,reach,profile_views&period=day&access_token=${this.accessToken}`
+    console.log('Fetching insights from:', url.replace(this.accessToken, 'TOKEN_HIDDEN'))
+    
+    const response = await fetch(url)
     const data = await response.json()
+    
+    console.log('Insights API response status:', response.status)
+    console.log('Insights API response:', JSON.stringify(data, null, 2))
     
     if (!response.ok) {
       console.error('Account insights error:', data)
@@ -230,8 +235,10 @@ export class InstagramAPI {
       // Get the most recent value (last element in values array)
       const latestValue = metric.values?.[metric.values.length - 1]?.value || 0
       insights[metric.name] = latestValue
+      console.log(`Metric ${metric.name}: ${latestValue}`)
     })
 
+    console.log('Parsed insights:', insights)
     return insights
   }
 }

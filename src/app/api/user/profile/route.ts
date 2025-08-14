@@ -200,22 +200,37 @@ export async function GET(request: NextRequest) {
 
     // Try to fetch Instagram insights if token is available
     let insights = null
+    console.log('Attempting to fetch Instagram insights for user:', userId)
+    
     try {
-      const { data: tokenData } = await supabaseAdmin
+      const { data: tokenData, error: tokenError } = await supabaseAdmin
         .from('user_tokens')
         .select('instagram_access_token')
         .eq('user_id', userId)
-        .single() as { data: { instagram_access_token: string } | null; error: any }
+        .single()
 
-      if (tokenData?.instagram_access_token) {
-        const instagramApi = new InstagramAPI(tokenData.instagram_access_token)
+      console.log('Token query result:', { 
+        hasToken: !!(tokenData as any)?.instagram_access_token,
+        tokenError,
+        tokenLength: (tokenData as any)?.instagram_access_token?.length 
+      })
+
+      if (tokenError) {
+        console.log('Token fetch error:', tokenError)
+      } else if ((tokenData as any)?.instagram_access_token) {
+        console.log('Found token, attempting to fetch insights...')
+        const instagramApi = new InstagramAPI((tokenData as any).instagram_access_token)
         insights = await instagramApi.getAccountInsights()
-        console.log('Fetched Instagram insights:', insights)
+        console.log('Successfully fetched Instagram insights:', insights)
       } else {
         console.log('No Instagram token found for user:', userId)
       }
     } catch (insightsError) {
       console.error('Failed to fetch Instagram insights:', insightsError)
+      console.error('Error details:', {
+        message: insightsError instanceof Error ? insightsError.message : 'Unknown error',
+        stack: insightsError instanceof Error ? insightsError.stack : undefined
+      })
       // Don't fail the whole request if insights fail
     }
 
