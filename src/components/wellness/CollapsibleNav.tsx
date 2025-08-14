@@ -10,9 +10,6 @@ import {
   Users, 
   Settings, 
   LogOut,
-  Sun,
-  Moon,
-  Coffee,
   Sparkles
 } from 'lucide-react'
 
@@ -50,8 +47,7 @@ export function CollapsibleNav() {
   
   return (
     <motion.div 
-      className="fixed top-4 left-1/2 z-50"
-      style={{ transform: 'translateX(-50%)' }}
+      className="fixed top-4 w-full z-50 flex justify-center"
       initial={{ y: 0 }}
       animate={{ 
         y: isVisible ? 0 : -100,
@@ -61,120 +57,79 @@ export function CollapsibleNav() {
       <motion.div
         onMouseEnter={() => setIsExpanded(true)}
         onMouseLeave={() => setIsExpanded(false)}
-        className="relative"
+        className="glass-card rounded-full cursor-pointer overflow-hidden"
+        animate={{
+          width: isExpanded ? '600px' : '180px',
+          transition: { 
+            duration: 0.4, 
+            ease: [0.4, 0, 0.2, 1]
+          }
+        }}
+        style={{
+          background: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(255, 255, 255, 0.8)',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08), 0 0 40px rgba(139, 127, 191, 0.1)',
+          height: '48px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
       >
-        {/* Expanded menu background */}
-        <motion.div
-          className="absolute top-0 left-1/2 rounded-full"
-          initial={false}
-          animate={{
-            scaleX: isExpanded ? 1 : 0,
-            opacity: isExpanded ? 1 : 0,
-            x: '-50%',
-          }}
-          transition={{ 
-            duration: 0.5, 
-            ease: [0.4, 0, 0.2, 1]
-          }}
-          style={{
-            background: 'rgba(255, 255, 255, 0.95)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255, 255, 255, 0.8)',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08), 0 0 40px rgba(139, 127, 191, 0.1)',
-            height: '48px',
-            width: '600px',
-            transformOrigin: 'center',
-          }}
-        />
-        
-        {/* Collapsed state background */}
-        <motion.div
-          className="absolute top-0 left-1/2 rounded-full"
-          initial={false}
-          animate={{
-            scaleX: isExpanded ? 0 : 1,
-            opacity: isExpanded ? 0 : 1,
-            x: '-50%',
-          }}
-          transition={{ 
-            duration: 0.5, 
-            ease: [0.4, 0, 0.2, 1]
-          }}
-          style={{
-            background: 'rgba(255, 255, 255, 0.95)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255, 255, 255, 0.8)',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08), 0 0 40px rgba(139, 127, 191, 0.1)',
-            height: '48px',
-            width: '180px',
-            transformOrigin: 'center',
-          }}
-        />
-        
-        {/* Content container */}
-        <div 
-          className="relative h-12 flex items-center justify-center cursor-pointer"
-          style={{ 
-            minWidth: '180px',
-            width: isExpanded ? '600px' : '180px',
-            transition: 'width 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
-          }}
-        >
-          <AnimatePresence mode="wait">
-            {!isExpanded ? (
-              /* Show Social Echelon when collapsed */
-              <motion.div
-                key="brand"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-                className="absolute"
-              >
-                <span className="font-medium text-gray-800 whitespace-nowrap">Social Echelon</span>
-              </motion.div>
-            ) : (
-              /* Show menu items when expanded */
-              <motion.div
-                key="menu"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-                className="flex items-center gap-2 px-6"
-              >
-                {navItems.map((item, index) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all ${
-                      pathname === item.href
-                        ? 'bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700'
-                        : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    {item.icon}
-                    <span className="text-sm font-medium whitespace-nowrap">{item.label}</span>
-                  </Link>
-                ))}
-                
-                <div className="w-px h-6 bg-gray-300 mx-2" />
-                
-                {/* Logout button */}
-                <button
-                  onClick={() => {
-                    document.cookie = 'user_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
-                    window.location.href = '/'
-                  }}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-red-50 text-gray-600 hover:text-red-600 transition-all"
+        <AnimatePresence mode="wait">
+          {!isExpanded ? (
+            /* Show Social Echelon when collapsed */
+            <motion.div
+              key="brand"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="px-6"
+            >
+              <span className="font-medium text-gray-800 whitespace-nowrap">Social Echelon</span>
+            </motion.div>
+          ) : (
+            /* Show menu items when expanded */
+            <motion.div
+              key="menu"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="flex items-center gap-2 px-6"
+            >
+              {navItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all ${
+                    pathname === item.href
+                      ? 'bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700'
+                      : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
+                  }`}
                 >
-                  <LogOut className="w-4 h-4" />
-                  <span className="text-sm font-medium">Logout</span>
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+                  {item.icon}
+                  <span className="text-sm font-medium whitespace-nowrap">{item.label}</span>
+                </Link>
+              ))}
+              
+              <div className="w-px h-6 bg-gray-300 mx-2" />
+              
+              {/* Logout button */}
+              <button
+                onClick={() => {
+                  document.cookie = 'user_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+                  window.location.href = '/'
+                }}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-red-50 text-gray-600 hover:text-red-600 transition-all"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="text-sm font-medium">Logout</span>
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     </motion.div>
   )
