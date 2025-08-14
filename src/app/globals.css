@@ -108,73 +108,26 @@
   pointer-events: none;
 }
 
-/* Gradient overlays for depth */
-.gradient-overlay-top {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 30vh;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.7) 0%,
-    rgba(255, 255, 255, 0.3) 40%,
-    transparent 100%
-  );
-  z-index: -1;
-  pointer-events: none;
-}
+/* Removed gradient overlays - they were causing uneven background visibility */
 
-.gradient-overlay-bottom {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 20vh;
-  background: linear-gradient(
-    0deg,
-    rgba(255, 255, 255, 0.8) 0%,
-    rgba(255, 255, 255, 0.4) 50%,
-    transparent 100%
-  );
-  z-index: -1;
-  pointer-events: none;
-}
-
-/* Colorful gradient mesh overlay */
-.gradient-mesh {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100vh;
-  z-index: -1;
-  background: 
-    radial-gradient(circle at 20% 30%, rgba(139, 127, 191, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(94, 205, 195, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 40% 70%, rgba(255, 214, 98, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 90% 80%, rgba(255, 180, 162, 0.12) 0%, transparent 50%),
-    radial-gradient(circle at 10% 90%, rgba(165, 216, 255, 0.15) 0%, transparent 50%);
-  pointer-events: none;
-}
 
 /* Glass morphism cards with backdrop blur */
 .glass-card {
-  background: rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.85);  /* More opaque for better text readability */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
   box-shadow: 
-    0 8px 32px rgba(31, 38, 135, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    0 4px 20px rgba(0, 0, 0, 0.08),
+    0 0 40px rgba(139, 127, 191, 0.05);
   transition: all 0.3s ease;
 }
 
 .glass-card:hover {
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.9);
   box-shadow: 
-    0 12px 48px rgba(31, 38, 135, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    0 8px 30px rgba(0, 0, 0, 0.12),
+    0 0 60px rgba(139, 127, 191, 0.08);
   transform: translateY(-2px);
 }
 
@@ -212,10 +165,10 @@ body {
 
 /* Apply glass effect to existing wellness cards */
 .wellness-card {
-  background: rgba(255, 255, 255, 0.8) !important;
-  backdrop-filter: blur(15px) saturate(150%);
-  -webkit-backdrop-filter: blur(15px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.9) !important;  /* More opaque for readability */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
 }
 
 /* Navigation glass effect */
