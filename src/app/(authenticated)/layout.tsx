@@ -1,6 +1,6 @@
 'use client'
 
-import { WellnessNav } from '@/components/wellness/WellnessNav'
+import { CollapsibleNav } from '@/components/wellness/CollapsibleNav'
 
 export default function AuthenticatedLayout({
   children,
@@ -9,8 +9,8 @@ export default function AuthenticatedLayout({
 }) {
   return (
     <>
-      <WellnessNav />
-      <main className="min-h-screen">
+      <CollapsibleNav />
+      <main className="min-h-screen pt-20">
         {children}
       </main>
     </>

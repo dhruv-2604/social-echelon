@@ -165,28 +165,43 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }
 
   return (
     <div className="min-h-screen">
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* Greeting Section */}
+      <div className="max-w-6xl mx-auto px-4 py-4">
+        {/* Simplified Greeting Section - More spacious */}
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="mb-12 text-center pt-8"
         >
-          <div className="flex items-center gap-3 mb-2">
+          <motion.div 
+            className="inline-flex items-center gap-3 mb-4"
+            animate={{ scale: [1, 1.05, 1] }}
+            transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+          >
             {icon}
-            <h1 className="text-3xl font-light text-gray-800">
+            <h1 className="text-4xl font-light text-gray-800">
               {greeting}, <span className="font-medium">{profile?.instagram_username || 'Creator'}</span>
             </h1>
-          </div>
-          <p className="text-gray-600 text-lg">
+          </motion.div>
+          <motion.p 
+            className="text-gray-600 text-xl"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
             Your wellness assistant handled everything while you rested
-          </p>
+          </motion.p>
         </motion.div>
 
-        {/* Controls Section - Time Range and View Toggle */}
-        <div className="flex justify-between items-center mb-6">
-          {/* Time Range Selector */}
-          <div className="flex items-center gap-2 bg-white/80 backdrop-blur rounded-full p-1 border border-gray-200">
+        {/* Controls Section - More subtle and centered */}
+        <motion.div 
+          className="flex justify-center items-center mb-10"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          {/* Time Range Selector - Centered */}
+          <div className="flex items-center gap-2 bg-white/80 backdrop-blur rounded-full p-1 border border-gray-200/50 shadow-sm">
             <button
               onClick={() => setTimeRange('24h')}
               className={`px-4 py-2 rounded-full text-sm transition-all ${
@@ -230,25 +245,30 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }
               </span>
             </button>
           </div>
-
-          {/* View Toggle */}
-          <button
-            onClick={() => setShowRealMetrics(!showRealMetrics)}
-            className="flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur rounded-full border border-gray-200 hover:bg-gray-50 transition-all"
-          >
-            {showRealMetrics ? (
-              <>
-                <EyeOff className="w-4 h-4" />
-                <span className="text-sm">Show Wellness View</span>
-              </>
-            ) : (
-              <>
-                <Eye className="w-4 h-4" />
-                <span className="text-sm">Show Real Metrics</span>
-              </>
-            )}
-          </button>
-        </div>
+        </motion.div>
+        
+        {/* View Toggle - Subtle floating button */}
+        <motion.button
+          onClick={() => setShowRealMetrics(!showRealMetrics)}
+          className="fixed bottom-8 right-8 flex items-center gap-2 px-4 py-3 bg-white/90 backdrop-blur rounded-full border border-gray-200/50 hover:bg-white shadow-lg transition-all z-30"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.8 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          {showRealMetrics ? (
+            <>
+              <EyeOff className="w-4 h-4 text-purple-600" />
+              <span className="text-sm font-medium text-gray-700">Wellness View</span>
+            </>
+          ) : (
+            <>
+              <Eye className="w-4 h-4 text-purple-600" />
+              <span className="text-sm font-medium text-gray-700">Real Metrics</span>
+            </>
+          )}
+        </motion.button>
 
         <AnimatePresence mode="wait">
           {showRealMetrics ? (
@@ -266,8 +286,18 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }
                 </div>
               )}
               
-              {/* Main Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {/* Main Stats - With staggered animation */}
+              <motion.div 
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                >
                 <WellnessCard className="bg-gradient-to-br from-purple-50 to-white">
                   <div className="flex items-start justify-between">
                     <div>
@@ -289,7 +319,13 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }
                     <Users className="w-5 h-5 text-purple-400" />
                   </div>
                 </WellnessCard>
+                </motion.div>
 
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                >
                 <WellnessCard className="bg-gradient-to-br from-blue-50 to-white">
                   <div className="flex items-start justify-between">
                     <div>
@@ -311,7 +347,13 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }
                     <Activity className="w-5 h-5 text-blue-400" />
                   </div>
                 </WellnessCard>
+                </motion.div>
 
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                >
                 <WellnessCard className="bg-gradient-to-br from-green-50 to-white">
                   <div className="flex items-start justify-between">
                     <div>
@@ -324,7 +366,13 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }
                     <Heart className="w-5 h-5 text-green-400" />
                   </div>
                 </WellnessCard>
+                </motion.div>
 
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 }}
+                >
                 <WellnessCard className="bg-gradient-to-br from-yellow-50 to-white">
                   <div className="flex items-start justify-between">
                     <div>
@@ -340,7 +388,8 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }
                     <BarChart3 className="w-5 h-5 text-yellow-400" />
                   </div>
                 </WellnessCard>
-              </div>
+                </motion.div>
+              </motion.div>
 
               {/* Detailed Stats */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -399,16 +448,21 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }
               </div>
             </motion.div>
           ) : (
-            /* Wellness View */
+            /* Wellness View - Cleaner and more spacious */
             <motion.div
               key="wellness-metrics"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="space-y-6"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="space-y-12"
             >
-              {/* Wellness Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Wellness Stats - With fade in */}
+              <motion.div 
+                className="grid grid-cols-1 md:grid-cols-3 gap-8"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, staggerChildren: 0.1 }}
+              >
                 <WellnessCard className="bg-gradient-to-br from-purple-50 to-white">
                   <div className="flex items-start justify-between">
                     <div>
