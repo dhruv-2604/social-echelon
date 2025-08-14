@@ -111,24 +111,26 @@
 /* Removed gradient overlays - they were causing uneven background visibility */
 
 
-/* Glass morphism cards with backdrop blur */
+/* Optimized glass cards - less backdrop-filter for performance */
 .glass-card {
-  background: rgba(255, 255, 255, 0.85);  /* More opaque for better text readability */
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.92);  /* More opaque, less need for blur */
+  backdrop-filter: blur(4px);  /* Reduced blur for performance */
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
   box-shadow: 
-    0 4px 20px rgba(0, 0, 0, 0.08),
-    0 0 40px rgba(139, 127, 191, 0.05);
-  transition: all 0.3s ease;
+    0 2px 12px rgba(0, 0, 0, 0.06),
+    0 0 20px rgba(139, 127, 191, 0.03);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;  /* Only animate what changes */
+  transform: translateZ(0);  /* Force GPU layer */
+  will-change: transform;  /* Optimize for animations */
 }
 
 .glass-card:hover {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   box-shadow: 
-    0 8px 30px rgba(0, 0, 0, 0.12),
-    0 0 60px rgba(139, 127, 191, 0.08);
-  transform: translateY(-2px);
+    0 4px 20px rgba(0, 0, 0, 0.08),
+    0 0 30px rgba(139, 127, 191, 0.05);
+  transform: translateY(-2px) translateZ(0);
 }
 
 /* Enhanced glass effect for main content areas */
@@ -161,22 +163,43 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   position: relative;
   min-height: 100vh;
+  /* Performance optimizations */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
 }
 
-/* Apply glass effect to existing wellness cards */
+/* Optimize scrolling performance */
+* {
+  /* Prevent unnecessary repaints */
+  -webkit-backface-visibility: hidden;
+  -moz-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* Disable expensive effects on scroll */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Optimized wellness cards */
 .wellness-card {
-  background: rgba(255, 255, 255, 0.9) !important;  /* More opaque for readability */
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.94) !important;  /* Very opaque, minimal blur needed */
+  backdrop-filter: blur(3px);  /* Minimal blur for performance */
+  -webkit-backdrop-filter: blur(3px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  transform: translateZ(0);  /* GPU acceleration */
 }
 
-/* Navigation glass effect */
+/* Optimized navigation */
 nav, header {
-  background: rgba(255, 255, 255, 0.85) !important;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.92) !important;
+  backdrop-filter: blur(5px);  /* Reduced blur */
+  -webkit-backdrop-filter: blur(5px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+  transform: translateZ(0);  /* GPU acceleration */
 }
 
 /* Ensure the variables are accessible */

@@ -30,12 +30,11 @@ export function WellnessCard({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
-      whileHover={hover ? { y: -4 } : {}}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+      whileHover={hover ? { y: -2 } : {}}  // Smaller hover movement
       className={cn(
         'glass-card rounded-2xl',
-        'transition-all duration-300',
-        hover && 'hover:shadow-xl',
+        hover && 'hover:shadow-lg',  // Removed duplicate transition
         glow && 'wellness-gradient p-[1px]',
         paddings[padding],
         className

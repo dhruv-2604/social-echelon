@@ -13,19 +13,18 @@ export function BackgroundEffect() {
   
   return (
     <>
-      {/* Nature background - fixed, uniform visibility */}
-      <div className="fixed inset-0 z-[-3]">
-        <div 
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `url('https://images.pexels.com/photos/1166209/pexels-photo-1166209.jpeg')`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundAttachment: 'fixed',
-            opacity: 0.4,  // Much more visible now
-          }}
-        />
-      </div>
+      {/* Nature background - optimized for performance */}
+      <div 
+        className="fixed inset-0 z-[-3]"
+        style={{
+          backgroundImage: `url('https://images.pexels.com/photos/1166209/pexels-photo-1166209.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          opacity: 0.4,
+          transform: 'translateZ(0)',  // Force GPU acceleration
+          backfaceVisibility: 'hidden',  // Prevent flickering
+        }}
+      />
       
       {/* Subtle white overlay for text readability */}
       <div 
