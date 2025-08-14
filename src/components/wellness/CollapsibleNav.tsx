@@ -61,18 +61,21 @@ export function CollapsibleNav() {
         onMouseEnter={() => setIsExpanded(true)}
         onMouseLeave={() => setIsExpanded(false)}
         initial={false}
-        className="relative"
       >
         <motion.div
           className="glass-card rounded-full flex items-center justify-center cursor-pointer"
+          animate={{
+            width: isExpanded ? 'auto' : '180px',
+            transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] }
+          }}
           style={{
             background: 'rgba(255, 255, 255, 0.95)',
             backdropFilter: 'blur(10px)',
             border: '1px solid rgba(255, 255, 255, 0.8)',
             boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08), 0 0 40px rgba(139, 127, 191, 0.1)',
             height: '48px',
-            paddingLeft: '24px',
-            paddingRight: '24px'
+            padding: '0 24px',
+            minWidth: '180px'
           }}
         >
           <AnimatePresence mode="wait">
@@ -80,10 +83,10 @@ export function CollapsibleNav() {
               /* Show Social Echelon when collapsed */
               <motion.div
                 key="brand"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
               >
                 <span className="font-medium text-gray-800 whitespace-nowrap">Social Echelon</span>
               </motion.div>
@@ -91,10 +94,10 @@ export function CollapsibleNav() {
               /* Show menu items when expanded */
               <motion.div
                 key="menu"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
                 className="flex items-center gap-2"
               >
                 {navItems.map((item, index) => (
