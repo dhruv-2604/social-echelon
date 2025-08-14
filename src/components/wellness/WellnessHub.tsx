@@ -31,6 +31,9 @@ interface WellnessHubProps {
     impressions: number
     reach: number
     profile_views: number
+    accounts_engaged?: number
+    total_interactions?: number
+    website_clicks?: number
     period: string
   }
 }

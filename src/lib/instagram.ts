@@ -202,6 +202,9 @@ export class InstagramAPI {
     impressions: number
     reach: number
     profile_views: number
+    accounts_engaged: number
+    total_interactions: number
+    website_clicks: number
     period: string
   }> {
     console.log('Getting account insights...')
@@ -209,9 +212,9 @@ export class InstagramAPI {
     console.log('Instagram Business Account ID:', instagramAccountId)
     
     // Use valid metrics for account insights
-    // According to the error, valid metrics include: reach, profile_views, website_clicks, follower_count, etc.
-    // We'll use reach and profile_views which are what we need
-    const url = `${FACEBOOK_GRAPH_URL}/${instagramAccountId}/insights?metric=reach,profile_views,website_clicks&period=day&access_token=${this.accessToken}`
+    // Note: impressions is NOT valid at account level, only at media level
+    // Using: reach, profile_views, website_clicks, accounts_engaged, total_interactions
+    const url = `${FACEBOOK_GRAPH_URL}/${instagramAccountId}/insights?metric=reach,profile_views,website_clicks,accounts_engaged,total_interactions&period=day&access_token=${this.accessToken}`
     console.log('Fetching insights from:', url.replace(this.accessToken, 'TOKEN_HIDDEN'))
     
     const response = await fetch(url)
@@ -227,9 +230,12 @@ export class InstagramAPI {
 
     // Parse the response to extract the latest values
     const insights: any = {
-      impressions: 0, // We'll use reach as a proxy since impressions isn't available at account level
+      impressions: 0, // Will use total_interactions as a better proxy
       reach: 0,
       profile_views: 0,
+      accounts_engaged: 0,
+      total_interactions: 0,
+      website_clicks: 0,
       period: 'day'
     }
 
@@ -243,11 +249,12 @@ export class InstagramAPI {
       // Get the most recent value (last element in values array)
       const latestValue = metric.values?.[metric.values.length - 1]?.value || 0
       
-      if (metric.name === 'reach') {
-        insights.reach = latestValue
-        insights.impressions = latestValue // Use reach as proxy for impressions
-      } else if (metric.name === 'profile_views') {
-        insights.profile_views = latestValue
+      // Store the metric value
+      insights[metric.name] = latestValue
+      
+      // Use total_interactions as a better proxy for impressions
+      if (metric.name === 'total_interactions') {
+        insights.impressions = latestValue
       }
       
       console.log(`Metric ${metric.name}: ${latestValue}`)
