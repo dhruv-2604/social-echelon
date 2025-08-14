@@ -50,7 +50,8 @@ export function CollapsibleNav() {
   
   return (
     <motion.div 
-      className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50"
+      className="fixed top-4 left-1/2 z-50"
+      style={{ transform: 'translateX(-50%)' }}
       initial={{ y: 0 }}
       animate={{ 
         y: isVisible ? 0 : -100,
@@ -60,13 +61,20 @@ export function CollapsibleNav() {
       <motion.div
         onMouseEnter={() => setIsExpanded(true)}
         onMouseLeave={() => setIsExpanded(false)}
-        initial={false}
+        className="relative"
       >
+        {/* Expanded menu background */}
         <motion.div
-          className="glass-card rounded-full flex items-center justify-center cursor-pointer"
+          className="absolute top-0 left-1/2 rounded-full"
+          initial={false}
           animate={{
-            width: isExpanded ? 'auto' : '180px',
-            transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] }
+            scaleX: isExpanded ? 1 : 0,
+            opacity: isExpanded ? 1 : 0,
+            x: '-50%',
+          }}
+          transition={{ 
+            duration: 0.5, 
+            ease: [0.4, 0, 0.2, 1]
           }}
           style={{
             background: 'rgba(255, 255, 255, 0.95)',
@@ -74,8 +82,42 @@ export function CollapsibleNav() {
             border: '1px solid rgba(255, 255, 255, 0.8)',
             boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08), 0 0 40px rgba(139, 127, 191, 0.1)',
             height: '48px',
-            padding: '0 24px',
-            minWidth: '180px'
+            width: '600px',
+            transformOrigin: 'center',
+          }}
+        />
+        
+        {/* Collapsed state background */}
+        <motion.div
+          className="absolute top-0 left-1/2 rounded-full"
+          initial={false}
+          animate={{
+            scaleX: isExpanded ? 0 : 1,
+            opacity: isExpanded ? 0 : 1,
+            x: '-50%',
+          }}
+          transition={{ 
+            duration: 0.5, 
+            ease: [0.4, 0, 0.2, 1]
+          }}
+          style={{
+            background: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255, 255, 255, 0.8)',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08), 0 0 40px rgba(139, 127, 191, 0.1)',
+            height: '48px',
+            width: '180px',
+            transformOrigin: 'center',
+          }}
+        />
+        
+        {/* Content container */}
+        <div 
+          className="relative h-12 flex items-center justify-center cursor-pointer"
+          style={{ 
+            minWidth: '180px',
+            width: isExpanded ? '600px' : '180px',
+            transition: 'width 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
           }}
         >
           <AnimatePresence mode="wait">
@@ -87,6 +129,7 @@ export function CollapsibleNav() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                className="absolute"
               >
                 <span className="font-medium text-gray-800 whitespace-nowrap">Social Echelon</span>
               </motion.div>
@@ -98,7 +141,7 @@ export function CollapsibleNav() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 px-6"
               >
                 {navItems.map((item, index) => (
                   <Link
@@ -131,7 +174,7 @@ export function CollapsibleNav() {
               </motion.div>
             )}
           </AnimatePresence>
-        </motion.div>
+        </div>
       </motion.div>
     </motion.div>
   )
