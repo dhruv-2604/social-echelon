@@ -233,6 +233,12 @@ export class InstagramAPI {
       period: 'day'
     }
 
+    // Check if we got an empty response (common for accounts with < 100 followers)
+    if (!data.data || data.data.length === 0) {
+      console.log('No insights data available (account may have < 100 followers)')
+      return insights
+    }
+
     data.data?.forEach((metric: any) => {
       // Get the most recent value (last element in values array)
       const latestValue = metric.values?.[metric.values.length - 1]?.value || 0

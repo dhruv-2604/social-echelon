@@ -472,17 +472,21 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics, 
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600">Profile Views</span>
                       <span className="font-medium text-gray-800">
-                        {performanceTrends.profileVisits > 0 
-                          ? `${performanceTrends.profileVisits.toLocaleString()}/day` 
-                          : 'No data yet'}
+                        {followers < 100 
+                          ? <span className="text-sm text-gray-500">Requires 100+ followers</span>
+                          : performanceTrends.profileVisits > 0 
+                            ? `${performanceTrends.profileVisits.toLocaleString()}/day` 
+                            : 'No data yet'}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600">Daily Reach</span>
                       <span className="font-medium text-gray-800">
-                        {currentInsights?.reach 
-                          ? currentInsights.reach.toLocaleString() 
-                          : 'No data yet'}
+                        {followers < 100
+                          ? <span className="text-sm text-gray-500">Requires 100+ followers</span>
+                          : currentInsights?.reach 
+                            ? currentInsights.reach.toLocaleString() 
+                            : 'No data yet'}
                       </span>
                     </div>
                     <div className="mt-3 pt-3 border-t border-gray-200">
