@@ -13,7 +13,8 @@ import {
   Sun,
   Cloud,
   Wind,
-  TreePine
+  TreePine,
+  TrendingUp
 } from 'lucide-react'
 import { WellnessCard } from '@/components/wellness/WellnessCard'
 import { WellnessButton } from '@/components/wellness/WellnessButton'
@@ -54,7 +55,7 @@ export default function TrendGardenPage() {
   const [loading, setLoading] = useState(true)
   const [niche, setNiche] = useState('lifestyle')
   const [refreshing, setRefreshing] = useState(false)
-  const [selectedSeason, setSelectedSeason] = useState<'growing' | 'blooming' | 'harvest'>('growing')
+  const [showAll, setShowAll] = useState(true)
 
   useEffect(() => {
     fetchTrends()
@@ -83,10 +84,10 @@ export default function TrendGardenPage() {
     fetchTrends()
   }
 
-  const getTrendGrowthStage = (score: number) => {
-    if (score > 80) return { stage: 'Blooming', icon: Flower2, color: 'text-pink-600 bg-pink-50' }
-    if (score > 50) return { stage: 'Growing', icon: Leaf, color: 'text-green-600 bg-green-50' }
-    return { stage: 'Seedling', icon: TreePine, color: 'text-blue-600 bg-blue-50' }
+  const getTrendStatus = (score: number) => {
+    if (score > 80) return { label: `${score}% Hot`, icon: Zap, color: 'text-red-600 bg-red-50' }
+    if (score > 50) return { label: `${score}% Trending`, icon: TrendingUp, color: 'text-orange-600 bg-orange-50' }
+    return { label: `${score}% Growing`, icon: Sparkles, color: 'text-blue-600 bg-blue-50' }
   }
 
   if (loading && !refreshing) {
@@ -135,20 +136,20 @@ export default function TrendGardenPage() {
         >
           {/* Niche Selector */}
           <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600">Garden Type:</label>
+            <label className="text-sm text-gray-600">Your Niche:</label>
             <select
               value={niche}
               onChange={(e) => setNiche(e.target.value)}
               className="px-4 py-2 bg-white border border-gray-200 rounded-full text-gray-700 focus:border-purple-400 focus:outline-none"
             >
-              <option value="lifestyle">Lifestyle Garden</option>
-              <option value="wellness">Wellness Grove</option>
-              <option value="fashion">Style Meadow</option>
-              <option value="fitness">Vitality Field</option>
-              <option value="beauty">Beauty Bloom</option>
-              <option value="food">Nourishment Patch</option>
-              <option value="travel">Journey Trail</option>
-              <option value="creativity">Creative Sanctuary</option>
+              <option value="lifestyle">Lifestyle</option>
+              <option value="fashion">Fashion</option>
+              <option value="fitness">Fitness</option>
+              <option value="beauty">Beauty</option>
+              <option value="food">Food</option>
+              <option value="travel">Travel</option>
+              <option value="tech">Tech</option>
+              <option value="business">Business</option>
             </select>
           </div>
 
@@ -159,53 +160,10 @@ export default function TrendGardenPage() {
             className="px-4 py-2 bg-white/80 backdrop-blur rounded-full border border-gray-200 hover:bg-white transition-all flex items-center gap-2"
           >
             <RefreshCw className={`w-4 h-4 text-purple-600 ${refreshing ? 'animate-spin' : ''}`} />
-            <span className="text-gray-700">Refresh Garden</span>
+            <span className="text-gray-700">Refresh</span>
           </button>
         </motion.div>
 
-        {/* Season Tabs */}
-        <motion.div 
-          className="flex justify-center mb-8"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-        >
-          <div className="inline-flex gap-2 p-1 bg-white/80 backdrop-blur rounded-full border border-gray-200/50">
-            <button
-              onClick={() => setSelectedSeason('growing')}
-              className={`px-6 py-2 rounded-full transition-all ${
-                selectedSeason === 'growing'
-                  ? 'bg-green-100 text-green-700'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <Leaf className="w-4 h-4 inline mr-2" />
-              Growing
-            </button>
-            <button
-              onClick={() => setSelectedSeason('blooming')}
-              className={`px-6 py-2 rounded-full transition-all ${
-                selectedSeason === 'blooming'
-                  ? 'bg-pink-100 text-pink-700'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <Flower2 className="w-4 h-4 inline mr-2" />
-              Blooming
-            </button>
-            <button
-              onClick={() => setSelectedSeason('harvest')}
-              className={`px-6 py-2 rounded-full transition-all ${
-                selectedSeason === 'harvest'
-                  ? 'bg-amber-100 text-amber-700'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <Sun className="w-4 h-4 inline mr-2" />
-              Ready to Harvest
-            </button>
-          </div>
-        </motion.div>
 
         {/* Insights Garden */}
         {insights?.hot_topics && insights.hot_topics.length > 0 && (
@@ -251,17 +209,11 @@ export default function TrendGardenPage() {
           </motion.div>
         )}
 
-        {/* Trend Seeds Grid */}
+        {/* Trending Topics Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-          {xTrends
-            .filter(trend => {
-              if (selectedSeason === 'blooming') return trend.trending_score > 80
-              if (selectedSeason === 'harvest') return trend.trending_score > 50
-              return trend.trending_score <= 50
-            })
-            .map((trend, idx) => {
-              const growth = getTrendGrowthStage(trend.trending_score)
-              const GrowthIcon = growth.icon
+          {xTrends.map((trend, idx) => {
+              const status = getTrendStatus(trend.trending_score)
+              const StatusIcon = status.icon
               
               return (
                 <motion.div
@@ -273,38 +225,38 @@ export default function TrendGardenPage() {
                   <WellnessCard hover>
                     <div className="flex items-start justify-between mb-4">
                       <h3 className="text-lg font-medium text-gray-800">{trend.query}</h3>
-                      <span className={`px-3 py-1 rounded-full text-sm flex items-center gap-1 ${growth.color}`}>
-                        <GrowthIcon className="w-4 h-4" />
-                        {growth.stage}
+                      <span className={`px-3 py-1 rounded-full text-sm flex items-center gap-1 ${status.color}`}>
+                        <StatusIcon className="w-4 h-4" />
+                        {status.label}
                       </span>
                     </div>
                     
-                    {/* Growth Metrics */}
+                    {/* Trend Metrics */}
                     <div className="grid grid-cols-3 gap-3 mb-4">
                       <div className="text-center">
                         <div className="text-xl font-light text-gray-800">
                           {(trend.avg_engagement / 1000).toFixed(1)}K
                         </div>
-                        <div className="text-xs text-gray-500">Engagement</div>
+                        <div className="text-xs text-gray-500">Avg Engagement</div>
                       </div>
                       <div className="text-center">
                         <div className="text-xl font-light text-gray-800">
                           {trend.trending_score}%
                         </div>
-                        <div className="text-xs text-gray-500">Growth Rate</div>
+                        <div className="text-xs text-gray-500">Trending Score</div>
                       </div>
                       <div className="text-center">
                         <div className="text-xl font-light text-gray-800">
                           {trend.top_tweets.length}
                         </div>
-                        <div className="text-xs text-gray-500">Seeds</div>
+                        <div className="text-xs text-gray-500">Top Posts</div>
                       </div>
                     </div>
 
-                    {/* Growing Tips */}
+                    {/* Success Factors */}
                     {trend.content_insights.viral_elements.length > 0 && (
                       <div className="p-3 bg-green-50 rounded-lg">
-                        <p className="text-sm font-medium text-gray-700 mb-2">Growing Tips:</p>
+                        <p className="text-sm font-medium text-gray-700 mb-2">What's Working:</p>
                         <div className="space-y-1">
                           {trend.content_insights.viral_elements.slice(0, 2).map((element, eIdx) => (
                             <p key={eIdx} className="text-sm text-gray-600 flex items-center gap-2">
@@ -316,10 +268,10 @@ export default function TrendGardenPage() {
                       </div>
                     )}
 
-                    {/* Sample Inspiration */}
+                    {/* Top Tweet Example */}
                     {trend.top_tweets.length > 0 && (
                       <div className="mt-4 p-3 bg-purple-50 rounded-lg">
-                        <p className="text-xs text-purple-700 mb-1">Inspiration seed:</p>
+                        <p className="text-xs text-purple-700 mb-1">Top performing example:</p>
                         <p className="text-sm text-gray-700 line-clamp-2">
                           {trend.top_tweets[0].content}
                         </p>
