@@ -6,13 +6,32 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin'
 export const dynamic = 'force-dynamic'
 import { AlertManager } from '@/lib/algorithm/alert-manager'
 
-// POST /api/algorithm/detect - Run anomaly detection (protected endpoint)
-export async function POST(request: NextRequest) {
+// GET /api/algorithm/detect - Run anomaly detection (Vercel cron endpoint)
+export async function GET(request: NextRequest) {
   try {
-    // This endpoint should be protected - only allow from cron jobs
+    // Check if this is a test request
+    const url = new URL(request.url)
+    const testMode = url.searchParams.get('test') === 'true'
+    
+    if (testMode) {
+      // For testing, run detection immediately
+      const detector = new AnomalyDetector()
+      const changes = await detector.detectChanges()
+
+      return NextResponse.json({
+        success: true,
+        test_mode: true,
+        changes_detected: changes.length,
+        changes: changes
+      })
+    }
+    
+    // Check if this is a Vercel cron job request
     const authHeader = request.headers.get('authorization')
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    
+    // For Vercel crons, check the authorization header if CRON_SECRET is set
+    if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      return NextResponse.json({ error: 'This endpoint is for scheduled jobs only' }, { status: 403 })
     }
 
     console.log('Starting algorithm detection via queue...')
@@ -93,25 +112,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
-
-// GET /api/algorithm/detect - Manual trigger for testing
-export async function GET(request: NextRequest) {
-  const url = new URL(request.url)
-  const testMode = url.searchParams.get('test') === 'true'
-  
-  if (!testMode) {
-    return NextResponse.json({ error: 'This endpoint is for scheduled jobs only' }, { status: 403 })
-  }
-
-  // For testing, run detection immediately
-  const detector = new AnomalyDetector()
-  const changes = await detector.detectChanges()
-
-  return NextResponse.json({
-    success: true,
-    test_mode: true,
-    changes_detected: changes.length,
-    changes: changes
-  })
 }

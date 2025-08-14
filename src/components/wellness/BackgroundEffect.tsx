@@ -34,14 +34,15 @@ export function BackgroundEffect() {
             backgroundImage: `url('https://images.pexels.com/photos/1166209/pexels-photo-1166209.jpeg')`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            filter: 'blur(2px) brightness(1.1)',
+            filter: 'blur(0.5px) brightness(1.2) saturate(1.2)',
+            opacity: 0.75,
           }}
         />
         <motion.div 
           className="absolute inset-0"
           style={{
-            opacity: overlayOpacity,
-            backgroundColor: 'rgba(255, 255, 255, 0.3)',
+            opacity: 0.2,
+            backgroundColor: 'rgba(255, 255, 255, 0.2)',
           }}
         />
       </motion.div>

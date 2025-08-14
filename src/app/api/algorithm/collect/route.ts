@@ -3,16 +3,47 @@ import { NextRequest, NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
 import { PerformanceCollector } from '@/lib/algorithm/performance-collector'
 
-// POST /api/algorithm/collect - Daily performance collection (runs once per day)
-export async function POST(request: NextRequest) {
+// GET /api/algorithm/collect - Daily performance collection (runs once per day)
+// Vercel crons call GET endpoints, not POST
+export async function GET(request: NextRequest) {
   try {
-    // Protected endpoint - only allow from cron jobs
+    // Check if this is a Vercel cron job request
     const authHeader = request.headers.get('authorization')
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    
+    // For Vercel crons, check the authorization header if CRON_SECRET is set
+    // Otherwise allow the request (Vercel manages cron security)
+    if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      // Not a cron request, check for test mode
+      const url = new URL(request.url)
+      const testMode = url.searchParams.get('test') === 'true'
+      
+      if (!testMode) {
+        return NextResponse.json({ error: 'This endpoint is for scheduled jobs only' }, { status: 403 })
+      }
+      
+      // Test mode - collect for current user only
+      const { cookies } = await import('next/headers')
+      const cookieStore = await cookies()
+      const userId = cookieStore.get('user_id')?.value
+
+      if (!userId) {
+        return NextResponse.json({ error: 'Not authenticated for test mode' }, { status: 401 })
+      }
+
+      console.log('Running test collection for user:', userId)
+      const collector = new PerformanceCollector()
+      const summary = await collector.collectDailySummary(userId)
+
+      return NextResponse.json({
+        success: true,
+        mode: 'test',
+        summary,
+        message: 'Test collection completed'
+      })
     }
 
-    console.log('Starting daily performance collection...')
+    // This is a cron job request - collect for all users
+    console.log('Starting daily performance collection (cron job)...')
 
     const collector = new PerformanceCollector()
     await collector.collectAllUsersSummaries()
@@ -26,44 +57,9 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Performance collection error:', error)
     return NextResponse.json(
-      { error: 'Failed to collect performance data' },
+      { error: 'Failed to collect performance data', details: error },
       { status: 500 }
     )
   }
 }
 
-// GET /api/algorithm/collect?test=true - Manual trigger for testing
-export async function GET(request: NextRequest) {
-  const url = new URL(request.url)
-  const testMode = url.searchParams.get('test') === 'true'
-  
-  if (!testMode) {
-    return NextResponse.json({ error: 'This endpoint is for scheduled jobs only' }, { status: 403 })
-  }
-
-  // For testing, collect data for the current user
-  const { cookies } = await import('next/headers')
-  const cookieStore = await cookies()
-  const userId = cookieStore.get('user_id')?.value
-
-  if (!userId) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
-  }
-
-  const collector = new PerformanceCollector()
-  const summary = await collector.collectDailySummary(userId)
-
-  if (!summary) {
-    return NextResponse.json({ error: 'Failed to collect data' }, { status: 500 })
-  }
-
-  // Also get trend
-  const trend = await collector.getUserTrend(userId)
-
-  return NextResponse.json({
-    success: true,
-    summary,
-    trend,
-    message: 'Test collection completed'
-  })
-}
