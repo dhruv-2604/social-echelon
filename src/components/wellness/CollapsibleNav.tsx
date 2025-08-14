@@ -64,83 +64,70 @@ export function CollapsibleNav() {
         className="relative"
       >
         <motion.div
-          className="glass-card rounded-full flex items-center cursor-pointer"
+          className="glass-card rounded-full flex items-center justify-center cursor-pointer"
           style={{
             background: 'rgba(255, 255, 255, 0.95)',
             backdropFilter: 'blur(10px)',
             border: '1px solid rgba(255, 255, 255, 0.8)',
             boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08), 0 0 40px rgba(139, 127, 191, 0.1)',
-            minHeight: '48px',
+            height: '48px',
             paddingLeft: '24px',
-            paddingRight: '24px',
-            paddingTop: '12px',
-            paddingBottom: '12px'
+            paddingRight: '24px'
           }}
         >
-          {/* Always visible - Social Echelon branding */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-purple-400 to-pink-400 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">SE</span>
-              </div>
-              <span className="font-medium text-gray-800 whitespace-nowrap">Social Echelon</span>
-            </div>
-            
-            {/* Expandable menu items */}
-            <AnimatePresence>
-              {isExpanded && (
-                <motion.div
-                  initial={{ opacity: 0, width: 0 }}
-                  animate={{ opacity: 1, width: 'auto' }}
-                  exit={{ opacity: 0, width: 0 }}
-                  transition={{ duration: 0.3, ease: 'easeInOut' }}
-                  className="flex items-center gap-1 overflow-hidden"
-                >
-                  <div className="w-px h-6 bg-gray-300 mx-3" />
-                  {navItems.map((item, index) => (
-                    <motion.div
-                      key={item.href}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.8 }}
-                      transition={{ delay: index * 0.03 }}
-                    >
-                      <Link
-                        href={item.href}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all ${
-                          pathname === item.href
-                            ? 'bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700'
-                            : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
-                        }`}
-                      >
-                        {item.icon}
-                        <span className="text-sm font-medium whitespace-nowrap">{item.label}</span>
-                      </Link>
-                    </motion.div>
-                  ))}
-                  
-                  {/* Logout button */}
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    transition={{ delay: navItems.length * 0.03 }}
+          <AnimatePresence mode="wait">
+            {!isExpanded ? (
+              /* Show Social Echelon when collapsed */
+              <motion.div
+                key="brand"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <span className="font-medium text-gray-800 whitespace-nowrap">Social Echelon</span>
+              </motion.div>
+            ) : (
+              /* Show menu items when expanded */
+              <motion.div
+                key="menu"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="flex items-center gap-2"
+              >
+                {navItems.map((item, index) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-all ${
+                      pathname === item.href
+                        ? 'bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700'
+                        : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
+                    }`}
                   >
-                    <button
-                      onClick={() => {
-                        document.cookie = 'user_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
-                        window.location.href = '/'
-                      }}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-red-50 text-gray-600 hover:text-red-600 transition-all ml-2"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      <span className="text-sm font-medium">Logout</span>
-                    </button>
-                  </motion.div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+                    {item.icon}
+                    <span className="text-sm font-medium whitespace-nowrap">{item.label}</span>
+                  </Link>
+                ))}
+                
+                <div className="w-px h-6 bg-gray-300 mx-2" />
+                
+                {/* Logout button */}
+                <button
+                  onClick={() => {
+                    document.cookie = 'user_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+                    window.location.href = '/'
+                  }}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-red-50 text-gray-600 hover:text-red-600 transition-all"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span className="text-sm font-medium">Logout</span>
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       </motion.div>
     </motion.div>
