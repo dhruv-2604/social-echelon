@@ -44,7 +44,7 @@ export class InstagramAPI {
     const params = new URLSearchParams({
       client_id: process.env.FACEBOOK_APP_ID!,
       redirect_uri: process.env.FACEBOOK_REDIRECT_URI!,
-      scope: 'pages_show_list,business_management,instagram_basic,instagram_manage_comments,instagram_manage_insights,instagram_content_publish,instagram_manage_messages,pages_read_engagement',
+      scope: 'pages_show_list,business_management,instagram_basic,instagram_manage_comments,instagram_manage_insights,instagram_content_publish,instagram_manage_messages,pages_read_engagement,ads_management,ads_read',
       response_type: 'code',
       state: 'instagram_auth'
     })
@@ -208,8 +208,10 @@ export class InstagramAPI {
     const instagramAccountId = await this.getInstagramBusinessAccount()
     console.log('Instagram Business Account ID:', instagramAccountId)
     
-    // Get insights for the last 2 days to ensure we have data
-    const url = `${FACEBOOK_GRAPH_URL}/${instagramAccountId}/insights?metric=impressions,reach,profile_views&period=day&access_token=${this.accessToken}`
+    // Use valid metrics for account insights
+    // According to the error, valid metrics include: reach, profile_views, website_clicks, follower_count, etc.
+    // We'll use reach and profile_views which are what we need
+    const url = `${FACEBOOK_GRAPH_URL}/${instagramAccountId}/insights?metric=reach,profile_views,website_clicks&period=day&access_token=${this.accessToken}`
     console.log('Fetching insights from:', url.replace(this.accessToken, 'TOKEN_HIDDEN'))
     
     const response = await fetch(url)
@@ -225,7 +227,7 @@ export class InstagramAPI {
 
     // Parse the response to extract the latest values
     const insights: any = {
-      impressions: 0,
+      impressions: 0, // We'll use reach as a proxy since impressions isn't available at account level
       reach: 0,
       profile_views: 0,
       period: 'day'
@@ -234,7 +236,14 @@ export class InstagramAPI {
     data.data?.forEach((metric: any) => {
       // Get the most recent value (last element in values array)
       const latestValue = metric.values?.[metric.values.length - 1]?.value || 0
-      insights[metric.name] = latestValue
+      
+      if (metric.name === 'reach') {
+        insights.reach = latestValue
+        insights.impressions = latestValue // Use reach as proxy for impressions
+      } else if (metric.name === 'profile_views') {
+        insights.profile_views = latestValue
+      }
+      
       console.log(`Metric ${metric.name}: ${latestValue}`)
     })
 
