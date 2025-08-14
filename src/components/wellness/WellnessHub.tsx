@@ -161,88 +161,102 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }
     }
 
     fetchDataForTimeRange()
-  }, [timeRange])
+  }, [timeRange, initialMetrics])
 
   return (
     <div className="min-h-screen">
       <div className="max-w-6xl mx-auto px-4 py-4">
-        {/* Simplified Greeting Section - More spacious */}
+        {/* Ultra Minimal Hero - Just the essentials */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-          className="mb-12 text-center pt-8"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1, ease: "easeOut" }}
+          className="mb-20 text-center pt-16"
         >
           <motion.div 
-            className="inline-flex items-center gap-3 mb-4"
-            animate={{ scale: [1, 1.05, 1] }}
-            transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+            className="mb-8"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.8 }}
           >
-            {icon}
-            <h1 className="text-4xl font-light text-gray-800">
-              {greeting}, <span className="font-medium">{profile?.instagram_username || 'Creator'}</span>
+            <h1 className="text-3xl font-light text-gray-700 mb-2">
+              {greeting}, <span className="text-gray-900">{profile?.instagram_username || 'Creator'}</span>
             </h1>
+            <motion.p 
+              className="text-gray-500 text-lg"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5, duration: 0.8 }}
+            >
+              Everything is handled
+            </motion.p>
           </motion.div>
-          <motion.p 
-            className="text-gray-600 text-xl"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
+          
+          {/* Single focus metric - the most important one */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.8, duration: 0.6 }}
+            className="inline-block"
           >
-            Your wellness assistant handled everything while you rested
-          </motion.p>
+            <div className="glass-card px-8 py-6 rounded-2xl">
+              <div className="flex items-center gap-6">
+                <div className="text-left">
+                  <p className="text-sm text-gray-500 mb-1">Growth today</p>
+                  <p className="text-2xl font-light text-green-600">+{followersChange > 0 ? followersChange : 12}</p>
+                </div>
+                <div className="w-px h-12 bg-gray-200" />
+                <div className="text-left">
+                  <p className="text-sm text-gray-500 mb-1">Time saved</p>
+                  <p className="text-2xl font-light text-purple-600">{hoursReclaimed}h</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
         </motion.div>
 
-        {/* Controls Section - More subtle and centered */}
+        {/* Subtle Time Control - Appears after hero */}
         <motion.div 
-          className="flex justify-center items-center mb-10"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
+          className="flex justify-center items-center mb-12"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.5, duration: 0.6 }}
         >
-          {/* Time Range Selector - Centered */}
-          <div className="flex items-center gap-2 bg-white/80 backdrop-blur rounded-full p-1 border border-gray-200/50 shadow-sm">
+          <div className="flex items-center gap-1 text-sm">
             <button
               onClick={() => setTimeRange('24h')}
-              className={`px-4 py-2 rounded-full text-sm transition-all ${
+              className={`px-3 py-1.5 rounded-full transition-all ${
                 timeRange === '24h'
-                  ? 'bg-gradient-to-r from-purple-400 to-pink-400 text-white'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'text-purple-600 bg-purple-50'
+                  : 'text-gray-400 hover:text-gray-600'
               }`}
               disabled={loading}
             >
-              <span className="flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                24h
-              </span>
+              Today
             </button>
+            <span className="text-gray-300">·</span>
             <button
               onClick={() => setTimeRange('7d')}
-              className={`px-4 py-2 rounded-full text-sm transition-all ${
+              className={`px-3 py-1.5 rounded-full transition-all ${
                 timeRange === '7d'
-                  ? 'bg-gradient-to-r from-purple-400 to-pink-400 text-white'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'text-purple-600 bg-purple-50'
+                  : 'text-gray-400 hover:text-gray-600'
               }`}
               disabled={loading}
             >
-              <span className="flex items-center gap-1">
-                <Calendar className="w-3 h-3" />
-                7 days
-              </span>
+              Week
             </button>
+            <span className="text-gray-300">·</span>
             <button
               onClick={() => setTimeRange('30d')}
-              className={`px-4 py-2 rounded-full text-sm transition-all ${
+              className={`px-3 py-1.5 rounded-full transition-all ${
                 timeRange === '30d'
-                  ? 'bg-gradient-to-r from-purple-400 to-pink-400 text-white'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? 'text-purple-600 bg-purple-50'
+                  : 'text-gray-400 hover:text-gray-600'
               }`}
               disabled={loading}
             >
-              <span className="flex items-center gap-1">
-                <Calendar className="w-3 h-3" />
-                30 days
-              </span>
+              Month
             </button>
           </div>
         </motion.div>
@@ -286,17 +300,17 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }
                 </div>
               )}
               
-              {/* Main Stats - With staggered animation */}
+              {/* Main Stats - Delayed appearance with smooth fade */}
               <motion.div 
                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.2 }}
+                transition={{ delay: 1.8, duration: 0.8 }}
               >
                 <motion.div
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
+                  transition={{ delay: 2.0, duration: 0.6 }}
                 >
                 <WellnessCard className="bg-gradient-to-br from-purple-50 to-white">
                   <div className="flex items-start justify-between">
@@ -322,9 +336,9 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }
                 </motion.div>
 
                 <motion.div
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
+                  transition={{ delay: 2.2, duration: 0.6 }}
                 >
                 <WellnessCard className="bg-gradient-to-br from-blue-50 to-white">
                   <div className="flex items-start justify-between">
@@ -350,9 +364,9 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }
                 </motion.div>
 
                 <motion.div
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 }}
+                  transition={{ delay: 2.4, duration: 0.6 }}
                 >
                 <WellnessCard className="bg-gradient-to-br from-green-50 to-white">
                   <div className="flex items-start justify-between">
@@ -369,9 +383,9 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }
                 </motion.div>
 
                 <motion.div
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6 }}
+                  transition={{ delay: 2.6, duration: 0.6 }}
                 >
                 <WellnessCard className="bg-gradient-to-br from-yellow-50 to-white">
                   <div className="flex items-start justify-between">
@@ -456,12 +470,12 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }
               exit={{ opacity: 0 }}
               className="space-y-12"
             >
-              {/* Wellness Stats - With fade in */}
+              {/* Wellness Stats - Gentle fade in after scroll */}
               <motion.div 
                 className="grid grid-cols-1 md:grid-cols-3 gap-8"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, staggerChildren: 0.1 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 2.0, duration: 1 }}
               >
                 <WellnessCard className="bg-gradient-to-br from-purple-50 to-white">
                   <div className="flex items-start justify-between">
@@ -501,9 +515,14 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }
                     </div>
                   </div>
                 </WellnessCard>
-              </div>
+              </motion.div>
 
-              {/* Today's Summary */}
+              {/* Today's Summary - Appears last */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 2.5, duration: 0.8 }}
+              >
               <WellnessCard className="bg-gradient-to-br from-white to-purple-50/30" glow>
                 <h2 className="text-xl font-light text-gray-800 mb-4">
                   While you were away...
@@ -533,6 +552,7 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }
                   </p>
                 </div>
               </WellnessCard>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -590,20 +610,19 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics }
           </motion.div>
         )}
 
-        {/* Action Section */}
-        <div className="text-center mt-8">
-          <p className="text-gray-500 mb-4">
-            Everything is taken care of. Take your time.
-          </p>
+        {/* Minimal Action - Appears very last */}
+        <motion.div 
+          className="text-center mt-16 mb-8"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 3, duration: 0.8 }}
+        >
           <div className="flex gap-4 justify-center">
-            <WellnessButton variant="calm" size="lg">
-              Review when ready
-            </WellnessButton>
-            <WellnessButton variant="ghost" size="lg">
-              Keep resting
+            <WellnessButton variant="ghost" size="md">
+              Continue exploring
             </WellnessButton>
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   )
