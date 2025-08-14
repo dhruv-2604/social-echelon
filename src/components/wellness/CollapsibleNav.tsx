@@ -57,9 +57,9 @@ export function CollapsibleNav() {
       <motion.div
         onMouseEnter={() => setIsExpanded(true)}
         onMouseLeave={() => setIsExpanded(false)}
-        className="glass-card rounded-full cursor-pointer overflow-hidden"
+        className="glass-card rounded-full cursor-pointer"
         animate={{
-          width: isExpanded ? '600px' : '180px',
+          width: isExpanded ? 'auto' : '180px',
           transition: { 
             duration: 0.4, 
             ease: [0.4, 0, 0.2, 1]
