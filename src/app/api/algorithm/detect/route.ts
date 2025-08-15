@@ -28,9 +28,10 @@ export async function GET(request: NextRequest) {
     
     // Check if this is a Vercel cron job request
     const authHeader = request.headers.get('authorization')
+    const isVercelCron = request.headers.get('x-vercel-cron') === '1'
     
-    // For Vercel crons, check the authorization header if CRON_SECRET is set
-    if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    // If not a Vercel cron and CRON_SECRET is set, check authorization
+    if (!isVercelCron && process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
       return NextResponse.json({ error: 'This endpoint is for scheduled jobs only' }, { status: 403 })
     }
 
