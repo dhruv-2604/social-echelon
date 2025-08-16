@@ -87,9 +87,18 @@ Before deployment:
 
 ### 10. **CURRENT KNOWN ISSUES**
 - Instagram hashtag API doesn't provide the metrics we need
-- Need to deploy to Vercel for cron jobs to work
 - Algorithm detection needs 30+ users to be meaningful
 - Vercel Hobby plan: Max 2 cron jobs, once per day only
+
+### 10a. **CRON JOB DATA COLLECTION**
+Daily performance collector (2 AM EST) collects:
+- **Instagram Data**: Last 7 days of posts (reach, impressions, likes, comments, saves)
+- **Calculated**: Avg engagement rate, performance by type (Reels/Carousels/Posts)  
+- **Storage**: `user_performance_summary` table with daily aggregates
+- **Used By**: Algorithm detection to identify Instagram changes
+
+### 10b. **COMMIT MESSAGE GUIDELINES**
+Keep commits concise - 1-2 sentence explanations maximum.
 
 ### 11. **PREVENTING BUILD FAILURES**
 
