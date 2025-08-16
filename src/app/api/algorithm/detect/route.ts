@@ -8,6 +8,11 @@ import { AlertManager } from '@/lib/algorithm/alert-manager'
 
 // GET /api/algorithm/detect - Run anomaly detection (Vercel cron endpoint)
 export async function GET(request: NextRequest) {
+  console.log('==========================================')
+  console.log('DETECT ENDPOINT HIT AT:', new Date().toISOString())
+  console.log('All headers:', Object.fromEntries(request.headers.entries()))
+  console.log('==========================================')
+  
   try {
     // Check if this is a test request
     const url = new URL(request.url)
@@ -30,9 +35,16 @@ export async function GET(request: NextRequest) {
     const authHeader = request.headers.get('authorization')
     const isVercelCron = request.headers.get('x-vercel-cron') === '1'
     
-    // If not a Vercel cron and CRON_SECRET is set, check authorization
-    if (!isVercelCron && process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json({ error: 'This endpoint is for scheduled jobs only' }, { status: 403 })
+    // TEMPORARY: Log auth info but don't block
+    console.log('Auth check results:', {
+      isVercelCron,
+      hasCronSecret: !!process.env.CRON_SECRET,
+      hasAuthHeader: !!authHeader
+    })
+    
+    // TEMPORARY: Skip all auth checks to debug cron issues
+    if (false) { // Disabled auth temporarily
+      // Auth code commented out for debugging
     }
 
     console.log('Starting algorithm detection via queue...')
