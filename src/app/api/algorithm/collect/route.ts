@@ -17,16 +17,10 @@ export async function GET(request: NextRequest) {
     const authHeader = request.headers.get('authorization')
     const isVercelCron = request.headers.get('x-vercel-cron') === '1'
     
-    // TEMPORARY: Skip all auth checks to debug cron issues
-    console.log('Auth check results:', {
-      isVercelCron,
-      hasCronSecret: !!process.env.CRON_SECRET,
-      hasAuthHeader: !!authHeader
-    })
-    
-    // For now, just log and continue to see if crons are even hitting this endpoint
-    if (false) { // Disabled auth temporarily
-      // Auth code commented out for debugging
+    // Verify this is either a Vercel cron job or has proper authorization
+    if (!isVercelCron && process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      console.log('Unauthorized access attempt - not a Vercel cron and invalid auth')
+      return NextResponse.json({ error: 'This endpoint is for scheduled jobs only' }, { status: 403 })
     }
 
     // This is a cron job request - collect for all users
