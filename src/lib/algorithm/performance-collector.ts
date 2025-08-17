@@ -15,6 +15,11 @@ export interface DailyPerformance {
   reel_avg_reach?: number
   carousel_avg_reach?: number
   post_avg_reach?: number
+  // Instagram Insights API data
+  profile_views?: number
+  website_clicks?: number
+  accounts_engaged?: number
+  total_interactions?: number
 }
 
 export class PerformanceCollector {
@@ -49,8 +54,10 @@ export class PerformanceCollector {
 
       if (!profile) return null
 
-      // Get Instagram posts from last 7 days
+      // Initialize Instagram API
       const instagram = new InstagramAPI(tokenData.instagram_access_token)
+      
+      // Get Instagram posts from last 7 days
       const media = await instagram.getMedia(25) // Get recent posts
       
       // Filter to only posts from last 7 days
@@ -137,6 +144,28 @@ export class PerformanceCollector {
       }
       if (performanceByType.post.count > 0) {
         summary.post_avg_reach = Math.round(performanceByType.post.reach / performanceByType.post.count)
+      }
+
+      // Get Instagram Insights (account-level metrics)
+      try {
+        // Only fetch insights for accounts with 100+ followers
+        if (profile.follower_count >= 100) {
+          console.log(`Fetching Instagram Insights for user ${userId}`)
+          const insights = await instagram.getAccountInsights()
+          
+          // Add insights to summary
+          summary.profile_views = insights.profile_views || 0
+          summary.website_clicks = insights.website_clicks || 0
+          summary.accounts_engaged = insights.accounts_engaged || 0
+          summary.total_interactions = insights.total_interactions || 0
+          
+          console.log(`Insights collected: ${insights.profile_views} profile views, ${insights.total_interactions} interactions`)
+        } else {
+          console.log(`Skipping insights for user ${userId} - less than 100 followers`)
+        }
+      } catch (insightsError) {
+        console.error(`Error fetching insights for user ${userId}:`, insightsError)
+        // Continue without insights data
       }
 
       // Store in database (upsert to avoid duplicates)
