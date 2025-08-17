@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { InstagramTrendCollector } from '@/lib/trends/instagram-collector'
+import { XTwitterCollector } from '@/lib/trends/x-twitter-collector'
 import { TrendManager } from '@/lib/trends/trend-manager'
 import { cookies } from 'next/headers'
 
@@ -14,54 +14,54 @@ const SUPPORTED_NICHES = [
 
 export async function POST(request: NextRequest) {
   try {
-    const supabaseAdmin = getSupabaseAdmin()
-    // This endpoint should be protected - only allow from cron jobs
+    // This endpoint should be protected - only allow from cron jobs or Vercel cron
     const authHeader = request.headers.get('authorization')
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    const isVercelCron = request.headers.get('x-vercel-cron') === '1'
+    
+    if (!isVercelCron && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    console.log('Starting trend collection job')
+    console.log('Starting X/Twitter trend collection job')
     
-    // Get a real Instagram access token from database
-    // For now, we'll use the first available token from any user
-    const { data: tokenData } = await supabaseAdmin
-      .from('user_tokens')
-      .select('instagram_access_token')
-      .not('instagram_access_token', 'is', null)
-      .limit(1)
-      .single()
-    
-    const accessToken = tokenData?.instagram_access_token as string | undefined
-    if (!accessToken) {
-      console.error('No Instagram access token available for trend collection')
-      return NextResponse.json({ error: 'No Instagram access token' }, { status: 500 })
-    }
-
-    const collector = new InstagramTrendCollector(accessToken)
+    // Use X/Twitter collector instead of Instagram
+    const collector = new XTwitterCollector()
 
     const allTrends = []
 
     // Collect trends for each niche
     for (const niche of SUPPORTED_NICHES) {
-      console.log(`Collecting trends for ${niche}`)
+      console.log(`Collecting X/Twitter trends for ${niche}`)
       
       try {
-        // Collect trends (topics, formats, and basic hashtags)
-        const trends = await collector.collectTrends(niche)
+        // Collect real X/Twitter trends
+        const xTrends = await collector.collectTrends(niche)
+        
+        // Convert X/Twitter trends to our TrendData format
+        const trends = xTrends.map(xTrend => ({
+          niche,
+          trend_type: 'hashtag' as const,
+          trend_name: xTrend.query,
+          growth_velocity: Math.round(xTrend.trending_score),
+          current_volume: xTrend.top_tweets.length * 1000, // Estimate based on sample
+          engagement_rate: xTrend.avg_engagement,
+          saturation_level: Math.min(100, xTrend.trending_score),
+          confidence_score: Math.min(100, Math.round(xTrend.trending_score * 1.2)),
+          trend_phase: (xTrend.trending_score > 70 ? 'growing' : xTrend.trending_score > 40 ? 'peak' : 'emerging') as 'emerging' | 'growing' | 'peak' | 'declining',
+          related_hashtags: xTrend.content_insights.viral_elements.filter(e => e.startsWith('#')),
+          example_posts: xTrend.top_tweets.slice(0, 3).map(t => t.content),
+          optimal_posting_times: [9, 12, 17, 20] // Standard peak times
+        }))
+        
         allTrends.push(...trends)
 
-        // Analyze competitors if available
-        const competitorTrends = await collector.analyzeNicheCompetitors(niche)
-        allTrends.push(...competitorTrends)
-
         // Save trends to database
-        await TrendManager.saveTrends([...trends, ...competitorTrends])
+        await TrendManager.saveTrends(trends)
         
-        // Add small delay to avoid rate limits
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        // Add delay to avoid rate limits
+        await new Promise(resolve => setTimeout(resolve, 2000))
       } catch (error) {
-        console.error(`Error collecting trends for ${niche}:`, error)
+        console.error(`Error collecting X/Twitter trends for ${niche}:`, error)
       }
     }
 
@@ -86,8 +86,6 @@ export async function POST(request: NextRequest) {
 
 // Manual trigger for testing
 export async function GET(request: NextRequest) {
-  const supabaseAdmin = getSupabaseAdmin()
-  
   // Check if user is authenticated
   const url = new URL(request.url)
   const testMode = url.searchParams.get('test') === 'true'
@@ -96,31 +94,30 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'This endpoint is for scheduled jobs only' }, { status: 403 })
   }
 
-  // For testing, get user's Instagram token from database
-  const cookieStore = await cookies()
-  const userId = cookieStore.get('user_id')?.value
-
-  if (!userId) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
-  }
-
-  // Get user's Instagram access token
-  const { data: tokenData, error } = await supabaseAdmin
-    .from('user_tokens')
-    .select('instagram_access_token')
-    .eq('user_id', userId)
-    .single()
-
-  if (error || !tokenData?.instagram_access_token) {
-    return NextResponse.json({ error: 'No Instagram access token found' }, { status: 400 })
-  }
-
-  // For testing, collect trends for a single niche
+  // For testing, collect X/Twitter trends for a single niche
   const niche = url.searchParams.get('niche') || 'lifestyle'
-  const collector = new InstagramTrendCollector(tokenData.instagram_access_token as string)
+  const collector = new XTwitterCollector()
   
   try {
-    const trends = await collector.collectTrends(niche)
+    console.log(`Testing X/Twitter trend collection for ${niche}`)
+    const xTrends = await collector.collectTrends(niche)
+    
+    // Convert to our format
+    const trends = xTrends.map(xTrend => ({
+      niche,
+      trend_type: 'hashtag' as const,
+      trend_name: xTrend.query,
+      growth_velocity: Math.round(xTrend.trending_score),
+      current_volume: xTrend.top_tweets.length * 1000,
+      engagement_rate: xTrend.avg_engagement,
+      saturation_level: Math.min(100, xTrend.trending_score),
+      confidence_score: Math.min(100, Math.round(xTrend.trending_score * 1.2)),
+      trend_phase: (xTrend.trending_score > 70 ? 'growing' : xTrend.trending_score > 40 ? 'peak' : 'emerging') as 'emerging' | 'growing' | 'peak' | 'declining',
+      related_hashtags: xTrend.content_insights.viral_elements.filter(e => e.startsWith('#')),
+      example_posts: xTrend.top_tweets.slice(0, 3).map(t => t.content),
+      optimal_posting_times: [9, 12, 17, 20]
+    }))
+    
     await TrendManager.saveTrends(trends)
 
     return NextResponse.json({
@@ -130,7 +127,8 @@ export async function GET(request: NextRequest) {
       top_trends: trends.slice(0, 5).map(t => ({
         name: t.trend_name,
         confidence: t.confidence_score,
-        phase: t.trend_phase
+        phase: t.trend_phase,
+        engagement: t.engagement_rate
       }))
     })
   } catch (error) {
