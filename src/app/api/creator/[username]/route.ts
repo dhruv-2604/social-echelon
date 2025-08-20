@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 
 export async function GET(
@@ -6,7 +7,20 @@ export async function GET(
   { params }: { params: { username: string } }
 ) {
   try {
+    // Authentication check
+    const cookieStore = await cookies()
+    const userId = cookieStore.get('user_id')?.value
+    
+    if (!userId) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    }
+    
     const username = params.username
+    
+    // Validate username parameter
+    if (!username || typeof username !== 'string' || username.length > 100) {
+      return NextResponse.json({ error: 'Invalid username' }, { status: 400 })
+    }
 
     // Get creator profile
   const supabaseAdmin = getSupabaseAdmin()

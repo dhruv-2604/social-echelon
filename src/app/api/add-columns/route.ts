@@ -1,11 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 
 export async function POST(request: NextRequest) {
   try {
+    // Authentication check - require admin access
+    const cookieStore = await cookies()
+    const userId = cookieStore.get('user_id')?.value
+    
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    
     const supabaseAdmin = getSupabaseAdmin()
     
-    console.log('Adding user preference columns to profiles table')
+    // Check if user is admin
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .single()
+    
+    if (profile?.role !== 'admin') {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+    }
 
     // Since we can't easily run ALTER TABLE via Supabase client,
     // let's check what columns exist first
@@ -15,14 +33,12 @@ export async function POST(request: NextRequest) {
       .limit(1)
       .single()
 
-    console.log('Current profile columns:', Object.keys(currentProfile || {}))
-
     // For now, let's temporarily disable the preference saving 
     // and focus on the main functionality
     return NextResponse.json({ 
       success: true, 
-      message: 'Column check completed',
-      currentColumns: Object.keys(currentProfile || {})
+      message: 'Column check completed'
+      // Don't expose database structure to client
     })
 
   } catch (error) {

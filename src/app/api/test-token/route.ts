@@ -1,30 +1,63 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 
 export async function POST(request: NextRequest) {
   try {
-    const { accessToken } = await request.json()
+    // Authentication check
+    const cookieStore = await cookies()
+    const userId = cookieStore.get('user_id')?.value
     
-    if (!accessToken) {
-      return NextResponse.json({ error: 'Access token required' }, { status: 400 })
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    console.log('Testing access token:', accessToken.substring(0, 20) + '...')
+    // Parse and validate input
+    let body
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+    }
 
-    // Test 1: Get user's pages
-    const pagesResponse = await fetch(
-      `https://graph.facebook.com/v18.0/me/accounts?fields=id,name,instagram_business_account&access_token=${accessToken}`
-    )
-    const pagesData = await pagesResponse.json()
+    const { accessToken } = body
     
-    console.log('Pages response:', pagesData)
+    // Input validation
+    if (!accessToken || typeof accessToken !== 'string') {
+      return NextResponse.json({ error: 'Valid access token required' }, { status: 400 })
+    }
 
-    // Test 2: Get user info
-    const userResponse = await fetch(
-      `https://graph.facebook.com/v18.0/me?fields=id,name&access_token=${accessToken}`
-    )
+    // Sanitize token for logging (never log full tokens)
+    const tokenPreview = accessToken.substring(0, 10) + '...'
+
+    // Test 1: Get user's pages with timeout
+    const pagesResponse = await Promise.race([
+      fetch(`https://graph.facebook.com/v18.0/me/accounts?fields=id,name,instagram_business_account&access_token=${accessToken}`),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 10000))
+    ]) as Response
+    
+    if (!pagesResponse.ok) {
+      return NextResponse.json(
+        { error: 'Failed to fetch pages', details: 'Invalid token or permissions' },
+        { status: 400 }
+      )
+    }
+    
+    const pagesData = await pagesResponse.json()
+
+    // Test 2: Get user info with timeout
+    const userResponse = await Promise.race([
+      fetch(`https://graph.facebook.com/v18.0/me?fields=id,name&access_token=${accessToken}`),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 10000))
+    ]) as Response
+    
+    if (!userResponse.ok) {
+      return NextResponse.json(
+        { error: 'Failed to fetch user data', details: 'Invalid token' },
+        { status: 400 }
+      )
+    }
+    
     const userData = await userResponse.json()
-
-    console.log('User response:', userData)
 
     // Test 3: If we find pages with Instagram, try to get Instagram data
     let instagramData = null
@@ -33,13 +66,22 @@ export async function POST(request: NextRequest) {
       
       if (pageWithInstagram) {
         const instagramId = pageWithInstagram.instagram_business_account.id
-        console.log('Found Instagram account:', instagramId)
         
-        const instagramResponse = await fetch(
-          `https://graph.facebook.com/v18.0/${instagramId}?fields=id,username,name,followers_count,follows_count,media_count,profile_picture_url&access_token=${accessToken}`
-        )
-        instagramData = await instagramResponse.json()
-        console.log('Instagram data:', instagramData)
+        try {
+          const instagramResponse = await Promise.race([
+            fetch(
+              `https://graph.facebook.com/v18.0/${instagramId}?fields=id,username,name,followers_count,follows_count,media_count,profile_picture_url&access_token=${accessToken}`
+            ),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 10000))
+          ]) as Response
+          
+          if (instagramResponse.ok) {
+            instagramData = await instagramResponse.json()
+          }
+        } catch (error) {
+          // Silently fail for Instagram data - it's optional
+          instagramData = { error: 'Failed to fetch Instagram data' }
+        }
       }
     }
 
@@ -51,7 +93,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Token test error:', error)
+    // Don't expose internal error details
     return NextResponse.json(
       { error: 'Failed to test token' },
       { status: 500 }

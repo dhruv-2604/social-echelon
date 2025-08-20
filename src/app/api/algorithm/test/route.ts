@@ -1,12 +1,50 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
+import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { AlgorithmTestUtilities } from '@/lib/algorithm/test-utilities'
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    // Authentication check - only allow admin users or cron jobs
+    const authHeader = request.headers.get('authorization')
+    const isVercelCron = request.headers.get('x-vercel-cron') === '1'
+    
+    if (!isVercelCron && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      // Check if user is admin
+      const cookieStore = await cookies()
+      const userId = cookieStore.get('user_id')?.value
+      
+      if (!userId) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+      
+      const supabaseAdmin = getSupabaseAdmin()
+      const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .single()
+      
+      if (profile?.role !== 'admin') {
+        return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+      }
+    }
+    
+    // Parse and validate input
+    let body
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+    }
+    
     const { action, params = {} } = body
     
-    console.log(`Running test action: ${action}`, params)
+    // Validate action parameter
+    const validActions = ['simulate_reach_drop', 'simulate_format_preference', 'generate_realistic_data', 'reset_data', 'get_status']
+    if (!action || !validActions.includes(action)) {
+      return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
+    }
     
     switch (action) {
       case 'simulate_reach_drop':

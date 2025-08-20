@@ -23,7 +23,10 @@ export interface XTrendData {
 
 export class XTwitterCollector {
   private readonly MASA_API_BASE = 'https://data.masa.ai/api/v1'
-  private readonly API_KEY = process.env.MASA_API_KEY
+  
+  private get API_KEY() {
+    return process.env.MASA_API_KEY
+  }
   
   /**
    * Collect trends from X/Twitter for a specific niche
