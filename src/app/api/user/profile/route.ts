@@ -209,28 +209,12 @@ export async function GET(request: NextRequest) {
         .eq('user_id', userId)
         .single()
 
-      console.log('Token query result:', { 
-        hasToken: !!(tokenData as any)?.instagram_access_token,
-        tokenError,
-        tokenLength: (tokenData as any)?.instagram_access_token?.length 
-      })
-
-      if (tokenError) {
-        console.log('Token fetch error:', tokenError)
-      } else if ((tokenData as any)?.instagram_access_token) {
-        console.log('Found token, attempting to fetch insights...')
+      if (!tokenError && (tokenData as any)?.instagram_access_token) {
         const instagramApi = new InstagramAPI((tokenData as any).instagram_access_token)
         insights = await instagramApi.getAccountInsights()
-        console.log('Successfully fetched Instagram insights:', insights)
-      } else {
-        console.log('No Instagram token found for user:', userId)
       }
     } catch (insightsError) {
-      console.error('Failed to fetch Instagram insights:', insightsError)
-      console.error('Error details:', {
-        message: insightsError instanceof Error ? insightsError.message : 'Unknown error',
-        stack: insightsError instanceof Error ? insightsError.stack : undefined
-      })
+      // Silently fail - insights are optional
       // Don't fail the whole request if insights fail
     }
 

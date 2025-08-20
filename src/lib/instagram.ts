@@ -53,7 +53,7 @@ export class InstagramAPI {
   }
 
   static async exchangeCodeForToken(code: string): Promise<string> {
-    console.log('Exchanging code for token...')
+    // Exchange code for token
     
     // Exchange code for Facebook access token
     const url = new URL(`${FACEBOOK_GRAPH_URL}/oauth/access_token`)
@@ -62,13 +62,12 @@ export class InstagramAPI {
     url.searchParams.append('redirect_uri', process.env.FACEBOOK_REDIRECT_URI!)
     url.searchParams.append('code', code)
 
-    console.log('Token exchange URL:', url.toString().replace(process.env.FACEBOOK_APP_SECRET!, 'SECRET_HIDDEN'))
+    // Token exchange in progress
 
     const tokenResponse = await fetch(url.toString())
     const tokenData = await tokenResponse.json()
     
-    console.log('Token response status:', tokenResponse.status)
-    console.log('Token response data:', tokenData)
+    // Token response received
     
     if (!tokenResponse.ok) {
       throw new Error(tokenData.error?.message || `Token exchange failed: ${JSON.stringify(tokenData)}`)
@@ -88,7 +87,7 @@ export class InstagramAPI {
     const longLivedResponse = await fetch(longLivedUrl.toString())
     const longLivedData = await longLivedResponse.json()
     
-    console.log('Long-lived token response:', longLivedResponse.status, longLivedData)
+    // Long-lived token obtained
     
     if (!longLivedResponse.ok) {
       // If long-lived exchange fails, just use the short-lived token
@@ -209,22 +208,16 @@ export class InstagramAPI {
   }> {
     console.log('Getting account insights...')
     const instagramAccountId = await this.getInstagramBusinessAccount()
-    console.log('Instagram Business Account ID:', instagramAccountId)
     
     // Use valid metrics for account insights
     // Note: impressions is NOT valid at account level, only at media level
     // Using: reach, profile_views, website_clicks, accounts_engaged, total_interactions
     const url = `${FACEBOOK_GRAPH_URL}/${instagramAccountId}/insights?metric=reach,profile_views,website_clicks,accounts_engaged,total_interactions&period=day&access_token=${this.accessToken}`
-    console.log('Fetching insights from:', url.replace(this.accessToken, 'TOKEN_HIDDEN'))
     
     const response = await fetch(url)
     const data = await response.json()
     
-    console.log('Insights API response status:', response.status)
-    console.log('Insights API response:', JSON.stringify(data, null, 2))
-    
     if (!response.ok) {
-      console.error('Account insights error:', data)
       throw new Error(data.error?.message || 'Failed to fetch account insights')
     }
 
