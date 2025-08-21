@@ -12,26 +12,26 @@ export default function AuthError({ searchParams }: { searchParams: { error?: st
       case 'instagram_auth_denied':
         return {
           title: 'Connection Paused',
-          message: 'It looks like you changed your mind about connecting Instagram. That's perfectly okay! Take your time and connect when you're ready.',
+          message: "It looks like you changed your mind about connecting Instagram. That's perfectly okay! Take your time and connect when you're ready.",
           suggestion: 'No pressure - your wellness journey can start whenever you feel comfortable.'
         }
       case 'missing_code':
         return {
           title: 'Connection Interrupted',
           message: 'Something went wrong during the Instagram connection process.',
-          suggestion: 'Let's try again with a fresh start. Sometimes technology just needs a second chance.'
+          suggestion: "Let's try again with a fresh start. Sometimes technology just needs a second chance."
         }
       case 'authentication_failed':
         return {
           title: 'Connection Hiccup',
-          message: 'We couldn't complete the Instagram connection this time.',
-          suggestion: 'These things happen! Let's give it another try, or reach out if you need help.'
+          message: "We couldn't complete the Instagram connection this time.",
+          suggestion: "These things happen! Let's give it another try, or reach out if you need help."
         }
       default:
         return {
           title: 'Unexpected Pause',
           message: 'Something unexpected happened during the connection process.',
-          suggestion: 'Let's take a breath and try again. We're here to help if you need support.'
+          suggestion: "Let's take a breath and try again. We're here to help if you need support."
         }
     }
   }
