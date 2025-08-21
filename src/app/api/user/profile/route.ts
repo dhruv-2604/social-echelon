@@ -1,25 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-
-export const dynamic = 'force-dynamic'
+import { withAuthAndValidation, withSecurityHeaders, requireAuth } from '@/lib/validation/middleware'
+import { UserProfileUpdateSchema } from '@/lib/validation/schemas'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { InstagramAPI } from '@/lib/instagram'
+import { z } from 'zod'
 
-export async function GET(request: NextRequest) {
-  try {
-    const supabaseAdmin = getSupabaseAdmin()
-    const cookieStore = await cookies()
-    const userId = cookieStore.get('user_id')?.value
+export const dynamic = 'force-dynamic'
 
-    if (!userId) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
-    }
+// Query parameters validation for GET request
+const ProfileQuerySchema = z.object({
+  timeRange: z.enum(['24h', '7d', '30d']).default('30d')
+})
 
-    // Get time range from query params
-    const searchParams = request.nextUrl.searchParams
-    const timeRange = searchParams.get('timeRange') || '30d'
+export const GET = withSecurityHeaders(
+  withAuthAndValidation({
+    query: ProfileQuerySchema
+  })(async (request: NextRequest, userId: string, { validatedQuery }) => {
+    try {
+      const supabaseAdmin = getSupabaseAdmin()
+      const timeRange = validatedQuery?.timeRange || '30d'
 
-    console.log('Looking for user with ID:', userId, 'Time range:', timeRange)
+      console.log('Looking for user with ID:', userId, 'Time range:', timeRange)
 
     // Get user profile
     const { data: profile, error: profileError } = await supabaseAdmin
@@ -228,52 +229,59 @@ export async function GET(request: NextRequest) {
       insights
     })
 
-  } catch (error) {
-    console.error('Profile API error:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch profile' },
-      { status: 500 }
-    )
-  }
-}
-
-export async function PATCH(request: NextRequest) {
-  try {
-    const supabaseAdmin = getSupabaseAdmin()
-    const cookieStore = await cookies()
-    const userId = cookieStore.get('user_id')?.value
-
-    if (!userId) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+    } catch (error) {
+      console.error('Profile API error:', error)
+      return NextResponse.json(
+        { error: 'Failed to fetch profile' },
+        { status: 500 }
+      )
     }
+  })
+)
 
-    const body = await request.json()
-    const { full_name, email } = body
+export const PATCH = withSecurityHeaders(
+  withAuthAndValidation({
+    body: UserProfileUpdateSchema
+  })(async (request: NextRequest, userId: string, { validatedBody }) => {
+    try {
+      const supabaseAdmin = getSupabaseAdmin()
 
-    // Update user profile
-    const { data: profile, error } = await supabaseAdmin
-      .from('profiles')
-      .update({
-        full_name,
-        email,
+      if (!validatedBody) {
+        return NextResponse.json({ error: 'Request body is required' }, { status: 400 })
+      }
+
+      // Build update object with only provided fields
+      const updateData: any = {
         updated_at: new Date().toISOString()
-      })
-      .eq('id', userId)
-      .select()
-      .single()
+      }
 
-    if (error) {
-      console.error('Profile update error:', error)
-      throw error
+      if (validatedBody.full_name !== undefined) updateData.full_name = validatedBody.full_name
+      if (validatedBody.email !== undefined) updateData.email = validatedBody.email
+      if (validatedBody.bio !== undefined) updateData.bio = validatedBody.bio
+      if (validatedBody.location !== undefined) updateData.location = validatedBody.location
+      if (validatedBody.website !== undefined) updateData.website = validatedBody.website
+
+      // Update user profile
+      const { data: profile, error } = await supabaseAdmin
+        .from('profiles')
+        .update(updateData)
+        .eq('id', userId)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Profile update error:', error)
+        throw error
+      }
+
+      return NextResponse.json({ profile })
+
+    } catch (error) {
+      console.error('Profile update API error:', error)
+      return NextResponse.json(
+        { error: 'Failed to update profile' },
+        { status: 500 }
+      )
     }
-
-    return NextResponse.json({ profile })
-
-  } catch (error) {
-    console.error('Profile update API error:', error)
-    return NextResponse.json(
-      { error: 'Failed to update profile' },
-      { status: 500 }
-    )
-  }
-}
+  })
+)

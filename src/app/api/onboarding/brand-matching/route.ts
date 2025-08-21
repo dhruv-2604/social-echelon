@@ -1,20 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
-import { cookies } from 'next/headers'
-
-export const dynamic = 'force-dynamic'
+import { withAuthAndValidation, withSecurityHeaders } from '@/lib/validation/middleware'
+import { CreatorOnboardingSchema } from '@/lib/validation/schemas'
 import { CreatorProfile } from '@/lib/brand-matching/creator-profile-schema'
 
-export async function POST(request: NextRequest) {
-  try {
-    const cookieStore = await cookies()
-    const userId = cookieStore.get('user_id')?.value
+export const dynamic = 'force-dynamic'
 
-    if (!userId) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
-    }
-
-    const data = await request.json()
+export const POST = withSecurityHeaders(
+  withAuthAndValidation({
+    body: CreatorOnboardingSchema as any
+  })(async (request: NextRequest, userId: string, { validatedBody }) => {
+    try {
+      if (!validatedBody) {
+        return NextResponse.json({ error: 'Request body is required' }, { status: 400 })
+      }
 
     const supabaseAdmin = getSupabaseAdmin()
 
@@ -40,7 +39,7 @@ export async function POST(request: NextRequest) {
     const avgLikes = recentPosts && recentPosts.length > 0 ? Math.round(recentPosts.reduce((sum, post) => sum + (post.likes_count || 0), 0) / recentPosts.length) : 0
     const avgComments = recentPosts && recentPosts.length > 0 ? Math.round(recentPosts.reduce((sum, post) => sum + (post.comments_count || 0), 0) / recentPosts.length) : 0
 
-    // Transform the onboarding data to match our schema
+    // Transform the validated onboarding data to match our schema
     const creatorProfile: Partial<CreatorProfile> = {
       userId,
       instagramHandle: profile.instagram_username || '',
@@ -48,67 +47,67 @@ export async function POST(request: NextRequest) {
         engagementRate: profile.engagement_rate || 0,
         avgLikes: avgLikes,
         avgComments: avgComments,
-        avgViews: parseInt(data.analytics.avgLikes) || 0, // Using story views from form
+        avgViews: validatedBody.analytics.avgLikes || 0, // Using story views from form
         followerCount: profile.follower_count || 0,
-        followerGrowthRate: parseFloat(data.analytics.growthRate),
+        followerGrowthRate: validatedBody.analytics.growthRate,
         topPostingTimes: [], // Can be calculated later
         audienceDemographics: {
-          ageRanges: data.analytics.ageRanges.map((r: any) => ({
+          ageRanges: validatedBody.analytics.ageRanges.map((r: any) => ({
             range: r.range,
-            percentage: parseFloat(r.percentage)
+            percentage: r.percentage
           })),
           genderSplit: {
-            male: parseFloat(data.analytics.genderSplit.male),
-            female: parseFloat(data.analytics.genderSplit.female),
-            other: parseFloat(data.analytics.genderSplit.other)
+            male: validatedBody.analytics.genderSplit.male,
+            female: validatedBody.analytics.genderSplit.female,
+            other: validatedBody.analytics.genderSplit.other
           },
-          topLocations: data.analytics.topLocations,
+          topLocations: validatedBody.analytics.topLocations,
           interests: [] // Will be enriched later
         }
       },
       identity: {
-        contentPillars: data.identity.contentPillars,
-        brandValues: data.identity.brandValues,
-        pastBrands: data.identity.pastBrands,
-        dreamBrands: data.identity.dreamBrands,
-        blacklistBrands: data.identity.blacklistIndustries,
+        contentPillars: validatedBody.identity.contentPillars,
+        brandValues: validatedBody.identity.brandValues,
+        pastBrands: validatedBody.identity.pastBrands,
+        dreamBrands: validatedBody.identity.dreamBrands,
+        blacklistBrands: validatedBody.identity.blacklistIndustries,
         contentStyle: {
           primaryFormat: 'reels', // Can be detected from content
-          aestheticKeywords: data.identity.aestheticKeywords,
+          aestheticKeywords: validatedBody.identity.aestheticKeywords,
           captionStyle: 'storytelling', // Can be analyzed
           productionValue: 'authentic'
         },
         audiencePsychographics: {
-          problems: data.identity.audienceProblems,
-          aspirations: data.identity.audienceAspirations,
-          incomeLevel: data.identity.incomeLevel as 'low' | 'medium' | 'high' | 'luxury',
+          problems: validatedBody.identity.audienceProblems,
+          aspirations: validatedBody.identity.audienceAspirations,
+          incomeLevel: validatedBody.identity.incomeLevel,
           similarCreators: []
         }
       },
       professional: {
         currentIncomeSources: [], // Can be added in detailed onboarding
         incomeGoals: {
-          realistic: parseInt(data.professional.monthlyGoal),
-          stretch: parseInt(data.professional.monthlyGoal) * 1.5
+          realistic: validatedBody.professional.monthlyGoal,
+          stretch: validatedBody.professional.monthlyGoal * 1.5
         },
         availability: {
-          hoursPerWeek: parseInt(data.professional.hoursPerWeek),
+          hoursPerWeek: validatedBody.professional.hoursPerWeek,
           turnaroundTime: 3 // Default 3 days
         },
         capabilities: {
-          equipment: data.professional.equipment,
-          skills: data.professional.skills,
-          languages: data.professional.languages,
-          travelRadius: parseInt(data.professional.travelRadius)
+          equipment: validatedBody.professional.equipment,
+          skills: validatedBody.professional.skills,
+          languages: validatedBody.professional.languages,
+          travelRadius: validatedBody.professional.travelRadius
         }
       },
       wellbeing: {
-        stressTriggers: data.wellbeing.stressTriggers,
-        communicationPreference: data.wellbeing.communicationPreference as 'email' | 'phone' | 'text' | 'video',
+        stressTriggers: validatedBody.wellbeing.stressTriggers,
+        communicationPreference: validatedBody.wellbeing.communicationPreference,
         workLifeBalance: {
-          maxBrandsPerMonth: parseInt(data.wellbeing.maxBrandsPerMonth),
+          maxBrandsPerMonth: validatedBody.wellbeing.maxBrandsPerMonth,
           blackoutDates: [],
-          preferredWorkHours: [data.wellbeing.preferredWorkHours]
+          preferredWorkHours: [validatedBody.wellbeing.preferredWorkHours]
         },
         supportNeeds: []
       },
@@ -177,11 +176,12 @@ export async function POST(request: NextRequest) {
       message: 'Profile created successfully. We\'re finding your perfect brand matches!'
     })
 
-  } catch (error) {
-    console.error('Onboarding error:', error)
-    return NextResponse.json(
-      { error: 'Failed to complete onboarding' },
-      { status: 500 }
-    )
-  }
-}
+    } catch (error) {
+      console.error('Onboarding error:', error)
+      return NextResponse.json(
+        { error: 'Failed to complete onboarding' },
+        { status: 500 }
+      )
+    }
+  })
+)

@@ -1,55 +1,89 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
-import { cookies } from 'next/headers'
-
-export const dynamic = 'force-dynamic'
+import { withAuthAndValidation, withSecurityHeaders, rateLimit } from '@/lib/validation/middleware'
+import { z } from 'zod'
 import { OutreachAutomationService } from '@/lib/brand-discovery/outreach-automation'
 
-export async function POST(request: NextRequest) {
-  try {
-    const cookieStore = await cookies()
-    const userId = cookieStore.get('user_id')?.value
+export const dynamic = 'force-dynamic'
 
-    if (!userId) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
-    }
+// Optional body schema for specific automation tasks
+const AutomationOptionsSchema = z.object({
+  runCampaigns: z.boolean().default(true),
+  scheduleDailyOutreach: z.boolean().default(true),
+  processScheduled: z.boolean().default(true),
+  processResponses: z.boolean().default(true),
+  maxOutreachPerRun: z.number().min(1).max(50).default(10) // Limit emails per run
+}).optional()
 
-    // Check if user is admin
-    const supabaseAdmin = getSupabaseAdmin()
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('role')
-      .eq('id', userId)
-      .single()
+export const POST = withSecurityHeaders(
+  rateLimit(1, 3600000)( // Only 1 automation run per hour to prevent abuse
+    withAuthAndValidation({
+      body: AutomationOptionsSchema
+    })(async (request: NextRequest, userId: string, { validatedBody }) => {
+      try {
+        // Check if user is admin
+        const supabaseAdmin = getSupabaseAdmin()
+        const { data: profile } = await supabaseAdmin
+          .from('profiles')
+          .select('role')
+          .eq('id', userId)
+          .single()
 
-    if (profile?.role !== 'admin') {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
-    }
+        if (profile?.role !== 'admin') {
+          return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+        }
 
-    const automationService = new OutreachAutomationService()
+        const options = validatedBody || {
+          runCampaigns: true,
+          scheduleDailyOutreach: true,
+          processScheduled: true,
+          processResponses: true,
+          maxOutreachPerRun: 10
+        }
 
-    // Create personalized campaigns for new creators
-    await automationService.createPersonalizedCampaigns()
+        const automationService = new OutreachAutomationService()
+        const results = {
+          campaigns: false,
+          scheduled: false,
+          processed: false,
+          responses: false
+        }
 
-    // Schedule daily outreach
-    await automationService.scheduleDailyOutreach()
+        // Run only requested operations with limits
+        if (options.runCampaigns) {
+          await automationService.createPersonalizedCampaigns()
+          results.campaigns = true
+        }
 
-    // Process any scheduled outreach that's due
-    await automationService.processScheduledOutreach()
+        if (options.scheduleDailyOutreach) {
+          await automationService.scheduleDailyOutreach()
+          results.scheduled = true
+        }
 
-    // Check for and process responses
-    await automationService.processResponses()
+        if (options.processScheduled) {
+          await automationService.processScheduledOutreach()
+          results.processed = true
+        }
 
-    return NextResponse.json({
-      success: true,
-      message: 'Automation cycle completed successfully'
+        if (options.processResponses) {
+          await automationService.processResponses()
+          results.responses = true
+        }
+
+        return NextResponse.json({
+          success: true,
+          message: 'Automation cycle completed successfully',
+          results,
+          maxOutreachPerRun: options.maxOutreachPerRun
+        })
+
+      } catch (error) {
+        console.error('Error running automation:', error)
+        return NextResponse.json(
+          { error: 'Failed to run automation' },
+          { status: 500 }
+        )
+      }
     })
-
-  } catch (error) {
-    console.error('Error running automation:', error)
-    return NextResponse.json(
-      { error: 'Failed to run automation' },
-      { status: 500 }
-    )
-  }
-}
+  )
+)

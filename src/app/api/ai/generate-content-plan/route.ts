@@ -1,70 +1,67 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 import { ContentGenerator, UserProfile } from '@/lib/ai/content-generator'
 import { ContentAnalyzer, InstagramPost } from '@/lib/ai/content-analyzer'
-import { InstagramAPI } from '@/lib/instagram'
-
-export const dynamic = 'force-dynamic'
+import { withAuthAndValidation, withSecurityHeaders } from '@/lib/validation/middleware'
+import { ContentPlanSchema } from '@/lib/validation/schemas'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 
-export async function POST(request: NextRequest) {
-  try {
-    const supabaseAdmin = getSupabaseAdmin()
-    const cookieStore = await cookies()
-    const userId = cookieStore.get('user_id')?.value
+export const dynamic = 'force-dynamic'
 
-    if (!userId) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
-    }
+export const POST = withSecurityHeaders(
+  withAuthAndValidation({
+    body: ContentPlanSchema
+  })(async (request: NextRequest, userId: string, { validatedBody }) => {
+    try {
+      const supabaseAdmin = getSupabaseAdmin()
 
-    console.log('Generating content plan for user:', userId)
+      console.log('Generating content plan for user:', userId)
 
-    // Get user profile and preferences
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single() as { data: any; error: any }
-
-    if (profileError || !profile) {
-      console.error('Profile error:', profileError)
-      return NextResponse.json({ error: 'User profile not found' }, { status: 404 })
-    }
-
-    // Get user's content preferences (with defaults)
-    const body = await request.json()
-    const userProfile: UserProfile = {
-      niche: body.niche || profile.niche || 'lifestyle',
-      primary_goal: body.primary_goal || profile.primary_goal || 'growth',
-      content_style: body.content_style || profile.content_style || 'authentic',
-      target_audience: body.target_audience || profile.target_audience || 'young professionals and entrepreneurs',
-      voice_tone: body.voice_tone || profile.voice_tone || 'casual',
-      posting_frequency: body.posting_frequency || profile.posting_frequency || 3
-    }
-
-    // Save preferences to user profile if they were provided in the request
-    if (body.niche || body.primary_goal || body.content_style || body.target_audience || body.voice_tone || body.posting_frequency) {
-      console.log('Updating user preferences in profile')
-      const { error: updateError } = await supabaseAdmin
+      // Get user profile and preferences
+      const { data: profile, error: profileError } = await supabaseAdmin
         .from('profiles')
-        .update({
-          niche: userProfile.niche,
-          primary_goal: userProfile.primary_goal,
-          content_style: userProfile.content_style,
-          target_audience: userProfile.target_audience,
-          voice_tone: userProfile.voice_tone,
-          posting_frequency: userProfile.posting_frequency,
-          preferences_set: true,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', userId) as { data: any; error: any }
+        .select('*')
+        .eq('id', userId)
+        .single() as { data: any; error: any }
 
-      if (updateError) {
-        console.error('Failed to update user preferences:', updateError)
-      } else {
-        console.log('User preferences saved successfully')
+      if (profileError || !profile) {
+        console.error('Profile error:', profileError)
+        return NextResponse.json({ error: 'User profile not found' }, { status: 404 })
       }
-    }
+
+      // Build user profile with validated input and secure defaults
+      const userProfile: UserProfile = {
+        niche: validatedBody?.niche || profile.niche || 'lifestyle',
+        primary_goal: validatedBody?.primary_goal || profile.primary_goal || 'growth',
+        content_style: validatedBody?.content_style || profile.content_style || 'authentic',
+        target_audience: validatedBody?.target_audience || profile.target_audience || 'young professionals and entrepreneurs',
+        voice_tone: validatedBody?.voice_tone || profile.voice_tone || 'casual',
+        posting_frequency: validatedBody?.posting_frequency || profile.posting_frequency || 3
+      }
+
+      // Save preferences to user profile if they were provided in the request
+      if (validatedBody?.niche || validatedBody?.primary_goal || validatedBody?.content_style || 
+          validatedBody?.target_audience || validatedBody?.voice_tone || validatedBody?.posting_frequency) {
+        console.log('Updating user preferences in profile')
+        const { error: updateError } = await supabaseAdmin
+          .from('profiles')
+          .update({
+            niche: userProfile.niche,
+            primary_goal: userProfile.primary_goal,
+            content_style: userProfile.content_style,
+            target_audience: userProfile.target_audience,
+            voice_tone: userProfile.voice_tone,
+            posting_frequency: userProfile.posting_frequency,
+            preferences_set: true,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', userId) as { data: any; error: any }
+
+        if (updateError) {
+          console.error('Failed to update user preferences:', updateError)
+        } else {
+          console.log('User preferences saved successfully')
+        }
+      }
 
     console.log('User profile:', userProfile)
 
@@ -170,11 +167,12 @@ export async function POST(request: NextRequest) {
       }
     })
 
-  } catch (error) {
-    console.error('Content plan generation error:', error)
-    return NextResponse.json(
-      { error: 'Failed to generate content plan' },
-      { status: 500 }
-    )
-  }
-}
+    } catch (error) {
+      console.error('Content plan generation error:', error)
+      return NextResponse.json(
+        { error: 'Failed to generate content plan' },
+        { status: 500 }
+      )
+    }
+  })
+)

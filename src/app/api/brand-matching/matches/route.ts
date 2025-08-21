@@ -1,41 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 import { EnhancedBrandMatchingService } from '@/lib/brand-matching/enhanced-matching-service'
+import { withAuthAndValidation, withSecurityHeaders, requireAuth } from '@/lib/validation/middleware'
+import { BrandMatchingQuerySchema } from '@/lib/validation/schemas'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(request: NextRequest) {
-  try {
-    const supabaseAdmin = getSupabaseAdmin()
-    const matchingService = new EnhancedBrandMatchingService()
-    const cookieStore = await cookies()
-    const userId = cookieStore.get('user_id')?.value
+export const GET = withSecurityHeaders(
+  withAuthAndValidation({
+    query: BrandMatchingQuerySchema
+  })(async (request: NextRequest, userId: string, { validatedQuery }) => {
+    try {
+      const supabaseAdmin = getSupabaseAdmin()
+      const matchingService = new EnhancedBrandMatchingService()
 
-    if (!userId) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
-    }
+      // Check if user has completed brand matching onboarding
+      const { data: profile } = await supabaseAdmin
+        .from('creator_profiles')
+        .select('profile_data')
+        .eq('user_id', userId)
+        .single()
 
-    // Check if user has completed brand matching onboarding
-    const { data: profile } = await supabaseAdmin
-      .from('creator_profiles')
-      .select('profile_data')
-      .eq('user_id', userId)
-      .single()
+      if (!(profile as any)?.profile_data?.identity) {
+        return NextResponse.json({ 
+          error: 'Brand matching profile not completed',
+          requiresOnboarding: true 
+        }, { status: 400 })
+      }
 
-    if (!(profile as any)?.profile_data?.identity) {
-      return NextResponse.json({ 
-        error: 'Brand matching profile not completed',
-        requiresOnboarding: true 
-      }, { status: 400 })
-    }
+      // Get matches from the service with validated parameters
+      const options = {
+        limit: validatedQuery?.limit || 100,
+        minScore: validatedQuery?.minScore || 50,
+        excludeMatched: validatedQuery?.excludeMatched || false
+      }
 
-    // Get matches from the service
-    const matchData = await matchingService.getMatchesForCreator(userId, {
-      limit: 100,
-      minScore: 50,
-      excludeMatched: false // Show all matches including previously matched
-    })
+      const matchData = await matchingService.getMatchesForCreator(userId, options)
 
     // Get similar brand suggestions based on past collaborations
     const similarBrands = await matchingService.getSimilarBrandMatches(userId)
@@ -59,45 +60,58 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+  })
+)
 
-// POST endpoint to manually trigger match recalculation
-export async function POST(request: NextRequest) {
-  try {
-    const supabaseAdmin = getSupabaseAdmin()
-    const matchingService = new EnhancedBrandMatchingService()
-    const cookieStore = await cookies()
-    const userId = cookieStore.get('user_id')?.value
+// POST body validation for match recalculation
+const MatchRecalculationSchema = z.object({
+  force_refresh: z.boolean().default(true),
+  clear_existing: z.boolean().default(true)
+})
 
-    if (!userId) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+export const POST = withSecurityHeaders(
+  withAuthAndValidation({
+    body: MatchRecalculationSchema
+  })(async (request: NextRequest, userId: string, { validatedBody }) => {
+    try {
+      const supabaseAdmin = getSupabaseAdmin()
+      const matchingService = new EnhancedBrandMatchingService()
+
+      const clearExisting = validatedBody?.clear_existing ?? true
+      const forceRefresh = validatedBody?.force_refresh ?? true
+
+      // Clear existing matches if requested
+      if (clearExisting) {
+        await supabaseAdmin
+          .from('user_brand_matches')
+          .delete()
+          .eq('user_id', userId)
+      }
+
+      // Get fresh matches
+      const matchData = await matchingService.getMatchesForCreator(userId, {
+        limit: 100,
+        minScore: 50,
+        excludeMatched: false
+      })
+
+      return NextResponse.json({
+        success: true,
+        message: 'Matches recalculated successfully',
+        matches: matchData.matches,
+        stats: matchData.matchStats,
+        config: {
+          cleared_existing: clearExisting,
+          force_refresh: forceRefresh
+        }
+      })
+
+    } catch (error) {
+      console.error('Error recalculating matches:', error)
+      return NextResponse.json(
+        { error: 'Failed to recalculate matches' },
+        { status: 500 }
+      )
     }
-
-    // Clear existing matches to force recalculation
-    await supabaseAdmin
-      .from('user_brand_matches')
-      .delete()
-      .eq('user_id', userId)
-
-    // Get fresh matches
-    const matchData = await matchingService.getMatchesForCreator(userId, {
-      limit: 100,
-      minScore: 50,
-      excludeMatched: false
-    })
-
-    return NextResponse.json({
-      success: true,
-      message: 'Matches recalculated successfully',
-      matches: matchData.matches,
-      stats: matchData.matchStats
-    })
-
-  } catch (error) {
-    console.error('Error recalculating matches:', error)
-    return NextResponse.json(
-      { error: 'Failed to recalculate matches' },
-      { status: 500 }
-    )
-  }
-}
+  })
+)

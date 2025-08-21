@@ -1,28 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { withValidation, withSecurityHeaders, rateLimit } from '@/lib/validation/middleware'
+import { SignupSchema } from '@/lib/validation/schemas'
 import bcrypt from 'bcryptjs'
 import { cookies } from 'next/headers'
 
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json()
-    const { 
-      email, 
-      password, 
-      fullName, 
-      instagramHandle, 
-      phone,
-      plan,
-      billingCycle
-    } = body
+export const POST = withSecurityHeaders(
+  rateLimit(3, 60000)( // 3 signup attempts per minute per IP
+    withValidation({
+      body: SignupSchema
+    })(async (request: NextRequest, { validatedBody }) => {
+      try {
+        if (!validatedBody) {
+          return NextResponse.json({ error: 'Request body is required' }, { status: 400 })
+        }
 
-    // Validate required fields
-    if (!email || !password || !fullName || !instagramHandle) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      )
-    }
+        const { 
+          email, 
+          password, 
+          fullName, 
+          instagramHandle, 
+          phone,
+          plan,
+          billingCycle
+        } = validatedBody
 
     const supabaseAdmin = getSupabaseAdmin()
 
@@ -116,4 +117,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+    })
+  )
+)
