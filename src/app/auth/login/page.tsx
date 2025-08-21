@@ -34,15 +34,34 @@ export default function LoginPage() {
     })
   }
 
+  const [error, setError] = useState('')
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    setError('')
     
-    // TODO: Implement actual login with Supabase
-    // For now, simulate login and redirect
-    setTimeout(() => {
-      window.location.href = '/dashboard'
-    }, 1000)
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || 'Failed to sign in')
+        setIsLoading(false)
+        return
+      }
+
+      // Redirect based on response
+      window.location.href = data.redirectTo || '/dashboard'
+    } catch (error) {
+      setError('Failed to sign in. Please try again.')
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -103,7 +122,7 @@ export default function LoginPage() {
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900 bg-white"
                   placeholder="sarah@example.com"
                   required
                 />
@@ -129,7 +148,7 @@ export default function LoginPage() {
                   name="password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900 bg-white"
                   placeholder="••••••••"
                   required
                 />

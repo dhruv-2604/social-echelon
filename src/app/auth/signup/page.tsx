@@ -77,13 +77,89 @@ export default function SignupPage() {
     })
   }
 
+  const [errors, setErrors] = useState<{[key: string]: string}>({})
+
+  const validatePassword = (password: string): string | null => {
+    if (password.length < 8) {
+      return 'Password must be at least 8 characters'
+    }
+    if (!/[A-Z]/.test(password)) {
+      return 'Password must contain at least one uppercase letter'
+    }
+    if (!/[a-z]/.test(password)) {
+      return 'Password must contain at least one lowercase letter'
+    }
+    if (!/[0-9]/.test(password)) {
+      return 'Password must contain at least one number'
+    }
+    if (!/[!@#$%^&*]/.test(password)) {
+      return 'Password must contain at least one special character (!@#$%^&*)'
+    }
+    return null
+  }
+
   const handleInfoSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    const newErrors: {[key: string]: string} = {}
+
+    // Validate password strength
+    const passwordError = validatePassword(formData.password)
+    if (passwordError) {
+      newErrors.password = passwordError
+    }
+
+    // Check if passwords match
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match'
+    }
+
+    // Validate Instagram handle format
+    const igHandle = formData.instagramHandle.replace('@', '')
+    if (!/^[a-zA-Z0-9._]+$/.test(igHandle)) {
+      newErrors.instagramHandle = 'Invalid Instagram handle format'
+    }
+
+    // Validate phone number (basic validation)
+    const phoneDigits = formData.phone.replace(/\D/g, '')
+    if (phoneDigits.length < 10) {
+      newErrors.phone = 'Please enter a valid phone number'
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors)
+      return
+    }
+
+    setErrors({})
     setStep('plan')
   }
 
-  const handlePlanSelection = () => {
-    setStep('payment')
+  const handlePlanSelection = async () => {
+    // Save user data to database before payment
+    try {
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formData,
+          plan: selectedPlan,
+          billingCycle
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setErrors({ submit: data.error || 'Failed to create account' })
+        return
+      }
+
+      // Store user ID for payment processing
+      localStorage.setItem('pending_user_id', data.userId)
+      setStep('payment')
+    } catch (error) {
+      setErrors({ submit: 'Failed to create account. Please try again.' })
+    }
   }
 
   const getPrice = () => {
@@ -149,7 +225,7 @@ export default function SignupPage() {
                         name="fullName"
                         value={formData.fullName}
                         onChange={handleInputChange}
-                        className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900 bg-white"
                         placeholder="Sarah Johnson"
                         required
                       />
@@ -167,11 +243,14 @@ export default function SignupPage() {
                         name="email"
                         value={formData.email}
                         onChange={handleInputChange}
-                        className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900 bg-white"
                         placeholder="sarah@example.com"
                         required
                       />
                     </div>
+                    {errors.email && (
+                      <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                    )}
                   </div>
 
                   <div>
@@ -185,11 +264,14 @@ export default function SignupPage() {
                         name="instagramHandle"
                         value={formData.instagramHandle}
                         onChange={handleInputChange}
-                        className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900 bg-white"
                         placeholder="@sarahcreates"
                         required
                       />
                     </div>
+                    {errors.instagramHandle && (
+                      <p className="mt-1 text-sm text-red-600">{errors.instagramHandle}</p>
+                    )}
                   </div>
 
                   <div>
@@ -203,16 +285,22 @@ export default function SignupPage() {
                         name="phone"
                         value={formData.phone}
                         onChange={handleInputChange}
-                        className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900 bg-white"
                         placeholder="+1 (555) 123-4567"
                         required
                       />
                     </div>
+                    {errors.phone && (
+                      <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
+                    )}
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Password
+                      <span className="text-xs text-gray-500 ml-2">
+                        (8+ chars, uppercase, lowercase, number, special char)
+                      </span>
                     </label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -221,12 +309,16 @@ export default function SignupPage() {
                         name="password"
                         value={formData.password}
                         onChange={handleInputChange}
-                        className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className={`w-full pl-10 pr-3 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900 bg-white ${
+                          errors.password ? 'border-red-500' : 'border-gray-200'
+                        }`}
                         placeholder="••••••••"
                         required
-                        minLength={8}
                       />
                     </div>
+                    {errors.password && (
+                      <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+                    )}
                   </div>
 
                   <div>
@@ -240,12 +332,16 @@ export default function SignupPage() {
                         name="confirmPassword"
                         value={formData.confirmPassword}
                         onChange={handleInputChange}
-                        className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className={`w-full pl-10 pr-3 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900 bg-white ${
+                          errors.confirmPassword ? 'border-red-500' : 'border-gray-200'
+                        }`}
                         placeholder="••••••••"
                         required
-                        minLength={8}
                       />
                     </div>
+                    {errors.confirmPassword && (
+                      <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
+                    )}
                   </div>
 
                   <WellnessButton type="submit" variant="primary" className="w-full">
