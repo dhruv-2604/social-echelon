@@ -93,7 +93,7 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
           >
-            <Link href="/api/auth/instagram">
+            <Link href="/auth/connect">
               <WellnessButton variant="primary" size="lg">
                 Start your wellness journey
               </WellnessButton>
@@ -437,7 +437,7 @@ export default function Home() {
           <p className="text-xl text-gray-600 mb-8">
             Join creators who've found balance between ambition and wellbeing
           </p>
-          <Link href="/api/auth/instagram">
+          <Link href="/auth/connect">
             <WellnessButton variant="primary" size="lg">
               <Sparkles className="w-5 h-5 mr-2" />
               Begin your journey
