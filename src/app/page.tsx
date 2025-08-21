@@ -93,14 +93,16 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
           >
-            <Link href="/auth/connect">
+            <Link href="/auth/signup">
               <WellnessButton variant="primary" size="lg">
                 Start your wellness journey
               </WellnessButton>
             </Link>
-            <WellnessButton variant="ghost" size="lg">
-              See how it works
-            </WellnessButton>
+            <Link href="/auth/login">
+              <WellnessButton variant="ghost" size="lg">
+                Sign in
+              </WellnessButton>
+            </Link>
           </motion.div>
 
           {/* Scroll indicator */}
@@ -341,9 +343,11 @@ export default function Home() {
                   </li>
                 </ul>
                 
-                <WellnessButton variant="secondary" className="w-full">
-                  Start free trial
-                </WellnessButton>
+                <Link href="/auth/signup" className="block">
+                  <WellnessButton variant="secondary" className="w-full">
+                    Get started
+                  </WellnessButton>
+                </Link>
               </div>
             </WellnessCard>
 
@@ -383,9 +387,11 @@ export default function Home() {
                   </li>
                 </ul>
                 
-                <WellnessButton variant="primary" className="w-full">
-                  Start free trial
-                </WellnessButton>
+                <Link href="/auth/signup" className="block">
+                  <WellnessButton variant="primary" className="w-full">
+                    Get started
+                  </WellnessButton>
+                </Link>
               </div>
             </WellnessCard>
           </div>
@@ -437,7 +443,7 @@ export default function Home() {
           <p className="text-xl text-gray-600 mb-8">
             Join creators who've found balance between ambition and wellbeing
           </p>
-          <Link href="/auth/connect">
+          <Link href="/auth/signup">
             <WellnessButton variant="primary" size="lg">
               <Sparkles className="w-5 h-5 mr-2" />
               Begin your journey
