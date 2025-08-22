@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { XTwitterCollector } from '@/lib/trends/x-twitter-collector'
 import { TrendManager } from '@/lib/trends/trend-manager'
 import { withSecurityHeaders, rateLimit, withAuthAndValidation } from '@/lib/validation/middleware'
 import { z } from 'zod'
@@ -11,6 +10,23 @@ const SUPPORTED_NICHES = [
   'fitness', 'beauty', 'lifestyle', 'fashion', 'food', 
   'travel', 'business', 'parenting', 'tech', 'education'
 ] as const
+
+// Helper function to get relevant hashtags for each niche
+function getNicheHashtags(niche: string): string[] {
+  const hashtagMap: Record<string, string[]> = {
+    fitness: ['fitness', 'workout', 'fitnessmotivation', 'gym', 'fitfam'],
+    beauty: ['beauty', 'makeup', 'skincare', 'beautytips', 'makeuptutorial'],
+    lifestyle: ['lifestyle', 'lifestyleblogger', 'dailylife', 'livingmybestlife', 'lifestylegoals'],
+    fashion: ['fashion', 'ootd', 'fashionista', 'style', 'fashionblogger'],
+    food: ['foodie', 'foodstagram', 'foodporn', 'recipe', 'cooking'],
+    travel: ['travel', 'wanderlust', 'travelgram', 'vacation', 'explore'],
+    business: ['entrepreneur', 'business', 'startup', 'businessowner', 'success'],
+    parenting: ['parenting', 'momlife', 'parenthood', 'kids', 'family'],
+    tech: ['tech', 'technology', 'innovation', 'coding', 'ai'],
+    education: ['education', 'learning', 'study', 'students', 'teaching']
+  }
+  return hashtagMap[niche] || ['trending', niche]
+}
 
 // Validation for POST body
 const TrendCollectionSchema = z.object({
@@ -32,12 +48,13 @@ function verifyCronAuth(request: NextRequest): boolean {
   return isVercelCron || (!!process.env.CRON_SECRET && authHeader === `Bearer ${process.env.CRON_SECRET}`)
 }
 
-// POST - Scheduled trend collection (cron job)
-export const POST = withSecurityHeaders(
+// GET - Scheduled trend collection (Vercel cron jobs use GET)
+export const GET = withSecurityHeaders(
   rateLimit(10, 3600000)( // 10 collections per hour max
     async (request: NextRequest) => {
       try {
         // This endpoint should be protected - only allow from cron jobs
+        // For testing, you can temporarily comment this out
         if (!verifyCronAuth(request)) {
           return NextResponse.json({ 
             error: 'Unauthorized - Cron authentication required',
@@ -60,36 +77,42 @@ export const POST = withSecurityHeaders(
         const nichesToCollect = validatedBody?.niches || SUPPORTED_NICHES
         const maxPerNiche = validatedBody?.maxPerNiche || 5
 
-        console.log(`Starting X/Twitter trend collection for ${nichesToCollect.length} niches`)
+        console.log(`Starting Instagram trend collection for ${nichesToCollect.length} niches`)
         
-        const collector = new XTwitterCollector()
         const allTrends = []
         const errors = []
 
         // Collect trends for each niche with rate limiting
         for (const niche of nichesToCollect) {
-          console.log(`Collecting X/Twitter trends for ${niche}`)
+          console.log(`Collecting Instagram trends for ${niche}`)
           
           try {
-            // Collect real X/Twitter trends
-            const xTrends = await collector.collectTrends(niche)
+            // Use Apify Instagram collector instead of X/Twitter
+            const { ApifyInstagramCollector } = await import('@/lib/trends/apify-instagram-collector')
+            const instagramCollector = new ApifyInstagramCollector()
             
-            // Limit trends per niche
-            const limitedTrends = xTrends.slice(0, maxPerNiche)
+            // Get popular hashtags for this niche
+            const hashtagsToAnalyze = getNicheHashtags(niche).slice(0, 3) // Limit to 3 hashtags per niche for cost
             
-            // Convert X/Twitter trends to our TrendData format
-            const trends = limitedTrends.map(xTrend => ({
+            // Collect Instagram trends
+            const instagramTrends = await instagramCollector.collectHashtagTrends(
+              hashtagsToAnalyze,
+              100 // Only 100 posts per hashtag to keep costs low
+            )
+            
+            // Convert to our TrendData format
+            const trends = instagramTrends.map(trend => ({
               niche,
               trend_type: 'hashtag' as const,
-              trend_name: xTrend.query,
-              growth_velocity: Math.round(xTrend.trending_score),
-              current_volume: xTrend.top_tweets.length * 1000, // Estimate based on sample
-              engagement_rate: xTrend.avg_engagement,
-              saturation_level: Math.min(100, xTrend.trending_score),
-              confidence_score: Math.min(100, Math.round(xTrend.trending_score * 1.2)),
-              trend_phase: (xTrend.trending_score > 70 ? 'growing' : xTrend.trending_score > 40 ? 'peak' : 'emerging') as 'emerging' | 'growing' | 'peak' | 'declining',
-              related_hashtags: xTrend.content_insights.viral_elements.filter(e => e.startsWith('#')),
-              example_posts: xTrend.top_tweets.slice(0, 3).map(t => t.content),
+              trend_name: trend.hashtag,
+              growth_velocity: Math.round(trend.growthRate || 0),
+              current_volume: trend.postCount * 100, // Estimate total volume
+              engagement_rate: trend.avgEngagement,
+              saturation_level: Math.min(100, trend.postCount / 10),
+              confidence_score: Math.min(100, 80), // High confidence for real data
+              trend_phase: (trend.growthRate && trend.growthRate > 10 ? 'growing' : trend.growthRate && trend.growthRate > 0 ? 'peak' : 'emerging') as 'emerging' | 'growing' | 'peak' | 'declining',
+              related_hashtags: [],
+              example_posts: trend.topPosts.slice(0, 3).map(p => p.caption?.substring(0, 100) || ''),
               optimal_posting_times: [9, 12, 17, 20] // Standard peak times
             }))
             
@@ -101,7 +124,7 @@ export const POST = withSecurityHeaders(
             // Add delay to avoid rate limits (2 seconds between niches)
             await new Promise(resolve => setTimeout(resolve, 2000))
           } catch (error) {
-            console.error(`Error collecting X/Twitter trends for ${niche}:`, error)
+            console.error(`Error collecting Instagram trends for ${niche}:`, error)
             errors.push({ niche, error: String(error) })
           }
         }
@@ -128,8 +151,8 @@ export const POST = withSecurityHeaders(
   )
 )
 
-// GET - Manual testing endpoint (protected with auth)
-export const GET = withSecurityHeaders(
+// POST - Manual testing endpoint (protected with auth)
+export const POST = withSecurityHeaders(
   withAuthAndValidation({
     query: TrendTestSchema
   })(async (request: NextRequest, userId: string, { validatedQuery }) => {
@@ -151,24 +174,28 @@ export const GET = withSecurityHeaders(
       }
 
       const niche = validatedQuery?.niche || 'lifestyle'
-      const collector = new XTwitterCollector()
       
-      console.log(`Testing X/Twitter trend collection for ${niche}`)
-      const xTrends = await collector.collectTrends(niche)
+      // Use Apify Instagram collector for testing
+      const { ApifyInstagramCollector } = await import('@/lib/trends/apify-instagram-collector')
+      const collector = new ApifyInstagramCollector()
       
-      // Convert to our format (limited to 3 for testing)
-      const trends = xTrends.slice(0, 3).map(xTrend => ({
+      console.log(`Testing Instagram trend collection for ${niche}`)
+      const hashtagsToTest = getNicheHashtags(niche).slice(0, 2) // Test with 2 hashtags
+      const instagramTrends = await collector.collectHashtagTrends(hashtagsToTest, 50) // Only 50 posts for testing
+      
+      // Convert to our format
+      const trends = instagramTrends.map(trend => ({
         niche,
         trend_type: 'hashtag' as const,
-        trend_name: xTrend.query,
-        growth_velocity: Math.round(xTrend.trending_score),
-        current_volume: xTrend.top_tweets.length * 1000,
-        engagement_rate: xTrend.avg_engagement,
-        saturation_level: Math.min(100, xTrend.trending_score),
-        confidence_score: Math.min(100, Math.round(xTrend.trending_score * 1.2)),
-        trend_phase: (xTrend.trending_score > 70 ? 'growing' : xTrend.trending_score > 40 ? 'peak' : 'emerging') as 'emerging' | 'growing' | 'peak' | 'declining',
-        related_hashtags: xTrend.content_insights.viral_elements.filter(e => e.startsWith('#')),
-        example_posts: xTrend.top_tweets.slice(0, 3).map(t => t.content),
+        trend_name: trend.hashtag,
+        growth_velocity: Math.round(trend.growthRate || 0),
+        current_volume: trend.postCount * 100,
+        engagement_rate: trend.avgEngagement,
+        saturation_level: Math.min(100, trend.postCount / 10),
+        confidence_score: 80,
+        trend_phase: (trend.growthRate && trend.growthRate > 10 ? 'growing' : 'emerging') as 'emerging' | 'growing' | 'peak' | 'declining',
+        related_hashtags: [],
+        example_posts: trend.topPosts.slice(0, 3).map(p => p.caption?.substring(0, 100) || ''),
         optimal_posting_times: [9, 12, 17, 20]
       }))
 

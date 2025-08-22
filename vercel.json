@@ -5,8 +5,8 @@
       "schedule": "0 7 * * *"
     },
     {
-      "path": "/api/algorithm/detect",
-      "schedule": "0 8 * * *"
+      "path": "/api/trends/collect",
+      "schedule": "0 9 * * *"
     }
   ]
 }
