@@ -12,18 +12,19 @@ const SUPPORTED_NICHES = [
 ] as const
 
 // Helper function to get relevant hashtags for each niche
+// Returns MORE hashtags to better capture trends and audio patterns
 function getNicheHashtags(niche: string): string[] {
   const hashtagMap: Record<string, string[]> = {
-    fitness: ['fitness', 'workout', 'fitnessmotivation', 'gym', 'fitfam'],
-    beauty: ['beauty', 'makeup', 'skincare', 'beautytips', 'makeuptutorial'],
-    lifestyle: ['lifestyle', 'lifestyleblogger', 'dailylife', 'livingmybestlife', 'lifestylegoals'],
-    fashion: ['fashion', 'ootd', 'fashionista', 'style', 'fashionblogger'],
-    food: ['foodie', 'foodstagram', 'foodporn', 'recipe', 'cooking'],
-    travel: ['travel', 'wanderlust', 'travelgram', 'vacation', 'explore'],
-    business: ['entrepreneur', 'business', 'startup', 'businessowner', 'success'],
-    parenting: ['parenting', 'momlife', 'parenthood', 'kids', 'family'],
-    tech: ['tech', 'technology', 'innovation', 'coding', 'ai'],
-    education: ['education', 'learning', 'study', 'students', 'teaching']
+    fitness: ['fitness', 'workout', 'fitnessmotivation', 'gym', 'fitfam', 'gymmotivation', 'fitnessjourney', 'fitnessgirl', 'workoutmotivation', 'homeworkout'],
+    beauty: ['beauty', 'makeup', 'skincare', 'beautytips', 'makeuptutorial', 'glowup', 'skincareroutine', 'makeuplooks', 'beautyhacks', 'cleanbeauty'],
+    lifestyle: ['lifestyle', 'lifestyleblogger', 'dailylife', 'livingmybestlife', 'lifestylegoals', 'morningroutine', 'selfcare', 'aesthetic', 'thatgirl', 'dailyinspo'],
+    fashion: ['fashion', 'ootd', 'fashionista', 'style', 'fashionblogger', 'streetstyle', 'outfitideas', 'fashioninspo', 'styleinspo', 'fashiontrends'],
+    food: ['foodie', 'foodstagram', 'foodporn', 'recipe', 'cooking', 'healthyfood', 'foodblogger', 'homecooking', 'easyrecipes', 'mealprep'],
+    travel: ['travel', 'wanderlust', 'travelgram', 'vacation', 'explore', 'travelphotography', 'traveltheworld', 'instatravel', 'travelguide', 'bucketlist'],
+    business: ['entrepreneur', 'business', 'startup', 'businessowner', 'success', 'smallbusiness', 'businesstips', 'entrepreneurship', 'businessgrowth', 'hustle'],
+    parenting: ['parenting', 'momlife', 'parenthood', 'kids', 'family', 'motherhood', 'toddlerlife', 'parentingtips', 'momhacks', 'familytime'],
+    tech: ['tech', 'technology', 'innovation', 'coding', 'ai', 'techtrends', 'programming', 'developer', 'artificialintelligence', 'futuretech'],
+    education: ['education', 'learning', 'study', 'students', 'teaching', 'studygram', 'studytips', 'onlinelearning', 'studymotivation', 'edtech']
   }
   return hashtagMap[niche] || ['trending', niche]
 }
@@ -92,12 +93,13 @@ export const GET = withSecurityHeaders(
             const instagramCollector = new ApifyInstagramCollector()
             
             // Get popular hashtags for this niche
-            const hashtagsToAnalyze = getNicheHashtags(niche).slice(0, 3) // Limit to 3 hashtags per niche for cost
+            // For better audio trend detection, analyze more hashtags but fewer posts each
+            const hashtagsToAnalyze = getNicheHashtags(niche).slice(0, 5) // 5 hashtags per niche
             
             // Collect Instagram trends
             const instagramTrends = await instagramCollector.collectHashtagTrends(
               hashtagsToAnalyze,
-              100 // Only 100 posts per hashtag to keep costs low
+              200 // 200 posts per hashtag = 1000 posts per niche for better audio pattern detection
             )
             
             // Convert to our TrendData format
