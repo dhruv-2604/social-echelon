@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { WellnessButton } from '@/components/wellness/WellnessButton'
 import { WellnessCard } from '@/components/wellness/WellnessCard'
-import { CollapsibleNav } from '@/components/wellness/CollapsibleNav'
 import { 
   Sparkles, 
   Heart, 
@@ -42,9 +41,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen relative">
-      {/* Navigation */}
-      <CollapsibleNav />
-
       {/* Hero Section - Minimal and Calming */}
       <motion.section 
         className="min-h-screen flex items-center justify-center px-4"
