@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     if (existing) {
       // Just log them in
       const cookieStore = await cookies()
-      cookieStore.set('user_id', existing.id, {
+      cookieStore.set('user_id', existing.id as string, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
     
     // Set session cookie
     const cookieStore = await cookies()
-    cookieStore.set('user_id', userId, {
+    cookieStore.set('user_id', userId as string, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
