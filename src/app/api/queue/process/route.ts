@@ -7,6 +7,7 @@ import { InstagramTrendCollector } from '@/lib/trends/instagram-collector'
 import { TrendManager } from '@/lib/trends/trend-manager'
 import { ContentGenerator } from '@/lib/ai/content-generator'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { withSecurityHeaders } from '@/lib/validation/middleware'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60 // 60 seconds max for processing jobs
@@ -21,13 +22,23 @@ const jobProcessors = {
   brand_discovery: processBrandDiscovery
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    // Verify authorization (cron secret or authenticated user)
-    const authHeader = request.headers.get('authorization')
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+// Helper to verify cron authorization
+function verifyCronAuth(request: NextRequest): boolean {
+  const authHeader = request.headers.get('authorization')
+  const isVercelCron = request.headers.get('x-vercel-cron') === '1'
+  
+  return isVercelCron || (!!process.env.CRON_SECRET && authHeader === `Bearer ${process.env.CRON_SECRET}`)
+}
+
+export const POST = withSecurityHeaders(
+  async (request: NextRequest) => {
+    try {
+      // Verify cron authorization only
+      if (!verifyCronAuth(request)) {
+        return NextResponse.json({ 
+          error: 'Unauthorized - Queue processing is restricted to scheduled jobs only' 
+        }, { status: 401 })
+      }
 
     const queue = JobQueue.getInstance()
     const cache = CacheService.getInstance()
@@ -91,12 +102,13 @@ export async function POST(request: NextRequest) {
     
   } catch (error) {
     console.error('Queue processing error:', error)
-    return NextResponse.json(
-      { error: 'Failed to process queue' },
-      { status: 500 }
-    )
+      return NextResponse.json(
+        { error: 'Failed to process queue' },
+        { status: 500 }
+      )
+    }
   }
-}
+)
 
 // Individual job processors
 async function processAlgorithmDetection(payload: any, userId?: string) {

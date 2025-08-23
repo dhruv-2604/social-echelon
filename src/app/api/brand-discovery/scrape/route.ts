@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
-import { withValidation, withSecurityHeaders } from '@/lib/validation/middleware'
+import { withValidation, withSecurityHeaders, rateLimit } from '@/lib/validation/middleware'
 import { ManualScrapingSchema } from '@/lib/validation/schemas'
 import { BrandOpportunityScraper } from '@/lib/brand-discovery/web-scraper'
 import { z } from 'zod'
@@ -40,9 +40,10 @@ async function verifyCronOrAdminAccess(request: NextRequest): Promise<boolean> {
 }
 
 export const POST = withSecurityHeaders(
-  withValidation({
-    body: ManualScrapingSchema
-  })(async (request: NextRequest, { validatedBody }) => {
+  rateLimit(5, 3600000)( // 5 requests per hour (expensive scraping operation)
+    withValidation({
+      body: ManualScrapingSchema
+    })(async (request: NextRequest, { validatedBody }) => {
     try {
       // Verify authorization
       const hasAccess = await verifyCronOrAdminAccess(request)
@@ -84,19 +85,12 @@ export const POST = withSecurityHeaders(
         { status: 500 }
       )
     }
-  })
+    })
+  )
 )
 
-// Query parameters for GET request
-const ScrapeQuerySchema = z.object({
-  limit: z.number().int().min(1).max(100).default(50),
-  status: z.enum(['all', 'qualified', 'pending', 'rejected']).default('qualified')
-})
-
 export const GET = withSecurityHeaders(
-  withValidation({
-    query: ScrapeQuerySchema
-  })(async (request: NextRequest, { validatedQuery }) => {
+  async (request: NextRequest) => {
     try {
       // Verify admin access
       const hasAccess = await verifyCronOrAdminAccess(request)
@@ -104,16 +98,32 @@ export const GET = withSecurityHeaders(
         return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
       }
 
+      // Parse and validate query parameters
+      const url = new URL(request.url)
+      
+      // Parse limit parameter
+      let limit = 50
+      const limitParam = url.searchParams.get('limit')
+      if (limitParam) {
+        const parsed = parseInt(limitParam)
+        if (!isNaN(parsed) && parsed >= 1 && parsed <= 100) {
+          limit = parsed
+        }
+      }
+      
+      // Parse status parameter
+      const statusParam = url.searchParams.get('status')
+      const validStatuses = ['all', 'qualified', 'pending', 'rejected']
+      const status = validStatuses.includes(statusParam || '') ? statusParam : 'qualified'
+
       const supabaseAdmin = getSupabaseAdmin()
-      const limit = validatedQuery?.limit || 50
-      const status = validatedQuery?.status || 'qualified'
       
       // Build query based on status filter
       let opportunitiesQuery = supabaseAdmin
         .from('scraped_opportunities')
         .select('*')
       
-      if (status !== 'all') {
+      if (status !== 'all' && status) {
         opportunitiesQuery = opportunitiesQuery.eq('status', status)
       }
       
@@ -144,5 +154,5 @@ export const GET = withSecurityHeaders(
         { status: 500 }
       )
     }
-  })
+  }
 )

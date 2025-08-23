@@ -20,7 +20,7 @@ export const GET = withSecurityHeaders(
       const supabaseAdmin = getSupabaseAdmin()
       const timeRange = validatedQuery?.timeRange || '30d'
 
-      console.log('Looking for user with ID:', userId, 'Time range:', timeRange)
+      console.log('Looking for user profile, time range:', timeRange)
 
     // Get user profile
     const { data: profile, error: profileError } = await supabaseAdmin
@@ -35,7 +35,7 @@ export const GET = withSecurityHeaders(
     }
 
     if (!profile) {
-      console.error('No profile found for user ID:', userId)
+      console.error('No profile found for authenticated user')
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
@@ -49,7 +49,7 @@ export const GET = withSecurityHeaders(
       [key: string]: any
     }
 
-    console.log('Found profile:', typedProfile.instagram_username)
+    console.log('Found profile for authenticated user')
 
     // Get recent Instagram posts
     const { data: posts, error: postsError } = await supabaseAdmin
@@ -141,11 +141,10 @@ export const GET = withSecurityHeaders(
       }
 
     console.log('Historical metrics query:', {
-      userId,
       lookingForDate: historicalDate.toISOString().split('T')[0],
       found: historicalMetrics?.length || 0,
-      data: historicalMetrics?.[0],
-      error: historicalError
+      hasData: !!historicalMetrics?.[0],
+      hasError: !!historicalError
     })
 
     // Also check if ANY historical data exists
@@ -156,7 +155,7 @@ export const GET = withSecurityHeaders(
       .order('date', { ascending: false })
       .limit(5)
 
-    console.log('Any historical data for user:', anyHistoricalData)
+    console.log('Historical data entries found:', anyHistoricalData?.length || 0)
 
     // Count posts in the selected time range
     const cutoffDate = new Date()
@@ -201,7 +200,7 @@ export const GET = withSecurityHeaders(
 
     // Try to fetch Instagram insights if token is available
     let insights = null
-    console.log('Attempting to fetch Instagram insights for user:', userId)
+    console.log('Attempting to fetch Instagram insights for authenticated user')
     
     try {
       const { data: tokenData, error: tokenError } = await supabaseAdmin

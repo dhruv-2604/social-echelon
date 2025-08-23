@@ -1,77 +1,112 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
-import { cookies } from 'next/headers'
 import OpenAI from 'openai'
 import { EnhancedBrandMatchingService } from '@/lib/brand-matching/enhanced-matching-service'
+import { withAuthAndValidation, withSecurityHeaders, rateLimit } from '@/lib/validation/middleware'
+import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
 
-const matchingService = new EnhancedBrandMatchingService()
+// Validation schema for match ID parameter
+const MatchIdParamsSchema = z.object({
+  matchId: z.string().uuid('Invalid match ID format')
+})
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { matchId: string } }
-) {
-  try {
-    const cookieStore = await cookies()
-    const userId = cookieStore.get('user_id')?.value
+// GET - Generate outreach content for a brand match (authenticated users only)
+export const GET = withSecurityHeaders(
+  rateLimit(5, 300000)( // 5 requests per 5 minutes (expensive AI operation)
+    withAuthAndValidation({
+      params: MatchIdParamsSchema
+    })(async (request: NextRequest, userId: string, { validatedParams, params }) => {
+      try {
+        const matchingService = new EnhancedBrandMatchingService()
+        const supabaseAdmin = getSupabaseAdmin()
 
-    if (!userId) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
-    }
+        // Resolve params if needed
+        const resolvedParams = params instanceof Promise ? await params : params
+        const matchId = validatedParams?.matchId || resolvedParams?.matchId
 
-    const supabaseAdmin = getSupabaseAdmin()
+        if (!matchId) {
+          return NextResponse.json({ error: 'Match ID required' }, { status: 400 })
+        }
 
-    // Get match details from user_brand_matches
-    const { data: match, error: matchError } = await supabaseAdmin
-      .from('user_brand_matches')
-      .select(`
-        *,
-        brand:brands(*)
-      `)
-      .eq('id', params.matchId)
-      .eq('user_id', userId)
-      .single() as { data: any; error: any }
+        // Get match details from user_brand_matches (ensure user owns this match)
+        const { data: match, error: matchError } = await supabaseAdmin
+          .from('user_brand_matches')
+          .select(`
+            id,
+            match_score,
+            match_category,
+            insights,
+            brand_id,
+            brand:brands(
+              id,
+              display_name,
+              brand_name,
+              industry,
+              instagram_handle,
+              recent_campaigns,
+              influencer_strategy
+            )
+          `)
+          .eq('id', matchId)
+          .eq('user_id', userId)
+          .single()
 
-    if (matchError || !match) {
-      return NextResponse.json({ error: 'Match not found' }, { status: 404 })
-    }
+        if (matchError || !match) {
+          return NextResponse.json({ error: 'Match not found or access denied' }, { status: 404 })
+        }
 
-    // Get creator profile
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single() as { data: any; error: any }
+        // Get creator profile (only necessary fields for outreach)
+        const { data: profile } = await supabaseAdmin
+          .from('profiles')
+          .select(`
+            full_name,
+            instagram_username,
+            follower_count,
+            engagement_rate
+          `)
+          .eq('id', userId)
+          .single()
 
-    const { data: creatorProfile } = await supabaseAdmin
-      .from('creator_profiles')
-      .select('profile_data')
-      .eq('user_id', userId)
-      .single() as { data: any; error: any }
+        const { data: creatorProfile } = await supabaseAdmin
+          .from('creator_profiles')
+          .select('profile_data')
+          .eq('user_id', userId)
+          .single()
 
-    if (!profile) {
-      return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
-    }
+        if (!profile) {
+          return NextResponse.json({ error: 'Creator profile not found' }, { status: 404 })
+        }
 
-    // Generate personalized outreach content using OpenAI
-    const emailPrompt = `
-      Generate a personalized brand outreach email using one of these three proven templates.
-      
-      Creator Info:
-      - Name: ${profile.full_name || 'Creator'}
-      - Instagram: @${profile.instagram_username || 'unknown'}
-      - Followers: ${profile.follower_count || 0}
-      - Engagement Rate: ${profile.engagement_rate || 0}%
-      - Content Focus: ${creatorProfile?.profile_data?.identity?.contentPillars?.join(', ') || 'Not specified'}
-      - Audience: ${creatorProfile?.profile_data?.analytics?.audienceDemographics?.topLocations?.[0]?.country || 'Global'} based, ${creatorProfile?.profile_data?.analytics?.audienceDemographics?.ageRanges?.[0]?.range || '18-34'} age range
-      
-      Brand Info:
-      - Name: ${match.brand?.display_name || 'Brand'}
-      - Industry: ${match.brand?.industry || 'Not specified'}
-      - Instagram: @${match.brand?.instagram_handle || match.brand?.brand_name?.toLowerCase().replace(/\s+/g, '') || 'unknown'}
-      - Recent Campaigns: ${match.brand?.recent_campaigns || 'Not specified'}
-      - Influencer Strategy: ${match.brand?.influencer_strategy || 'Standard partnerships'}
+        // Validate that OpenAI API key is configured
+        if (!process.env.OPENAI_API_KEY) {
+          return NextResponse.json({ error: 'AI content generation not available' }, { status: 503 })
+        }
+
+        // Sanitize inputs for AI generation
+        const sanitizeInput = (input: string | null | undefined): string => {
+          return input?.replace(/[<>'"&]/g, '').trim().slice(0, 100) || 'Not specified'
+        }
+
+        // Generate personalized outreach content using OpenAI
+        const emailPrompt = `
+          Generate a personalized brand outreach email using one of these three proven templates.
+          
+          Creator Info:
+          - Name: ${sanitizeInput(profile.full_name as string || 'Creator')}
+          - Instagram: @${sanitizeInput(profile.instagram_username as string || 'unknown')}
+          - Followers: ${Math.max(0, profile.follower_count as number || 0)}
+          - Engagement Rate: ${Math.max(0, Math.min(100, profile.engagement_rate as number || 0))}%
+          - Content Focus: ${sanitizeInput((creatorProfile?.profile_data as any)?.identity?.contentPillars?.slice(0, 3)?.join(', ') || 'Not specified')}
+          - Audience: ${sanitizeInput((creatorProfile?.profile_data as any)?.analytics?.audienceDemographics?.topLocations?.[0]?.country as string || 'Global')} based
+          
+          Brand Info:
+          - Name: ${sanitizeInput((match.brand as any)?.display_name as string || 'Brand')}
+          - Industry: ${sanitizeInput((match.brand as any)?.industry as string || 'Not specified')}
+          - Instagram: @${sanitizeInput((match.brand as any)?.instagram_handle as string || 'unknown')}
+          - Recent Campaigns: ${sanitizeInput((match.brand as any)?.recent_campaigns as string || 'Not specified')}
+          - Influencer Strategy: ${sanitizeInput((match.brand as any)?.influencer_strategy as string || 'Standard partnerships')}
       
       Choose ONE of these templates and fill in the bracketed parts:
       
@@ -136,93 +171,124 @@ export async function GET(
       }
     `
 
-    const dmPrompt = `
-      Generate a SHORT, NATURAL Instagram DM for brand outreach.
-      
-      Creator: @${profile.instagram_username} (${creatorProfile?.profile_data?.identity?.contentPillars?.[0] || 'lifestyle'} creator)
-      Brand: ${match.brand.display_name} (@${match.brand.instagram_handle || match.brand.brand_name.toLowerCase().replace(/\s+/g, '')})
-      
-      CRITICAL RULES:
-      1. Maximum 2-3 sentences (under 50 words total)
-      2. Reference their MOST RECENT post or story specifically
-      3. Sound like you're DMing a friend - super casual
-      4. One specific content idea that fits their current vibe
-      5. End with: "Check out my creator profile: [link]"
-      
-      EXAMPLES of natural DMs:
-      "Hey! Your new matcha latte launch looks incredible 🍵 Would love to create a 'morning routine' reel featuring it - my wellness audience would be obsessed. Check out my creator profile: [link]"
-      
-      "Just saw your Coachella collection drop! I'd love to style 3 festival looks for my fashion-forward followers. Check out my creator profile: [link]"
-      
-      BE SPECIFIC - mention actual products, campaigns, or posts you "just saw"
-      
-      Format the response as JSON with:
-      {
-        "message": "the DM text (MUST be under 50 words, natural tone)",
-        "personalizationPoints": ["specific thing you referenced"]
+        const dmPrompt = `
+          Generate a SHORT, NATURAL Instagram DM for brand outreach.
+          
+          Creator: @${sanitizeInput(profile.instagram_username as string)} (${sanitizeInput((creatorProfile?.profile_data as any)?.identity?.contentPillars?.[0] as string || 'lifestyle')} creator)
+          Brand: ${sanitizeInput((match.brand as any)?.display_name as string)} (@${sanitizeInput((match.brand as any)?.instagram_handle as string || 'unknown')})
+          
+          CRITICAL RULES:
+          1. Maximum 2-3 sentences (under 50 words total)
+          2. Reference their recent content
+          3. Sound professional but friendly
+          4. One specific content idea
+          5. End with: "Check out my creator profile: [link]"
+          
+          Format the response as JSON with:
+          {
+            "message": "the DM text (under 50 words)",
+            "personalizationPoints": ["content referenced"]
+          }
+        `
+
+        // Initialize OpenAI client with timeout
+        const openai = new OpenAI({
+          apiKey: process.env.OPENAI_API_KEY!,
+          timeout: 30000 // 30 second timeout
+        })
+
+        try {
+          const [emailResponse, dmResponse] = await Promise.all([
+            openai.chat.completions.create({
+              model: 'gpt-3.5-turbo', // Use cheaper model for this use case
+              messages: [{ role: 'user', content: emailPrompt }],
+              temperature: 0.7,
+              max_tokens: 500, // Limit response length
+              response_format: { type: 'json_object' }
+            }),
+            openai.chat.completions.create({
+              model: 'gpt-3.5-turbo',
+              messages: [{ role: 'user', content: dmPrompt }],
+              temperature: 0.7,
+              max_tokens: 200, // Shorter for DMs
+              response_format: { type: 'json_object' }
+            })
+          ])
+
+          const emailDraft = JSON.parse(emailResponse.choices[0]?.message?.content || '{"error": "No content"}')
+          const dmDraft = JSON.parse(dmResponse.choices[0]?.message?.content || '{"error": "No content"}')
+
+          // Validate AI responses
+          if (!emailDraft.body || !dmDraft.message) {
+            throw new Error('AI generated invalid content')
+          }
+
+          // Add profile link securely
+          const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.socialechelon.com'
+          const profileUrl = `${baseUrl}/creator/${encodeURIComponent(profile.instagram_username as string)}`
+          
+          // Replace placeholder safely
+          if (emailDraft.body && typeof emailDraft.body === 'string') {
+            emailDraft.body = emailDraft.body.replace(
+              'Social Echelon profile',
+              `Social Echelon profile: ${profileUrl}`
+            )
+          }
+          
+          if (dmDraft.message && typeof dmDraft.message === 'string') {
+            dmDraft.message = dmDraft.message.replace('[link]', profileUrl)
+          }
+
+          // Track outreach generation
+          try {
+            await matchingService.trackOutreachSent(userId, match.brand_id || (match.brand as any)?.id || '')
+          } catch (trackingError) {
+            console.error('Error tracking outreach:', trackingError)
+            // Don't fail the request if tracking fails
+          }
+
+          return NextResponse.json({
+            success: true,
+            match: {
+              id: match.id,
+              brand: {
+                display_name: (match.brand as any)?.display_name,
+                instagram_handle: (match.brand as any)?.instagram_handle,
+                industry: (match.brand as any)?.industry
+              },
+              match_score: match.match_score,
+              match_category: match.match_category
+              // Don't expose sensitive insights
+            },
+            creator: {
+              instagram_username: profile.instagram_username,
+              full_name: profile.full_name
+            },
+            emailDraft: {
+              subject: emailDraft.subject,
+              body: emailDraft.body,
+              template_used: emailDraft.template_used
+            },
+            dmDraft: {
+              message: dmDraft.message
+            }
+          })
+
+        } catch (aiError) {
+          console.error('OpenAI API error:', aiError)
+          return NextResponse.json(
+            { error: 'AI content generation temporarily unavailable' },
+            { status: 503 }
+          )
+        }
+
+      } catch (error) {
+        console.error('Error generating outreach:', error)
+        return NextResponse.json(
+          { error: 'Failed to generate outreach content' },
+          { status: 500 }
+        )
       }
-    `
-
-    // Initialize OpenAI client
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY!
     })
-
-    const [emailResponse, dmResponse] = await Promise.all([
-      openai.chat.completions.create({
-        model: 'gpt-4',
-        messages: [{ role: 'user', content: emailPrompt }],
-        temperature: 0.7,
-        response_format: { type: 'json_object' }
-      }),
-      openai.chat.completions.create({
-        model: 'gpt-4',
-        messages: [{ role: 'user', content: dmPrompt }],
-        temperature: 0.7,
-        response_format: { type: 'json_object' }
-      })
-    ])
-
-    const emailDraft = JSON.parse(emailResponse.choices[0].message.content || '{}')
-    const dmDraft = JSON.parse(dmResponse.choices[0].message.content || '{}')
-
-    // Add profile link to both drafts
-    const profileUrl = `${process.env.NEXT_PUBLIC_APP_URL}/creator/${profile.instagram_username}`
-    
-    // For email, replace the placeholder in the PS section
-    emailDraft.body = emailDraft.body.replace(
-      'Social Echelon profile',
-      `Social Echelon profile: ${profileUrl}`
-    )
-    
-    // For DM, replace the [link] placeholder
-    dmDraft.message = dmDraft.message.replace('[link]', profileUrl)
-
-    // Track that outreach was generated (helps with response rate tracking)
-    await matchingService.trackOutreachSent(userId, match.brand_id || match.brand?.id || '')
-
-    return NextResponse.json({
-      success: true,
-      match: {
-        id: match.id,
-        brand: match.brand,
-        overallScore: match.match_score,
-        matchCategory: match.match_category,
-        insights: match.insights || {}
-      },
-      creator: {
-        instagram_username: profile.instagram_username,
-        full_name: profile.full_name
-      },
-      emailDraft,
-      dmDraft
-    })
-
-  } catch (error) {
-    console.error('Error generating outreach:', error)
-    return NextResponse.json(
-      { error: 'Failed to generate outreach content' },
-      { status: 500 }
-    )
-  }
-}
+  )
+)

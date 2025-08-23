@@ -42,7 +42,7 @@ export class AudioTrendAggregator {
         
         // Aggregate audio data
         for (const trend of trends) {
-          if (trend.trendingAudio && trend.trendingAudio.length > 0) {
+          if (trend.trendingAudio && trend.trendingAudio.size > 0) {
             for (const [audioName, count] of trend.trendingAudio) {
               const [artist, track] = this.parseAudioName(audioName)
               const key = `${artist}-${track}`.toLowerCase()
@@ -147,6 +147,6 @@ export class AudioTrendAggregator {
       return []
     }
     
-    return data || []
+    return (data as any) || []
   }
 }

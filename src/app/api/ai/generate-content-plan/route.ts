@@ -14,7 +14,7 @@ export const POST = withSecurityHeaders(
     try {
       const supabaseAdmin = getSupabaseAdmin()
 
-      console.log('Generating content plan for user:', userId)
+      console.log('Generating content plan for authenticated user')
 
       // Get user profile and preferences
       const { data: profile, error: profileError } = await supabaseAdmin
@@ -63,7 +63,7 @@ export const POST = withSecurityHeaders(
         }
       }
 
-    console.log('User profile:', userProfile)
+    console.log('User profile prepared for content generation')
 
     // Get user's Instagram posts for analysis
     const { data: posts, error: postsError } = await supabaseAdmin

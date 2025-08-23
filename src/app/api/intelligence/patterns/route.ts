@@ -1,106 +1,158 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PatternDetector } from '@/lib/intelligence/pattern-detector'
+import { withAuthAndValidation, withSecurityHeaders, rateLimit } from '@/lib/validation/middleware'
+import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
 
-// POST /api/intelligence/patterns - Detect patterns (scheduled job)
-export async function POST(request: NextRequest) {
-  try {
-    // Protected endpoint - only allow from cron jobs
-    const authHeader = request.headers.get('authorization')
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    console.log('Starting pattern detection...')
-
-    const detector = new PatternDetector()
-    const patterns = await detector.detectPatterns()
-
-    return NextResponse.json({
-      success: true,
-      patterns_detected: patterns.length,
-      patterns: patterns.map(p => ({
-        type: p.pattern_type,
-        description: p.pattern_description,
-        score: p.avg_performance_score,
-        confidence: p.confidence_score
-      })),
-      timestamp: new Date().toISOString()
-    })
-
-  } catch (error) {
-    console.error('Pattern detection error:', error)
-    return NextResponse.json(
-      { error: 'Failed to detect patterns' },
-      { status: 500 }
-    )
-  }
+// Helper to verify cron authorization
+function verifyCronAuth(request: NextRequest): boolean {
+  const authHeader = request.headers.get('authorization')
+  const isVercelCron = request.headers.get('x-vercel-cron') === '1'
+  
+  return isVercelCron || (!!process.env.CRON_SECRET && authHeader === `Bearer ${process.env.CRON_SECRET}`)
 }
 
-// GET /api/intelligence/patterns - Get discovered patterns
-export async function GET(request: NextRequest) {
-  try {
-    const url = new URL(request.url)
-    const niche = url.searchParams.get('niche')
-    const patternType = url.searchParams.get('type')
-
-    const { getSupabaseAdmin } = await import('@/lib/supabase-admin')
-    const supabase = getSupabaseAdmin()
-
-    let query = supabase
-      .from('content_patterns')
-      .select('*')
-      .eq('is_active', true)
-      .gte('confidence_score', 70)
-      .order('avg_performance_score', { ascending: false })
-
-    if (patternType) {
-      query = query.eq('pattern_type', patternType)
-    }
-
-    if (niche) {
-      query = query.contains('applicable_niches', [niche])
-    }
-
-    const { data: patterns, error } = await query.limit(20) as { 
-      data: Array<{
-        pattern_type: string;
-        pattern_description: string;
-        pattern_value: any;
-        avg_performance_score: number;
-        confidence_score: number;
-        applicable_niches: string[];
-        is_active: boolean;
-      }> | null;
-      error: any;
-    }
-
-    if (error) throw error
-
-    // Group patterns by type
-    const groupedPatterns = patterns?.reduce((acc: any, pattern) => {
-      if (!acc[pattern.pattern_type]) {
-        acc[pattern.pattern_type] = []
+// POST - Run pattern detection (cron-only)
+export const POST = withSecurityHeaders(
+  async (request: NextRequest) => {
+    try {
+      // Protected endpoint - only allow from cron jobs
+      if (!verifyCronAuth(request)) {
+        return NextResponse.json({ 
+          error: 'Unauthorized - Cron authentication required' 
+        }, { status: 401 })
       }
-      acc[pattern.pattern_type].push(pattern)
-      return acc
-    }, {})
 
-    return NextResponse.json({
-      success: true,
-      total_patterns: patterns?.length || 0,
-      patterns: groupedPatterns,
-      summary: generatePatternSummary(patterns || [])
-    })
+      // Restrict in production
+      if (process.env.NODE_ENV === 'production' && !process.env.ALLOW_PATTERN_DETECTION) {
+        return NextResponse.json({ 
+          error: 'Pattern detection disabled in production' 
+        }, { status: 403 })
+      }
 
-  } catch (error) {
-    console.error('Error fetching patterns:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch patterns' },
-      { status: 500 }
-    )
+      const detector = new PatternDetector()
+      const patterns = await detector.detectPatterns()
+
+      return NextResponse.json({
+        success: true,
+        patterns_detected: patterns.length,
+        timestamp: new Date().toISOString()
+        // Don't expose detailed patterns in cron response
+      })
+
+    } catch (error) {
+      console.error('Pattern detection error:', error)
+      return NextResponse.json(
+        { error: 'Failed to detect patterns' },
+        { status: 500 }
+      )
+    }
   }
+)
+
+// Query parameters for pattern retrieval
+const PatternQuerySchema = z.object({
+  niche: z.string().min(1).max(50).optional(),
+  type: z.enum(['caption_length', 'hashtag_count', 'posting_time', 'content_format']).optional()
+}).optional()
+
+// GET - Get discovered patterns (authenticated users only)
+export const GET = withSecurityHeaders(
+  rateLimit(30, 300000)( // 30 requests per 5 minutes
+    withAuthAndValidation({
+      query: PatternQuerySchema
+    })(async (request: NextRequest, userId: string, { validatedQuery }) => {
+      try {
+        const niche = validatedQuery?.niche
+        const patternType = validatedQuery?.type
+
+        const { getSupabaseAdmin } = await import('@/lib/supabase-admin')
+        const supabase = getSupabaseAdmin()
+
+        let query = supabase
+          .from('content_patterns')
+          .select(`
+            pattern_type,
+            pattern_description,
+            pattern_value,
+            avg_performance_score,
+            confidence_score,
+            applicable_niches
+          `)
+          .eq('is_active', true)
+          .gte('confidence_score', 70)
+          .order('avg_performance_score', { ascending: false })
+
+        if (patternType) {
+          query = query.eq('pattern_type', patternType)
+        }
+
+        if (niche) {
+          query = query.contains('applicable_niches', [niche])
+        }
+
+        const { data: patterns, error } = await query.limit(20)
+
+        if (error) throw error
+
+        // Sanitize patterns data
+        const sanitizedPatterns = patterns?.map((pattern: any) => ({
+          type: pattern.pattern_type,
+          description: pattern.pattern_description,
+          value: sanitizePatternValue(pattern.pattern_value),
+          performance_score: Math.round(pattern.avg_performance_score || 0),
+          confidence: Math.round(pattern.confidence_score || 0),
+          niches: pattern.applicable_niches?.slice(0, 5) || []
+        })) || []
+
+        // Group patterns by type
+        const groupedPatterns = sanitizedPatterns.reduce((acc: any, pattern) => {
+          if (!acc[pattern.type]) {
+            acc[pattern.type] = []
+          }
+          acc[pattern.type].push(pattern)
+          return acc
+        }, {})
+
+        return NextResponse.json({
+          success: true,
+          total_patterns: sanitizedPatterns.length,
+          patterns: groupedPatterns,
+          summary: generatePatternSummary(sanitizedPatterns)
+        })
+
+      } catch (error) {
+        console.error('Error fetching patterns:', error)
+        return NextResponse.json(
+          { error: 'Failed to fetch content patterns' },
+          { status: 500 }
+        )
+      }
+    })
+  )
+)
+
+// Sanitize pattern values to prevent data exposure
+function sanitizePatternValue(value: any): any {
+  if (!value || typeof value !== 'object') return value
+  
+  // Remove sensitive fields and limit array sizes
+  const sanitized = { ...value }
+  
+  if (Array.isArray(sanitized.examples)) {
+    delete sanitized.examples // Remove example posts
+  }
+  
+  if (Array.isArray(sanitized.user_ids)) {
+    delete sanitized.user_ids // Remove user identification
+  }
+  
+  if (Array.isArray(sanitized.post_ids)) {
+    delete sanitized.post_ids // Remove post identification
+  }
+  
+  return sanitized
 }
 
 function generatePatternSummary(patterns: any[]): any {

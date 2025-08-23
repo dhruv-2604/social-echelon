@@ -25,7 +25,7 @@ export const POST = withSecurityHeaders(
           }, { status: 400 })
         }
         
-        console.log(`Resetting ${validatedBody.resetType} for user:`, userId)
+        console.log(`Resetting ${validatedBody.resetType} for authenticated user`)
         
         const supabaseAdmin = getSupabaseAdmin()
         const deletedItems = {

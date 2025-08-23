@@ -35,7 +35,7 @@ export const POST = withSecurityHeaders(
         // Use the requested amount of posts (you have Apify paid plan)
         const maxPosts = validatedBody.maxPostsPerTag || 500
 
-        console.log(`Collecting Instagram trends for user ${userId}`)
+        console.log('Collecting Instagram trends for authenticated user')
         
         const collector = new ApifyInstagramCollector()
         const trends = await collector.collectHashtagTrends(

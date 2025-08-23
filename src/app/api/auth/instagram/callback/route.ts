@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
     
     if (existingUser && !fetchError) {
       // Update existing user
-      console.log('Updating existing user:', existingUser.id)
+      console.log('Updating existing user profile')
       const { error: updateError } = await supabaseAdmin
         .from('profiles')
         .update({
@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
       userId = existingUser.id as string
     } else {
       // Create new user
-      console.log('Creating new user for Instagram ID:', profile.id)
+      console.log('Creating new user for Instagram profile')
       const newUserId = crypto.randomUUID()
       const { data: newUser, error: insertError } = await supabaseAdmin
         .from('profiles')
@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
       }
       
       userId = (newUser?.id as string) || newUserId
-      console.log('Created user with ID:', userId)
+      console.log('Created new user successfully')
     }
 
     // Store Instagram posts in database
