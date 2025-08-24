@@ -7,87 +7,184 @@ import {
   Clock, 
   Zap, 
   RefreshCw, 
-  ArrowRight,
-  Flower2,
-  Leaf,
-  Sun,
-  Cloud,
-  Wind,
-  TreePine,
-  TrendingUp
+  Music,
+  Hash,
+  TrendingUp,
+  TrendingDown,
+  Heart,
+  MessageCircle,
+  Play,
+  Calendar,
+  AlertCircle
 } from 'lucide-react'
 import { WellnessCard } from '@/components/wellness/WellnessCard'
 import { WellnessButton } from '@/components/wellness/WellnessButton'
 
-interface XTrend {
-  query: string
-  trending_score: number
-  avg_engagement: number
-  top_tweets: any[]
-  content_insights: {
-    avg_length: number
-    common_formats: string[]
-    viral_elements: string[]
+interface InstagramTrend {
+  id: string
+  trend_name: string
+  trend_type: string
+  platform: string
+  metrics: {
+    hashtag: string
+    postCount: number
+    avgEngagement: number
+    totalEngagement: number
+    growthRate: number
+    trendingAudio?: Array<[string, number]>
+    topPosts?: Array<{
+      url: string
+      likes: number
+      comments: number
+      caption: string
+      createdAt: string
+    }>
   }
+  collected_at: string
 }
 
-interface CrossPlatformInsights {
-  hot_topics: Array<{
-    topic: string
-    instagram_potential: string
-    suggested_content: string[]
-  }>
-  cross_platform_tips: string[]
-  timing_insight: string
-  viral_topics?: Array<{
-    topic: string
-    instagram_strategy: string
-    content_ideas: string[]
-  }>
-  best_hooks?: string[]
-  trending_formats?: string[]
-  adaptation_tips?: string[]
+interface TrendInsights {
+  totalTrends: number
+  avgGrowthRate: number
+  topAudio: Array<[string, number]>
+  bestPostingTime: string
+  dominantContentType: string
 }
 
 export default function TrendGardenPage() {
-  const [xTrends, setXTrends] = useState<XTrend[]>([])
-  const [insights, setInsights] = useState<CrossPlatformInsights | null>(null)
+  const [trends, setTrends] = useState<InstagramTrend[]>([])
+  const [insights, setInsights] = useState<TrendInsights | null>(null)
   const [loading, setLoading] = useState(true)
-  const [niche, setNiche] = useState('lifestyle')
+  const [niche, setNiche] = useState('all')
   const [refreshing, setRefreshing] = useState(false)
-  const [showAll, setShowAll] = useState(true)
+  const [selectedTrend, setSelectedTrend] = useState<InstagramTrend | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchTrends()
+    fetchInstagramTrends()
   }, [niche])
 
-  const fetchTrends = async () => {
+  const fetchInstagramTrends = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/trends/x-twitter?niche=${niche}`)
+      setError(null)
+      
+      // Fetch Instagram trends from our database
+      const response = await fetch('/api/trends/instagram', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch trends')
+      }
+      
       const data = await response.json()
       
-      if (data.success) {
-        setXTrends(data.trends)
-        setInsights(data.insights)
+      if (data.success && data.trends) {
+        setTrends(data.trends)
+        
+        // Calculate insights from the trends
+        const insights = calculateInsights(data.trends)
+        setInsights(insights)
+      } else {
+        setError('No trend data available. Trends are collected daily at 9 AM.')
       }
     } catch (error) {
-      console.error('Error fetching trends:', error)
+      console.error('Error fetching Instagram trends:', error)
+      setError('Failed to load trends. Please try again later.')
     } finally {
       setLoading(false)
       setRefreshing(false)
     }
   }
 
-  const handleRefresh = () => {
-    setRefreshing(true)
-    fetchTrends()
+  const calculateInsights = (trends: InstagramTrend[]): TrendInsights => {
+    // Aggregate all audio trends
+    const audioMap = new Map<string, number>()
+    let totalGrowth = 0
+    let trendCount = 0
+    
+    trends.forEach(trend => {
+      if (trend.metrics.growthRate) {
+        totalGrowth += trend.metrics.growthRate
+        trendCount++
+      }
+      
+      // Aggregate audio
+      if (trend.metrics.trendingAudio) {
+        trend.metrics.trendingAudio.forEach(([audio, count]) => {
+          audioMap.set(audio, (audioMap.get(audio) || 0) + count)
+        })
+      }
+    })
+    
+    // Sort audio by usage
+    const topAudio = Array.from(audioMap.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+    
+    return {
+      totalTrends: trends.length,
+      avgGrowthRate: trendCount > 0 ? totalGrowth / trendCount : 0,
+      topAudio,
+      bestPostingTime: '7 PM - 9 PM', // This could be calculated from data
+      dominantContentType: 'Reels' // This could be determined from metrics
+    }
   }
 
-  const getTrendStatus = (score: number) => {
-    if (score > 80) return { label: `${score}% Hot`, icon: Zap, color: 'text-red-600 bg-red-50' }
-    if (score > 50) return { label: `${score}% Trending`, icon: TrendingUp, color: 'text-orange-600 bg-orange-50' }
-    return { label: `${score}% Growing`, icon: Sparkles, color: 'text-blue-600 bg-blue-50' }
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    
+    // Trigger new collection
+    try {
+      const response = await fetch('/api/trends/instagram', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          hashtags: getHashtagsForNiche(niche),
+          maxPostsPerTag: 100
+        })
+      })
+      
+      if (response.ok) {
+        // Wait a bit then fetch the new data
+        setTimeout(() => {
+          fetchInstagramTrends()
+        }, 2000)
+      }
+    } catch (error) {
+      console.error('Error triggering collection:', error)
+      setRefreshing(false)
+    }
+  }
+
+  const getHashtagsForNiche = (niche: string): string[] => {
+    const hashtagMap: Record<string, string[]> = {
+      fitness: ['fitness', 'workout', 'gym'],
+      beauty: ['beauty', 'makeup', 'skincare'],
+      lifestyle: ['lifestyle', 'dailylife', 'aesthetic'],
+      fashion: ['fashion', 'ootd', 'style'],
+      food: ['foodie', 'recipe', 'cooking'],
+      all: ['trending', 'viral', 'explore']
+    }
+    return hashtagMap[niche] || ['trending']
+  }
+
+  const getGrowthIcon = (growthRate: number) => {
+    if (growthRate > 10) return <TrendingUp className="w-4 h-4 text-green-600" />
+    if (growthRate < -10) return <TrendingDown className="w-4 h-4 text-red-600" />
+    return <TrendingUp className="w-4 h-4 text-gray-400" />
+  }
+
+  const formatEngagement = (num: number): string => {
+    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
+    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
+    return num.toString()
   }
 
   if (loading && !refreshing) {
@@ -102,17 +199,17 @@ export default function TrendGardenPage() {
             animate={{ rotate: 360 }}
             transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
           >
-            <Flower2 className="w-8 h-8 text-purple-400 mx-auto mb-4" />
+            <Sparkles className="w-8 h-8 text-purple-400 mx-auto mb-4" />
           </motion.div>
-          <p className="text-gray-600">Cultivating trends...</p>
+          <p className="text-gray-600">Gathering Instagram trends...</p>
         </motion.div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen">
-      <div className="max-w-6xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-b from-purple-50/50 to-white">
+      <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -120,10 +217,10 @@ export default function TrendGardenPage() {
           className="text-center mb-12"
         >
           <h1 className="text-4xl font-light text-gray-800 mb-4">
-            Trend Garden
+            Instagram Trend Garden
           </h1>
           <p className="text-gray-600 text-lg">
-            Watch ideas bloom naturally
+            Real-time insights from Instagram's trending content
           </p>
         </motion.div>
 
@@ -136,174 +233,217 @@ export default function TrendGardenPage() {
         >
           {/* Niche Selector */}
           <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600">Your Niche:</label>
+            <label className="text-sm text-gray-600">Filter by niche:</label>
             <select
               value={niche}
               onChange={(e) => setNiche(e.target.value)}
               className="px-4 py-2 bg-white border border-gray-200 rounded-full text-gray-700 focus:border-purple-400 focus:outline-none"
             >
-              <option value="lifestyle">Lifestyle</option>
-              <option value="fashion">Fashion</option>
+              <option value="all">All Niches</option>
               <option value="fitness">Fitness</option>
               <option value="beauty">Beauty</option>
+              <option value="lifestyle">Lifestyle</option>
+              <option value="fashion">Fashion</option>
               <option value="food">Food</option>
-              <option value="travel">Travel</option>
-              <option value="tech">Tech</option>
-              <option value="business">Business</option>
             </select>
           </div>
 
           {/* Refresh */}
-          <button
+          <WellnessButton
             onClick={handleRefresh}
             disabled={refreshing}
-            className="px-4 py-2 bg-white/80 backdrop-blur rounded-full border border-gray-200 hover:bg-white transition-all flex items-center gap-2"
+            variant="secondary"
+            size="sm"
           >
-            <RefreshCw className={`w-4 h-4 text-purple-600 ${refreshing ? 'animate-spin' : ''}`} />
-            <span className="text-gray-700">Refresh</span>
-          </button>
+            <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+            {refreshing ? 'Collecting...' : 'Refresh'}
+          </WellnessButton>
         </motion.div>
 
-
-        {/* Insights Garden */}
-        {insights?.hot_topics && insights.hot_topics.length > 0 && (
+        {/* Error State */}
+        {error && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="mb-10"
+            className="mb-8"
           >
-            <WellnessCard className="bg-gradient-to-br from-green-50 to-blue-50">
-              <div className="flex items-start gap-4">
-                <Sun className="w-6 h-6 text-amber-500 mt-1" />
-                <div className="flex-1">
-                  <h3 className="text-xl font-medium text-gray-800 mb-3">Today's Harvest</h3>
-                  <p className="text-gray-600 mb-6">{insights.timing_insight}</p>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {insights.hot_topics.slice(0, 3).map((topic, idx) => (
-                      <motion.div 
-                        key={idx} 
-                        className="bg-white/80 rounded-lg p-4"
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.5 + idx * 0.1 }}
-                      >
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="font-medium text-gray-800">{topic.topic}</span>
-                          <Sparkles className="w-4 h-4 text-purple-500" />
-                        </div>
-                        <div className="space-y-2">
-                          {topic.suggested_content.slice(0, 2).map((suggestion, sIdx) => (
-                            <p key={sIdx} className="text-sm text-gray-600">
-                              • {suggestion}
-                            </p>
-                          ))}
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
+            <WellnessCard className="bg-yellow-50 border-yellow-200">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
+                <div>
+                  <p className="text-yellow-800">{error}</p>
+                  <p className="text-sm text-yellow-600 mt-2">
+                    Trends are automatically collected daily. You can also trigger a manual collection using the refresh button.
+                  </p>
                 </div>
               </div>
             </WellnessCard>
           </motion.div>
         )}
 
-        {/* Trending Topics Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-          {xTrends.map((trend, idx) => {
-              const status = getTrendStatus(trend.trending_score)
-              const StatusIcon = status.icon
+        {/* Insights Overview */}
+        {insights && insights.totalTrends > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="mb-10"
+          >
+            <WellnessCard className="bg-gradient-to-br from-purple-50 to-pink-50">
+              <h3 className="text-xl font-medium text-gray-800 mb-6">Trend Insights</h3>
               
-              return (
-                <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 * idx }}
-                >
-                  <WellnessCard hover>
-                    <div className="flex items-start justify-between mb-4">
-                      <h3 className="text-lg font-medium text-gray-800">{trend.query}</h3>
-                      <span className={`px-3 py-1 rounded-full text-sm flex items-center gap-1 ${status.color}`}>
-                        <StatusIcon className="w-4 h-4" />
-                        {status.label}
-                      </span>
-                    </div>
-                    
-                    {/* Trend Metrics */}
-                    <div className="grid grid-cols-3 gap-3 mb-4">
-                      <div className="text-center">
-                        <div className="text-xl font-light text-gray-800">
-                          {(trend.avg_engagement / 1000).toFixed(1)}K
-                        </div>
-                        <div className="text-xs text-gray-500">Avg Engagement</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-xl font-light text-gray-800">
-                          {trend.trending_score}%
-                        </div>
-                        <div className="text-xs text-gray-500">Trending Score</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-xl font-light text-gray-800">
-                          {trend.top_tweets.length}
-                        </div>
-                        <div className="text-xs text-gray-500">Top Posts</div>
-                      </div>
-                    </div>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                {/* Total Trends */}
+                <div className="text-center">
+                  <Hash className="w-8 h-8 text-purple-500 mx-auto mb-2" />
+                  <div className="text-2xl font-light text-gray-800">{insights.totalTrends}</div>
+                  <div className="text-sm text-gray-600">Active Trends</div>
+                </div>
 
-                    {/* Success Factors */}
-                    {trend.content_insights.viral_elements.length > 0 && (
-                      <div className="p-3 bg-green-50 rounded-lg">
-                        <p className="text-sm font-medium text-gray-700 mb-2">What's Working:</p>
-                        <div className="space-y-1">
-                          {trend.content_insights.viral_elements.slice(0, 2).map((element, eIdx) => (
-                            <p key={eIdx} className="text-sm text-gray-600 flex items-center gap-2">
-                              <Leaf className="w-3 h-3 text-green-500" />
-                              {element}
-                            </p>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                {/* Average Growth */}
+                <div className="text-center">
+                  <TrendingUp className="w-8 h-8 text-green-500 mx-auto mb-2" />
+                  <div className="text-2xl font-light text-gray-800">
+                    {insights.avgGrowthRate > 0 ? '+' : ''}{insights.avgGrowthRate.toFixed(1)}%
+                  </div>
+                  <div className="text-sm text-gray-600">Avg Growth Rate</div>
+                </div>
 
-                    {/* Top Tweet Example */}
-                    {trend.top_tweets.length > 0 && (
-                      <div className="mt-4 p-3 bg-purple-50 rounded-lg">
-                        <p className="text-xs text-purple-700 mb-1">Top performing example:</p>
-                        <p className="text-sm text-gray-700 line-clamp-2">
-                          {trend.top_tweets[0].content}
-                        </p>
-                      </div>
-                    )}
-                  </WellnessCard>
-                </motion.div>
-              )
-            })}
+                {/* Top Audio */}
+                <div className="text-center">
+                  <Music className="w-8 h-8 text-pink-500 mx-auto mb-2" />
+                  <div className="text-2xl font-light text-gray-800">{insights.topAudio.length}</div>
+                  <div className="text-sm text-gray-600">Trending Sounds</div>
+                </div>
+
+                {/* Best Time */}
+                <div className="text-center">
+                  <Clock className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+                  <div className="text-lg font-light text-gray-800">{insights.bestPostingTime}</div>
+                  <div className="text-sm text-gray-600">Best Posting Time</div>
+                </div>
+              </div>
+
+              {/* Trending Audio Section */}
+              {insights.topAudio.length > 0 && (
+                <div className="mt-8 pt-6 border-t border-purple-100">
+                  <h4 className="text-lg font-medium text-gray-800 mb-4 flex items-center">
+                    <Music className="w-5 h-5 mr-2 text-pink-500" />
+                    Viral Audio Trends
+                  </h4>
+                  <div className="space-y-3">
+                    {insights.topAudio.map(([audio, count], idx) => (
+                      <motion.div
+                        key={idx}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.4 + idx * 0.1 }}
+                        className="flex items-center justify-between p-3 bg-white/70 rounded-lg"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl font-light text-gray-400">
+                            {idx + 1}
+                          </span>
+                          <div>
+                            <p className="font-medium text-gray-800">{audio}</p>
+                            <p className="text-sm text-gray-500">Used in {count} posts</p>
+                          </div>
+                        </div>
+                        <Play className="w-5 h-5 text-purple-400" />
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </WellnessCard>
+          </motion.div>
+        )}
+
+        {/* Trending Hashtags Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {trends.map((trend, idx) => (
+            <motion.div
+              key={trend.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 * idx }}
+              onClick={() => setSelectedTrend(trend)}
+              className="cursor-pointer"
+            >
+              <WellnessCard hover className="h-full">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-800 flex items-center gap-2">
+                      <Hash className="w-4 h-4 text-purple-400" />
+                      {trend.metrics.hashtag || trend.trend_name}
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {trend.metrics.postCount} posts analyzed
+                    </p>
+                  </div>
+                  {getGrowthIcon(trend.metrics.growthRate)}
+                </div>
+                
+                {/* Metrics */}
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <div className="text-xl font-light text-gray-800">
+                      {formatEngagement(trend.metrics.avgEngagement)}
+                    </div>
+                    <div className="text-xs text-gray-500">Avg Engagement</div>
+                  </div>
+                  <div>
+                    <div className="text-xl font-light text-gray-800">
+                      {trend.metrics.growthRate > 0 ? '+' : ''}{trend.metrics.growthRate.toFixed(1)}%
+                    </div>
+                    <div className="text-xs text-gray-500">Growth Rate</div>
+                  </div>
+                </div>
+
+                {/* Trending Audio for this hashtag */}
+                {trend.metrics.trendingAudio && trend.metrics.trendingAudio.length > 0 && (
+                  <div className="pt-3 border-t border-gray-100">
+                    <p className="text-xs text-gray-600 mb-2 flex items-center">
+                      <Music className="w-3 h-3 mr-1" />
+                      Top Audio
+                    </p>
+                    <p className="text-sm text-gray-700 truncate">
+                      {trend.metrics.trendingAudio[0][0]}
+                    </p>
+                  </div>
+                )}
+
+                {/* Collection Time */}
+                <div className="mt-4 pt-3 border-t border-gray-100">
+                  <p className="text-xs text-gray-400 flex items-center">
+                    <Calendar className="w-3 h-3 mr-1" />
+                    Updated {new Date(trend.collected_at).toLocaleDateString()}
+                  </p>
+                </div>
+              </WellnessCard>
+            </motion.div>
+          ))}
         </div>
 
-        {/* Cultivation Tips */}
-        {insights?.cross_platform_tips && insights.cross_platform_tips.length > 0 && (
+        {/* No Data State */}
+        {trends.length === 0 && !loading && !error && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
+            className="text-center py-12"
           >
-            <WellnessCard className="bg-gradient-to-r from-purple-50 to-pink-50">
-              <h3 className="text-xl font-medium text-gray-800 mb-4">
-                <Cloud className="w-5 h-5 inline mr-2 text-purple-500" />
-                Cultivation Wisdom
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {insights.cross_platform_tips.map((tip, idx) => (
-                  <div key={idx} className="flex items-start gap-3">
-                    <Wind className="w-4 h-4 text-purple-400 mt-1" />
-                    <span className="text-gray-700 text-sm">{tip}</span>
-                  </div>
-                ))}
-              </div>
-            </WellnessCard>
+            <Hash className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-600 text-lg mb-4">No trend data available yet</p>
+            <p className="text-gray-500">
+              Trends are collected automatically every day at 9 AM.
+            </p>
+            <WellnessButton
+              onClick={handleRefresh}
+              variant="primary"
+              className="mt-6"
+            >
+              Collect Trends Now
+            </WellnessButton>
           </motion.div>
         )}
 
@@ -315,9 +455,82 @@ export default function TrendGardenPage() {
           transition={{ delay: 0.8 }}
         >
           <Clock className="w-4 h-4 inline-block mr-1" />
-          Your garden refreshes naturally throughout the day
+          Trends are automatically collected daily at 9 AM EST
         </motion.div>
       </div>
+
+      {/* Trend Detail Modal */}
+      <AnimatePresence>
+        {selectedTrend && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+            onClick={() => setSelectedTrend(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="text-2xl font-light text-gray-800 mb-4">
+                #{selectedTrend.metrics.hashtag || selectedTrend.trend_name}
+              </h2>
+              
+              {/* Top Posts */}
+              {selectedTrend.metrics.topPosts && selectedTrend.metrics.topPosts.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-medium text-gray-700 mb-3">Top Performing Posts</h3>
+                  <div className="space-y-3">
+                    {selectedTrend.metrics.topPosts.slice(0, 3).map((post, idx) => (
+                      <div key={idx} className="p-3 bg-gray-50 rounded-lg">
+                        <p className="text-sm text-gray-700 mb-2 line-clamp-2">
+                          {post.caption}
+                        </p>
+                        <div className="flex items-center gap-4 text-sm text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <Heart className="w-3 h-3" />
+                            {formatEngagement(post.likes)}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <MessageCircle className="w-3 h-3" />
+                            {formatEngagement(post.comments)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Trending Audio */}
+              {selectedTrend.metrics.trendingAudio && selectedTrend.metrics.trendingAudio.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-medium text-gray-700 mb-3">Trending Audio</h3>
+                  <div className="space-y-2">
+                    {selectedTrend.metrics.trendingAudio.slice(0, 5).map(([audio, count], idx) => (
+                      <div key={idx} className="flex items-center justify-between p-2 bg-purple-50 rounded">
+                        <span className="text-sm text-gray-700">{audio}</span>
+                        <span className="text-xs text-gray-500">{count} uses</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <button
+                onClick={() => setSelectedTrend(null)}
+                className="w-full py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                Close
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
