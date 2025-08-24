@@ -112,15 +112,20 @@ export class ApifyInstagramCollector {
       }
     })
     
-    // Calculate growth rate (comparing first half vs second half of posts)
+    // Calculate growth rate (comparing older posts vs newer posts)
+    // Since Instagram returns posts newest first, we need to reverse the comparison
     const midPoint = Math.floor(items.length / 2)
-    const firstHalfEngagement = items.slice(0, midPoint).reduce((sum: number, post: any) => 
+    const newerPosts = items.slice(0, midPoint) // First half = newer
+    const olderPosts = items.slice(midPoint)    // Second half = older
+    
+    const newerEngagement = newerPosts.reduce((sum: number, post: any) => 
       sum + post.likeCount + post.commentCount, 0)
-    const secondHalfEngagement = items.slice(midPoint).reduce((sum: number, post: any) => 
+    const olderEngagement = olderPosts.reduce((sum: number, post: any) => 
       sum + post.likeCount + post.commentCount, 0)
     
-    const growthRate = firstHalfEngagement > 0 
-      ? ((secondHalfEngagement - firstHalfEngagement) / firstHalfEngagement) * 100
+    // Growth rate: how much better are newer posts doing vs older posts
+    const growthRate = olderEngagement > 0 
+      ? ((newerEngagement - olderEngagement) / olderEngagement) * 100
       : 0
     
     return {

@@ -193,9 +193,21 @@ export default function TrendGardenPage() {
   }
 
   const getGrowthIcon = (growthRate: number) => {
-    if (growthRate > 10) return <TrendingUp className="w-4 h-4 text-green-600" />
-    if (growthRate < -10) return <TrendingDown className="w-4 h-4 text-red-600" />
+    if (growthRate > 5) return <TrendingUp className="w-4 h-4 text-green-500" />
+    if (growthRate < -5) return <TrendingDown className="w-4 h-4 text-red-500" />
     return <TrendingUp className="w-4 h-4 text-gray-400" />
+  }
+
+  const getGrowthColor = (growthRate: number) => {
+    if (growthRate > 5) return 'text-green-500'
+    if (growthRate < -5) return 'text-red-500'
+    return 'text-gray-500'
+  }
+
+  const getGrowthBgColor = (growthRate: number) => {
+    if (growthRate > 5) return 'bg-green-50'
+    if (growthRate < -5) return 'bg-red-50'
+    return 'bg-gray-50'
   }
 
   const formatEngagement = (num: number): string => {
@@ -206,20 +218,79 @@ export default function TrendGardenPage() {
 
   if (loading && !refreshing) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <motion.div 
-          className="text-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-        >
+      <div className="min-h-screen bg-gradient-to-b from-purple-50/50 to-white">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          {/* Header Skeleton */}
           <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center mb-12"
           >
-            <Sparkles className="w-8 h-8 text-purple-400 mx-auto mb-4" />
+            <div className="h-10 bg-gray-200 rounded-lg w-80 mx-auto mb-4 animate-pulse"></div>
+            <div className="h-6 bg-gray-200 rounded-lg w-96 mx-auto animate-pulse"></div>
           </motion.div>
-          <p className="text-gray-600">Gathering Instagram trends...</p>
-        </motion.div>
+
+          {/* Controls Skeleton */}
+          <div className="flex justify-center items-center gap-6 mb-10">
+            <div className="h-10 bg-gray-200 rounded-full w-48 animate-pulse"></div>
+            <div className="h-10 bg-gray-200 rounded-full w-32 animate-pulse"></div>
+          </div>
+
+          {/* Insights Overview Skeleton */}
+          <div className="mb-10">
+            <div className="bg-white rounded-2xl p-8 shadow-lg border border-purple-100">
+              <div className="h-6 bg-gray-200 rounded w-32 mb-6 animate-pulse"></div>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="text-center">
+                    <div className="w-12 h-12 bg-gray-200 rounded-full mx-auto mb-2 animate-pulse"></div>
+                    <div className="h-8 bg-gray-200 rounded w-16 mx-auto mb-1 animate-pulse"></div>
+                    <div className="h-4 bg-gray-200 rounded w-20 mx-auto animate-pulse"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Trending Cards Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 * i }}
+              >
+                <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <div className="h-6 bg-gray-200 rounded w-32 mb-2 animate-pulse"></div>
+                      <div className="h-4 bg-gray-200 rounded w-24 animate-pulse"></div>
+                    </div>
+                    <div className="w-4 h-4 bg-gray-200 rounded animate-pulse"></div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="text-center p-3 bg-gray-50 rounded-lg">
+                      <div className="h-6 bg-gray-200 rounded w-16 mx-auto mb-1 animate-pulse"></div>
+                      <div className="h-3 bg-gray-200 rounded w-20 mx-auto animate-pulse"></div>
+                    </div>
+                    <div className="text-center p-3 bg-gray-50 rounded-lg">
+                      <div className="h-6 bg-gray-200 rounded w-16 mx-auto mb-1 animate-pulse"></div>
+                      <div className="h-3 bg-gray-200 rounded w-20 mx-auto animate-pulse"></div>
+                    </div>
+                  </div>
+                  <div className="pt-3 border-t border-gray-100">
+                    <div className="h-3 bg-gray-200 rounded w-16 mb-2 animate-pulse"></div>
+                    <div className="h-4 bg-gray-200 rounded w-full animate-pulse"></div>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-gray-100">
+                    <div className="h-3 bg-gray-200 rounded w-24 animate-pulse"></div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
       </div>
     )
   }
@@ -306,38 +377,58 @@ export default function TrendGardenPage() {
             transition={{ delay: 0.3 }}
             className="mb-10"
           >
-            <WellnessCard className="bg-gradient-to-br from-purple-50 to-pink-50">
+            <WellnessCard className="bg-gradient-to-br from-purple-50 to-pink-50 shadow-lg border border-purple-100">
               <h3 className="text-xl font-medium text-gray-800 mb-6">Trend Insights</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 {/* Total Trends */}
                 <div className="text-center">
-                  <Hash className="w-8 h-8 text-purple-500 mx-auto mb-2" />
-                  <div className="text-2xl font-light text-gray-800">{insights.totalTrends}</div>
-                  <div className="text-sm text-gray-600">Active Trends</div>
+                  <div className="w-12 h-12 bg-purple-100 rounded-full mx-auto mb-2 flex items-center justify-center">
+                    <Hash className="w-6 h-6 text-purple-500" />
+                  </div>
+                  <div className="text-2xl font-medium text-purple-600">{insights.totalTrends}</div>
+                  <div className="text-sm text-gray-600 font-medium">Active Trends</div>
                 </div>
 
                 {/* Average Growth */}
                 <div className="text-center">
-                  <TrendingUp className="w-8 h-8 text-green-500 mx-auto mb-2" />
-                  <div className="text-2xl font-light text-gray-800">
+                  <div className={`w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center ${
+                    insights.avgGrowthRate > 5 ? 'bg-green-100' : 
+                    insights.avgGrowthRate < -5 ? 'bg-red-100' : 'bg-gray-100'
+                  }`}>
+                    {insights.avgGrowthRate > 5 ? (
+                      <TrendingUp className="w-6 h-6 text-green-500" />
+                    ) : insights.avgGrowthRate < -5 ? (
+                      <TrendingDown className="w-6 h-6 text-red-500" />
+                    ) : (
+                      <TrendingUp className="w-6 h-6 text-gray-400" />
+                    )}
+                  </div>
+                  <div className={`text-2xl font-medium ${
+                    insights.avgGrowthRate > 5 ? 'text-green-600' : 
+                    insights.avgGrowthRate < -5 ? 'text-red-600' : 'text-gray-700'
+                  }`}>
                     {insights.avgGrowthRate > 0 ? '+' : ''}{insights.avgGrowthRate.toFixed(1)}%
                   </div>
-                  <div className="text-sm text-gray-600">Avg Growth Rate</div>
+                  <div className="text-sm text-gray-600 font-medium">Avg Growth Rate</div>
                 </div>
 
                 {/* Top Audio */}
                 <div className="text-center">
-                  <Music className="w-8 h-8 text-pink-500 mx-auto mb-2" />
-                  <div className="text-2xl font-light text-gray-800">{insights.topAudio.length}</div>
-                  <div className="text-sm text-gray-600">Trending Sounds</div>
+                  <div className="w-12 h-12 bg-pink-100 rounded-full mx-auto mb-2 flex items-center justify-center">
+                    <Music className="w-6 h-6 text-pink-500" />
+                  </div>
+                  <div className="text-2xl font-medium text-pink-600">{insights.topAudio.length}</div>
+                  <div className="text-sm text-gray-600 font-medium">Trending Sounds</div>
                 </div>
 
                 {/* Best Time */}
                 <div className="text-center">
-                  <Clock className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-                  <div className="text-lg font-light text-gray-800">{insights.bestPostingTime}</div>
-                  <div className="text-sm text-gray-600">Best Posting Time</div>
+                  <div className="w-12 h-12 bg-blue-100 rounded-full mx-auto mb-2 flex items-center justify-center">
+                    <Clock className="w-6 h-6 text-blue-500" />
+                  </div>
+                  <div className="text-lg font-medium text-blue-600">{insights.bestPostingTime}</div>
+                  <div className="text-sm text-gray-600 font-medium">Best Posting Time</div>
                 </div>
               </div>
 
@@ -403,17 +494,18 @@ export default function TrendGardenPage() {
                 
                 {/* Metrics */}
                 <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <div className="text-xl font-light text-gray-800">
+                  <div className="text-center p-3 bg-gray-50 rounded-lg">
+                    <div className="text-xl font-medium text-gray-800">
                       {formatEngagement(trend.metrics.avgEngagement)}
                     </div>
-                    <div className="text-xs text-gray-500">Avg Engagement</div>
+                    <div className="text-xs text-gray-600 font-medium mt-1">Avg Engagement</div>
                   </div>
-                  <div>
-                    <div className="text-xl font-light text-gray-800">
+                  <div className={`text-center p-3 rounded-lg ${getGrowthBgColor(trend.metrics.growthRate)}`}>
+                    <div className={`text-xl font-medium flex items-center justify-center gap-1 ${getGrowthColor(trend.metrics.growthRate)}`}>
+                      {getGrowthIcon(trend.metrics.growthRate)}
                       {trend.metrics.growthRate > 0 ? '+' : ''}{trend.metrics.growthRate.toFixed(1)}%
                     </div>
-                    <div className="text-xs text-gray-500">Growth Rate</div>
+                    <div className="text-xs text-gray-600 font-medium mt-1">Growth Rate</div>
                   </div>
                 </div>
 
@@ -498,31 +590,80 @@ export default function TrendGardenPage() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+              className="bg-white rounded-2xl p-8 max-w-3xl w-full max-h-[85vh] overflow-y-auto shadow-2xl border border-gray-100"
               onClick={(e) => e.stopPropagation()}
             >
-              <h2 className="text-2xl font-light text-gray-800 mb-4">
-                #{selectedTrend.metrics.hashtag || selectedTrend.trend_name}
-              </h2>
+              {/* Header */}
+              <div className="flex items-start justify-between mb-8">
+                <div>
+                  <h2 className="text-3xl font-medium text-gray-800 mb-2">
+                    #{selectedTrend.metrics.hashtag || selectedTrend.trend_name}
+                  </h2>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-500">{selectedTrend.metrics.postCount} posts analyzed</span>
+                    <span className="text-gray-300">•</span>
+                    <span className="text-sm text-gray-500">Updated {new Date(selectedTrend.collected_at).toLocaleDateString()}</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSelectedTrend(null)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Key Metrics */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                <div className="text-center p-4 bg-gray-50 rounded-xl">
+                  <div className="text-2xl font-medium text-gray-800">
+                    {formatEngagement(selectedTrend.metrics.avgEngagement)}
+                  </div>
+                  <div className="text-sm text-gray-600 mt-1">Avg Engagement</div>
+                </div>
+                <div className={`text-center p-4 rounded-xl ${getGrowthBgColor(selectedTrend.metrics.growthRate)}`}>
+                  <div className={`text-2xl font-medium flex items-center justify-center gap-1 ${getGrowthColor(selectedTrend.metrics.growthRate)}`}>
+                    {getGrowthIcon(selectedTrend.metrics.growthRate)}
+                    {selectedTrend.metrics.growthRate > 0 ? '+' : ''}{selectedTrend.metrics.growthRate.toFixed(1)}%
+                  </div>
+                  <div className="text-sm text-gray-600 mt-1">Growth Rate</div>
+                </div>
+                <div className="text-center p-4 bg-purple-50 rounded-xl">
+                  <div className="text-2xl font-medium text-purple-600">
+                    {selectedTrend.metrics.postCount}
+                  </div>
+                  <div className="text-sm text-gray-600 mt-1">Total Posts</div>
+                </div>
+              </div>
               
               {/* Top Posts */}
               {selectedTrend.metrics.topPosts && selectedTrend.metrics.topPosts.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-lg font-medium text-gray-700 mb-3">Top Performing Posts</h3>
-                  <div className="space-y-3">
+                <div className="mb-8">
+                  <h3 className="text-xl font-medium text-gray-800 mb-4 flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-purple-500" />
+                    Top Performing Posts
+                  </h3>
+                  <div className="space-y-4">
                     {selectedTrend.metrics.topPosts.slice(0, 3).map((post, idx) => (
-                      <div key={idx} className="p-3 bg-gray-50 rounded-lg">
-                        <p className="text-sm text-gray-700 mb-2 line-clamp-2">
+                      <div key={idx} className="p-4 bg-gradient-to-r from-gray-50 to-purple-50 rounded-xl border border-gray-100">
+                        <p className="text-gray-700 mb-3 line-clamp-3 leading-relaxed">
                           {post.caption}
                         </p>
-                        <div className="flex items-center gap-4 text-sm text-gray-500">
-                          <span className="flex items-center gap-1">
-                            <Heart className="w-3 h-3" />
-                            {formatEngagement(post.likes)}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <MessageCircle className="w-3 h-3" />
-                            {formatEngagement(post.comments)}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-6">
+                            <span className="flex items-center gap-2 text-gray-600">
+                              <Heart className="w-4 h-4 text-red-400" />
+                              <span className="font-medium">{formatEngagement(post.likes)}</span>
+                            </span>
+                            <span className="flex items-center gap-2 text-gray-600">
+                              <MessageCircle className="w-4 h-4 text-blue-400" />
+                              <span className="font-medium">{formatEngagement(post.comments)}</span>
+                            </span>
+                          </div>
+                          <span className="text-xs text-gray-500">
+                            {new Date(post.createdAt).toLocaleDateString()}
                           </span>
                         </div>
                       </div>
@@ -533,25 +674,36 @@ export default function TrendGardenPage() {
 
               {/* Trending Audio */}
               {selectedTrend.metrics.trendingAudio && selectedTrend.metrics.trendingAudio.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-lg font-medium text-gray-700 mb-3">Trending Audio</h3>
-                  <div className="space-y-2">
+                <div className="mb-8">
+                  <h3 className="text-xl font-medium text-gray-800 mb-4 flex items-center gap-2">
+                    <Music className="w-5 h-5 text-pink-500" />
+                    Trending Audio
+                  </h3>
+                  <div className="grid grid-cols-1 gap-3">
                     {selectedTrend.metrics.trendingAudio.slice(0, 5).map(([audio, count], idx) => (
-                      <div key={idx} className="flex items-center justify-between p-2 bg-purple-50 rounded">
-                        <span className="text-sm text-gray-700">{audio}</span>
-                        <span className="text-xs text-gray-500">{count} uses</span>
+                      <div key={idx} className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100">
+                        <div className="flex items-center gap-3">
+                          <span className="text-lg font-medium text-purple-600">#{idx + 1}</span>
+                          <span className="text-gray-700 font-medium">{audio}</span>
+                        </div>
+                        <span className="bg-white px-3 py-1 rounded-full text-sm text-gray-600 border">
+                          {count} uses
+                        </span>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              <button
-                onClick={() => setSelectedTrend(null)}
-                className="w-full py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-              >
-                Close
-              </button>
+              {/* Close button */}
+              <div className="flex justify-center pt-4 border-t border-gray-100">
+                <button
+                  onClick={() => setSelectedTrend(null)}
+                  className="px-8 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium rounded-full hover:from-purple-600 hover:to-pink-600 transition-all duration-200 shadow-md hover:shadow-lg"
+                >
+                  Close
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}

@@ -1,18 +1,18 @@
 /* Wellness-First Design System - Vibrant & Alive */
 
 :root {
-  /* Core Wellness Palette - Vibrant but Calming */
-  --wellness-purple: #8B7FBF;
-  --wellness-purple-soft: #B8ADE8;
-  --wellness-purple-light: #F3F0FF;
+  /* Core Wellness Palette - Consistent with design system */
+  --wellness-purple: #9333ea;
+  --wellness-purple-soft: #a855f7;
+  --wellness-purple-light: #f3e8ff;
   
   --wellness-blue: #6BB6D6;
   --wellness-blue-soft: #9BD4ED;
   --wellness-blue-light: #E8F6FC;
   
-  --wellness-green: #7BC96F;
-  --wellness-green-soft: #A3E599;
-  --wellness-green-light: #EDFAEB;
+  --wellness-green: #10b981;
+  --wellness-green-soft: #34d399;
+  --wellness-green-light: #d1fae5;
   
   --wellness-yellow: #FFD662;
   --wellness-yellow-soft: #FFE593;
@@ -22,9 +22,9 @@
   --wellness-teal-soft: #8EDDD6;
   --wellness-teal-light: #E5FAF8;
   
-  --wellness-coral: #FFB4A2;
-  --wellness-coral-soft: #FFCFC5;
-  --wellness-coral-light: #FFF5F3;
+  --wellness-coral: #ef4444;
+  --wellness-coral-soft: #f87171;
+  --wellness-coral-light: #fee2e2;
   
   --wellness-mint: #B2F2BB;
   --wellness-mint-soft: #D3F9D8;
@@ -46,9 +46,10 @@
   --wellness-white: #FFFFFF;
   
   /* Semantic Colors */
-  --color-primary: var(--wellness-purple);
+  --color-primary: #9333ea;
   --color-secondary: var(--wellness-teal);
-  --color-success: var(--wellness-green);
+  --color-success: #10b981;
+  --color-error: #ef4444;
   --color-joy: var(--wellness-yellow);
   --color-energy: var(--wellness-coral);
   --color-calm: var(--wellness-sky);
@@ -56,10 +57,11 @@
   --color-text: var(--wellness-neutral-700);
   --color-text-soft: var(--wellness-neutral-500);
   
-  /* Gentle Status Colors */
-  --color-error: #FFB4A2; /* Soft coral instead of red */
-  --color-warning: #FFD662; /* Warm yellow instead of harsh orange */
-  --color-info: #6BB6D6; /* Soft blue */
+  /* Consistent Status Colors */
+  --color-error: #ef4444; /* Consistent red */
+  --color-warning: #f59e0b; /* Consistent amber */
+  --color-info: #3b82f6; /* Consistent blue */
+  --color-success: #10b981; /* Consistent green */
   
   /* Spacing System - Generous breathing room */
   --space-xs: 0.5rem;   /* 8px */

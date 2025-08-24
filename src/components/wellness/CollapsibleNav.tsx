@@ -17,6 +17,7 @@ export function CollapsibleNav() {
   const [isExpanded, setIsExpanded] = useState(false)
   const [isVisible, setIsVisible] = useState(true)
   const [lastScrollY, setLastScrollY] = useState(0)
+  const [isMobile, setIsMobile] = useState(false)
   const pathname = usePathname()
   
   useEffect(() => {
@@ -51,7 +52,7 @@ export function CollapsibleNav() {
       initial={{ y: 0 }}
       animate={{ 
         y: isVisible ? 0 : -100,
-        transition: { duration: 0.3, ease: 'easeInOut' }
+        transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }
       }}
     >
       <motion.div
@@ -81,10 +82,10 @@ export function CollapsibleNav() {
             /* Show Social Echelon when collapsed */
             <motion.div
               key="brand"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
               className="px-6"
             >
               <span className="font-medium text-gray-800 whitespace-nowrap">Social Echelon</span>
@@ -93,10 +94,10 @@ export function CollapsibleNav() {
             /* Show menu items when expanded */
             <motion.div
               key="menu"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
               className="flex items-center gap-2 px-6"
             >
               {navItems.map((item) => (

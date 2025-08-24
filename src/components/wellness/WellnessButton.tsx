@@ -28,29 +28,33 @@ export function WellnessButton({
   const baseStyles = `
     font-medium rounded-xl transition-all duration-300
     focus:outline-none focus:ring-2 focus:ring-offset-2
-    disabled:opacity-50 disabled:cursor-not-allowed
+    disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none
+    disabled:bg-gray-300 disabled:text-gray-500 disabled:shadow-none
   `
 
   const variants = {
     primary: `
-      bg-gradient-to-r from-[var(--wellness-purple)] to-[var(--wellness-purple-soft)]
-      text-white shadow-sm hover:shadow-md
-      focus:ring-[var(--wellness-purple-soft)]
+      bg-gradient-to-r from-[#9333ea] to-[#a855f7]
+      text-white shadow-sm hover:shadow-md hover:from-[#7c3aed] hover:to-[#9333ea]
+      focus:ring-[#9333ea]/30 focus:ring-4
+      disabled:from-gray-300 disabled:to-gray-300
     `,
     secondary: `
-      bg-gradient-to-r from-[var(--wellness-blue)] to-[var(--wellness-blue-soft)]
-      text-white shadow-sm hover:shadow-md
-      focus:ring-[var(--wellness-blue-soft)]
+      bg-gradient-to-r from-[#10b981] to-[#059669]
+      text-white shadow-sm hover:shadow-md hover:from-[#059669] hover:to-[#047857]
+      focus:ring-[#10b981]/30 focus:ring-4
+      disabled:from-gray-300 disabled:to-gray-300
     `,
     calm: `
-      bg-[var(--wellness-neutral-100)] text-[var(--wellness-neutral-700)]
-      hover:bg-[var(--wellness-neutral-100)] hover:shadow-sm
-      focus:ring-[var(--wellness-neutral-300)]
+      bg-gray-100 text-gray-700 border border-gray-200
+      hover:bg-gray-200 hover:shadow-sm hover:border-gray-300
+      focus:ring-[#9333ea]/20 focus:border-[#9333ea]
+      disabled:bg-gray-100 disabled:border-gray-200
     `,
     ghost: `
-      bg-transparent text-[var(--wellness-neutral-700)]
-      hover:bg-[var(--wellness-neutral-100)]
-      focus:ring-[var(--wellness-neutral-300)]
+      bg-transparent text-gray-700 hover:bg-gray-100
+      focus:ring-[#9333ea]/20
+      disabled:bg-transparent disabled:text-gray-400
     `
   }
 
@@ -69,13 +73,17 @@ export function WellnessButton({
         baseStyles,
         variants[variant],
         sizes[size],
+        disabled && 'disabled:hover:shadow-none disabled:hover:scale-100',
         className
       )}
       disabled={disabled}
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
       type={type}
+      aria-disabled={disabled}
     >
-      {children}
+      <span className={disabled ? 'opacity-60' : 'opacity-100'}>
+        {children}
+      </span>
     </motion.button>
   )
 }
