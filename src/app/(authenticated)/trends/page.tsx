@@ -137,28 +137,43 @@ export default function TrendGardenPage() {
 
   const handleRefresh = async () => {
     setRefreshing(true)
+    setError(null)
     
     // Trigger new collection
     try {
+      const hashtagsToCollect = getHashtagsForNiche(niche)
+      console.log(`Collecting trends for ${niche} with hashtags:`, hashtagsToCollect)
+      
       const response = await fetch('/api/trends/instagram', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          hashtags: getHashtagsForNiche(niche),
-          maxPostsPerTag: 100
+          hashtags: hashtagsToCollect,
+          maxPostsPerTag: 100,
+          analysisType: 'quick'
         })
       })
       
       if (response.ok) {
+        const data = await response.json()
+        console.log('Collection successful:', data)
+        
         // Wait a bit then fetch the new data
         setTimeout(() => {
           fetchInstagramTrends()
+          setRefreshing(false)
         }, 2000)
+      } else {
+        const errorData = await response.json()
+        console.error('Collection failed:', errorData)
+        setError(errorData.error || 'Failed to collect trends')
+        setRefreshing(false)
       }
     } catch (error) {
       console.error('Error triggering collection:', error)
+      setError('Network error - please try again')
       setRefreshing(false)
     }
   }
@@ -441,8 +456,16 @@ export default function TrendGardenPage() {
               onClick={handleRefresh}
               variant="primary"
               className="mt-6"
+              disabled={refreshing}
             >
-              Collect Trends Now
+              {refreshing ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin inline" />
+                  Collecting...
+                </>
+              ) : (
+                'Collect Trends Now'
+              )}
             </WellnessButton>
           </motion.div>
         )}
