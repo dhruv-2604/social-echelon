@@ -72,6 +72,7 @@ export default function TrendGardenPage() {
       // Fetch Instagram trends from our database
       const response = await fetch('/api/trends/instagram', {
         method: 'GET',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         }
@@ -146,6 +147,7 @@ export default function TrendGardenPage() {
       
       const response = await fetch('/api/trends/instagram', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },

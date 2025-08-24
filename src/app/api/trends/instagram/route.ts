@@ -20,7 +20,11 @@ export const POST = withSecurityHeaders(
       body: InstagramTrendSchema
     })(async (request: NextRequest, userId: string, { validatedBody }) => {
       try {
+        console.log('Instagram trends POST - userId:', userId)
+        console.log('Instagram trends POST - body:', validatedBody)
+        
         if (!validatedBody) {
+          console.error('No validated body received')
           return NextResponse.json({ error: 'Request body required' }, { status: 400 })
         }
 
@@ -35,7 +39,7 @@ export const POST = withSecurityHeaders(
         // Use the requested amount of posts (you have Apify paid plan)
         const maxPosts = validatedBody.maxPostsPerTag || 500
 
-        console.log('Collecting Instagram trends for authenticated user')
+        console.log(`Collecting Instagram trends for user ${userId} with ${validatedBody.hashtags.length} hashtags`)
         
         const collector = new ApifyInstagramCollector()
         const trends = await collector.collectHashtagTrends(
