@@ -102,26 +102,40 @@ export const GET = withSecurityHeaders(
               200 // 200 posts per hashtag = 1000 posts per niche for better audio pattern detection
             )
             
-            // Convert to our TrendData format
-            const trends = instagramTrends.map(trend => ({
-              niche,
-              trend_type: 'hashtag' as const,
+            // Convert to trend_analysis table format
+            const trendRecords = instagramTrends.map(trend => ({
+              user_id: 'system', // System-wide trends, not user-specific
+              platform: 'instagram',
+              trend_type: 'hashtag',
               trend_name: trend.hashtag,
-              growth_velocity: Math.round(trend.growthRate || 0),
-              current_volume: trend.postCount * 100, // Estimate total volume
-              engagement_rate: trend.avgEngagement,
-              saturation_level: Math.min(100, trend.postCount / 10),
-              confidence_score: Math.min(100, 80), // High confidence for real data
-              trend_phase: (trend.growthRate && trend.growthRate > 10 ? 'growing' : trend.growthRate && trend.growthRate > 0 ? 'peak' : 'emerging') as 'emerging' | 'growing' | 'peak' | 'declining',
-              related_hashtags: [],
-              example_posts: trend.topPosts.slice(0, 3).map(p => p.caption?.substring(0, 100) || ''),
-              optimal_posting_times: [9, 12, 17, 20] // Standard peak times
+              metrics: {
+                hashtag: trend.hashtag,
+                postCount: trend.postCount,
+                avgEngagement: trend.avgEngagement,
+                totalEngagement: trend.totalEngagement,
+                growthRate: trend.growthRate,
+                trendingAudio: Array.from(trend.trendingAudio.entries()).slice(0, 10)
+              },
+              top_posts: trend.topPosts.slice(0, 5),
+              collected_at: new Date().toISOString()
             }))
             
-            allTrends.push(...trends)
+            allTrends.push(...trendRecords)
 
-            // Save trends to database
-            await TrendManager.saveTrends(trends)
+            // Save directly to trend_analysis table
+            const { getSupabaseAdmin } = await import('@/lib/supabase-admin')
+            const supabaseAdmin = getSupabaseAdmin()
+            
+            const { error: insertError } = await supabaseAdmin
+              .from('trend_analysis')
+              .insert(trendRecords)
+            
+            if (insertError) {
+              console.error(`Failed to save trends for ${niche}:`, insertError)
+              errors.push({ niche, error: insertError.message })
+            } else {
+              console.log(`Saved ${trendRecords.length} trends for ${niche}`)
+            }
             
             // Add delay to avoid rate limits (2 seconds between niches)
             await new Promise(resolve => setTimeout(resolve, 2000))
