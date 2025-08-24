@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV to Brands SQL Converter</title>
+    <style>
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8fafc;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1a365d;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #4a5568;
+            margin-bottom: 30px;
+        }
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-family: 'SF Mono', Menlo, monospace;
+            font-size: 14px;
+            resize: vertical;
+        }
+        textarea:focus {
+            border-color: #4299e1;
+            outline: none;
+        }
+        .convert-btn {
+            background: #4299e1;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 20px 0;
+            transition: all 0.2s;
+        }
+        .convert-btn:hover {
+            background: #3182ce;
+            transform: translateY(-1px);
+        }
+        .result {
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            font-family: 'SF Mono', Menlo, monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .copy-btn {
+            background: #38a169;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .copy-btn:hover {
+            background: #2f855a;
+        }
+        .example {
+            background: #edf2f7;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-family: 'SF Mono', Menlo, monospace;
+            font-size: 12px;
+        }
+        .warning {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        .success {
+            background: #c6f6d5;
+            color: #22543d;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        .info {
+            background: #bee3f8;
+            color: #2c5282;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CSV to Brands SQL Converter</h1>
+        <p class="subtitle">Convert your brand CSV data into SQL INSERT statements for Supabase</p>
+        
+        <div class="info">
+            <strong>Expected CSV Format:</strong><br>
+            Brand | InstagramHandle | Location | Followers | Industry | IndustryNiche | InfluencerTypes | ShipsTo | RecentCampaigns | Strategy
+        </div>
+
+        <div class="example">
+            <strong>Example CSV Row:</strong><br>
+            David Yurman | @davidyurman | New York City, USA | 814K | Jewelry & Accessories | Luxury fine jewelry, cable jewelry, designer watches | Macro and celebrity influencers (Sofia Richie Grainge, Scarlett Johansson, Blair Eadie) | US|CA|FR|GB|IT|DE | #DYSculpturedCable with Sofia Richie Grainge, Michael B. Jordan for The Vault collection | Long-term brand ambassadorships, campaign-specific collaborations, celebrity endorsements
+        </div>
+
+        <label for="csvInput"><strong>Paste your CSV data here:</strong></label>
+        <textarea id="csvInput" placeholder="Brand | InstagramHandle | Location | Followers | Industry | IndustryNiche | InfluencerTypes | ShipsTo | RecentCampaigns | Strategy
+
+David Yurman | @davidyurman | New York City, USA | 814K | Jewelry & Accessories | Luxury fine jewelry, cable jewelry, designer watches | Macro and celebrity influencers (Sofia Richie Grainge, Scarlett Johansson, Blair Eadie) | US|CA|FR|GB|IT|DE | #DYSculpturedCable with Sofia Richie Grainge, Michael B. Jordan for The Vault collection | Long-term brand ambassadorships, campaign-specific collaborations, celebrity endorsements"></textarea>
+
+        <button class="convert-btn" onclick="convertCSVToSQL()">Convert to SQL</button>
+
+        <div id="result" style="display: none;">
+            <h3>Generated SQL (Ready to run in Supabase SQL Editor):</h3>
+            <div class="success">
+                <strong>Instructions:</strong> Copy the SQL below and paste it into your Supabase SQL Editor, then run it.
+            </div>
+            <pre id="sqlOutput" class="result"></pre>
+            <button class="copy-btn" onclick="copySQLToClipboard()">Copy SQL to Clipboard</button>
+        </div>
+
+        <div id="errors" style="display: none;">
+            <div class="warning" id="errorMessage"></div>
+        </div>
+    </div>
+
+    <script>
+        function parseFollowers(followerStr) {
+            if (!followerStr) return null;
+            
+            // Remove any non-numeric characters except K, M, k, m
+            const cleaned = followerStr.toString().replace(/[^\d.KMkm]/g, '');
+            
+            if (cleaned.includes('K') || cleaned.includes('k')) {
+                return Math.round(parseFloat(cleaned) * 1000);
+            } else if (cleaned.includes('M') || cleaned.includes('m')) {
+                return Math.round(parseFloat(cleaned) * 1000000);
+            } else {
+                return parseInt(cleaned) || null;
+            }
+        }
+
+        function parseShipsTo(shipsToStr) {
+            if (!shipsToStr) return [];
+            
+            // Split by | and clean up
+            return shipsToStr.split('|')
+                .map(country => country.trim())
+                .filter(country => country.length > 0);
+        }
+
+        function parseInfluencerTypes(influencerStr) {
+            if (!influencerStr) return [];
+            
+            const types = [];
+            const lower = influencerStr.toLowerCase();
+            
+            if (lower.includes('nano')) types.push('nano');
+            if (lower.includes('micro')) types.push('micro');
+            if (lower.includes('macro')) types.push('macro');
+            if (lower.includes('celebrity') || lower.includes('mega')) types.push('mega');
+            
+            return types.length > 0 ? types : ['micro']; // Default to micro
+        }
+
+        function escapeSQLString(str) {
+            if (!str) return 'NULL';
+            return "'" + str.replace(/'/g, "''").replace(/\\/g, '\\\\') + "'";
+        }
+
+        function convertCSVToSQL() {
+            const csvInput = document.getElementById('csvInput').value.trim();
+            const resultDiv = document.getElementById('result');
+            const errorsDiv = document.getElementById('errors');
+            const sqlOutput = document.getElementById('sqlOutput');
+
+            // Hide previous results
+            resultDiv.style.display = 'none';
+            errorsDiv.style.display = 'none';
+
+            if (!csvInput) {
+                document.getElementById('errorMessage').textContent = 'Please paste your CSV data first.';
+                errorsDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const lines = csvInput.split('\n').filter(line => line.trim());
+                
+                if (lines.length < 2) {
+                    throw new Error('CSV must have at least a header row and one data row.');
+                }
+
+                // Skip header row
+                const dataRows = lines.slice(1);
+                const sqlStatements = [];
+
+                dataRows.forEach((line, index) => {
+                    if (!line.trim()) return; // Skip empty lines
+
+                    const columns = line.split('|').map(col => col.trim());
+                    
+                    if (columns.length < 9) {
+                        console.warn(`Row ${index + 2} has only ${columns.length} columns, padding with empty values`);
+                        // Pad with empty strings to match expected columns
+                        while (columns.length < 9) {
+                            columns.push('');
+                        }
+                    }
+
+                    const [brand, instagramHandle, location, followers, industry, industryNiche, influencerTypes, shipsTo, recentCampaigns, strategy] = columns;
+
+                    if (!brand) {
+                        console.warn(`Row ${index + 2} missing brand name, skipping`);
+                        return;
+                    }
+
+                    // Parse followers to integer
+                    const followerCount = parseFollowers(followers);
+                    
+                    // Parse ships to countries
+                    const shipsToArray = parseShipsTo(shipsTo);
+                    
+                    // Parse influencer types
+                    const influencerTypesArray = parseInfluencerTypes(influencerTypes);
+                    
+                    // Determine follower ranges based on actual count
+                    let minFollowers = 1000;
+                    let maxFollowers = 100000;
+                    
+                    if (followerCount) {
+                        if (followerCount < 10000) {
+                            minFollowers = Math.max(1000, Math.floor(followerCount * 0.7));
+                            maxFollowers = Math.ceil(followerCount * 1.5);
+                        } else if (followerCount < 100000) {
+                            minFollowers = Math.floor(followerCount * 0.5);
+                            maxFollowers = Math.ceil(followerCount * 2);
+                        } else {
+                            minFollowers = Math.floor(followerCount * 0.3);
+                            maxFollowers = Math.ceil(followerCount * 5);
+                        }
+                    }
+
+                    // Build the SQL INSERT statement
+                    const sqlValues = [
+                        escapeSQLString(brand),
+                        instagramHandle && instagramHandle.startsWith('@') ? escapeSQLString(instagramHandle) : 'NULL',
+                        escapeSQLString(industry || 'Other'),
+                        escapeSQLString(industryNiche),
+                        escapeSQLString(`${brand} - ${industryNiche || industry || 'Brand partnership opportunity'}`),
+                        minFollowers.toString(),
+                        maxFollowers.toString(),
+                        '2.0', // target_engagement_min
+                        `ARRAY[${industryNiche ? "'" + industryNiche.toLowerCase() + "'" : "'lifestyle'"}]`, // target_niches
+                        '500', // budget_min
+                        '2000', // budget_max
+                        location ? `'${shipsToArray.length > 0 ? shipsToArray[0] : 'USA'}'` : 'NULL', // Primary location from ships_to
+                        recentCampaigns ? escapeSQLString(recentCampaigns.substring(0, 500)) : 'NULL', // campaign history
+                        strategy ? escapeSQLString(strategy.substring(0, 500)) : 'NULL', // brand values from strategy
+                        `ARRAY[${influencerTypesArray.map(type => `'${type}'`).join(',')}]`, // past_influencer_size array
+                        'true', // verified
+                        '75', // data_completeness
+                        'NOW()', // created_at
+                        'NOW()' // last_updated
+                    ];
+
+                    const sql = `INSERT INTO brands (
+    name, 
+    instagram_handle, 
+    industry, 
+    sub_industry, 
+    description, 
+    target_follower_min, 
+    target_follower_max, 
+    target_engagement_min, 
+    target_niches, 
+    budget_min, 
+    budget_max,
+    contact_email,
+    description,
+    brand_values,
+    campaign_types,
+    verified,
+    data_completeness,
+    created_at,
+    last_updated
+) VALUES (${sqlValues.join(', ')})
+ON CONFLICT (name) DO UPDATE SET
+    instagram_handle = EXCLUDED.instagram_handle,
+    industry = EXCLUDED.industry,
+    sub_industry = EXCLUDED.sub_industry,
+    description = EXCLUDED.description,
+    target_follower_min = EXCLUDED.target_follower_min,
+    target_follower_max = EXCLUDED.target_follower_max,
+    budget_min = EXCLUDED.budget_min,
+    budget_max = EXCLUDED.budget_max,
+    last_updated = NOW();`;
+
+                    sqlStatements.push(sql);
+                });
+
+                if (sqlStatements.length === 0) {
+                    throw new Error('No valid data rows found to convert.');
+                }
+
+                const fullSQL = `-- Generated SQL for ${sqlStatements.length} brands
+-- Run this in your Supabase SQL Editor
+
+${sqlStatements.join('\n\n')}
+
+-- Summary: Inserted/updated ${sqlStatements.length} brands`;
+
+                sqlOutput.textContent = fullSQL;
+                resultDiv.style.display = 'block';
+
+            } catch (error) {
+                document.getElementById('errorMessage').textContent = `Error: ${error.message}`;
+                errorsDiv.style.display = 'block';
+            }
+        }
+
+        function copySQLToClipboard() {
+            const sqlText = document.getElementById('sqlOutput').textContent;
+            navigator.clipboard.writeText(sqlText).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                btn.style.background = '#22543d';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '#38a169';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                alert('Failed to copy to clipboard. Please select and copy manually.');
+            });
+        }
+    </script>
+</body>
+</html>
