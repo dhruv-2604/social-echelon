@@ -2,27 +2,45 @@
 
 import { CreatorProfile, MATCHING_WEIGHTS, MATCH_THRESHOLDS } from './creator-profile-schema';
 import { EnhancedBrand, BrandMatch } from './enhanced-brand-schema';
+import { 
+  getIndustryWeights, 
+  LOCATION_IMPORTANCE, 
+  calculateLocationScore,
+  ENGAGEMENT_PRIORITIES 
+} from './brand-industry-weights';
 
 export class BrandMatchingEngine {
   
   /**
    * Calculate comprehensive match score between creator and brand
+   * Now with industry-specific weight adjustments
    */
-  calculateMatch(creator: CreatorProfile, brand: EnhancedBrand): BrandMatch {
+  calculateMatch(creator: CreatorProfile, brand: EnhancedBrand, industry?: string): BrandMatch {
     const scores = {
       valuesAlignment: this.calculateValuesAlignment(creator, brand),
-      audienceResonance: this.calculateAudienceResonance(creator, brand),
+      audienceResonance: this.calculateAudienceResonance(creator, brand, industry),
       contentStyleMatch: this.calculateContentStyleMatch(creator, brand),
-      successProbability: this.calculateSuccessProbability(creator, brand)
+      successProbability: this.calculateSuccessProbability(creator, brand),
+      campaignAlignment: this.calculateCampaignAlignment(creator, brand),  // New component
+      competitorExperience: this.calculateCompetitorExperience(creator, brand, industry)  // New component
     };
     
-    // Calculate weighted overall score
-    const overallScore = Math.round(
-      scores.valuesAlignment.score * MATCHING_WEIGHTS.valuesAlignment +
-      scores.audienceResonance.score * MATCHING_WEIGHTS.audienceResonance +
-      scores.contentStyleMatch.score * MATCHING_WEIGHTS.contentStyleMatch +
-      scores.successProbability.score * MATCHING_WEIGHTS.successProbability
+    // Get industry-specific weights
+    const weights = industry ? getIndustryWeights(industry) : MATCHING_WEIGHTS;
+    
+    // Calculate weighted overall score with industry-specific weights
+    const baseScore = Math.round(
+      scores.valuesAlignment.score * weights.valuesAlignment +
+      scores.audienceResonance.score * weights.audienceResonance +
+      scores.contentStyleMatch.score * weights.contentStyleMatch +
+      scores.successProbability.score * weights.successProbability
     );
+    
+    // Add bonus scores from new components (up to 10 points each)
+    const campaignBonus = Math.min(10, scores.campaignAlignment.score * 0.1);
+    const competitorBonus = Math.min(10, scores.competitorExperience.score * 0.1);
+    
+    const overallScore = Math.min(100, baseScore + campaignBonus + competitorBonus);
     
     // Determine match category
     let matchCategory: 'excellent' | 'good' | 'fair' | 'poor' = 'poor';
@@ -141,9 +159,9 @@ export class BrandMatchingEngine {
   }
   
   /**
-   * Calculate audience resonance and overlap
+   * Calculate audience resonance and overlap with industry-specific location weighting
    */
-  private calculateAudienceResonance(creator: CreatorProfile, brand: EnhancedBrand): {
+  private calculateAudienceResonance(creator: CreatorProfile, brand: EnhancedBrand, industry?: string): {
     score: number;
     overlapPercentage: number;
     sharedInterests: string[];
@@ -159,55 +177,24 @@ export class BrandMatchingEngine {
     const ageOverlapScore = (ageOverlap.length / brand.targeting.audienceDemographics.ageRanges.length) * 30;
     score += ageOverlapScore;
     
-    // Enhanced Location Matching (25% of audience score)
-    let locationScore = 0;
-    const locationDetails: string[] = [];
+    // Enhanced Location Matching with Industry-Specific Importance
+    const locationImportance = industry ? ((LOCATION_IMPORTANCE as any)[industry] || LOCATION_IMPORTANCE['default']) : 0.25;
+    const maxLocationScore = 25 * (locationImportance / 0.25);  // Scale based on importance
     
-    // Get creator's audience location data with percentages
     const creatorLocations = creator.analytics.audienceDemographics.topLocations;
     const brandTargetCountries = brand.targeting.audienceDemographics.locations.countries;
-    const brandTargetCities = brand.targeting.audienceDemographics.locations.cities || [];
     
-    // Calculate weighted location overlap
-    let totalAudienceOverlap = 0;
+    // Use the enhanced location scoring function
+    const locationResult = calculateLocationScore(creatorLocations, brandTargetCountries);
     
-    for (const location of creatorLocations) {
-      // Country-level matching
-      if (brandTargetCountries.includes(location.country)) {
-        totalAudienceOverlap += location.percentage;
-        
-        // Bonus for city-level match (if city data exists)
-        if (location.city && brandTargetCities.length > 0 && brandTargetCities.includes(location.city)) {
-          totalAudienceOverlap += location.percentage * 0.5; // 50% bonus for exact city match
-          locationDetails.push(`${location.city}, ${location.country} (${location.percentage}% exact match)`);
-        } else if (location.city) {
-          locationDetails.push(`${location.country} (${location.percentage}% country match, ${location.city})`);
-        } else {
-          locationDetails.push(`${location.country} (${location.percentage}% country match)`);
-        }
-      }
-    }
-    
-    // Scale location score based on overlap percentage
-    if (totalAudienceOverlap > 80) {
-      locationScore = 25; // Excellent geographic alignment
-      sharedInterests.push(`Excellent location match: ${Math.round(totalAudienceOverlap)}% audience overlap`);
-    } else if (totalAudienceOverlap > 60) {
-      locationScore = 20; // Good geographic alignment
-      sharedInterests.push(`Strong location match: ${Math.round(totalAudienceOverlap)}% audience overlap`);
-    } else if (totalAudienceOverlap > 40) {
-      locationScore = 15; // Fair geographic alignment
-      sharedInterests.push(`Moderate location match: ${Math.round(totalAudienceOverlap)}% audience overlap`);
-    } else if (totalAudienceOverlap > 20) {
-      locationScore = 10; // Minimal geographic alignment
-    } else if (totalAudienceOverlap > 0) {
-      locationScore = 5; // Very limited geographic alignment
-    } else {
-      locationScore = 0; // No geographic alignment - major concern
-      // This should significantly impact the overall match
-    }
-    
+    // Apply industry-specific scaling
+    const locationScore = (locationResult.score / 100) * maxLocationScore;
     score += locationScore;
+    
+    // Add details to shared interests
+    if (locationResult.coverage > 60) {
+      sharedInterests.push(...locationResult.details.slice(0, 1));  // Add top detail
+    }
     
     // Income level alignment
     const audienceIncomeMatches = brand.targeting.audienceDemographics.incomeLevel.includes(
@@ -382,6 +369,14 @@ export class BrandMatchingEngine {
     }
     if (creator.identity.dreamBrands.includes(brand.name)) {
       strengths.push('Creator\'s enthusiasm for brand will show in content');
+    }
+    
+    // New scoring components
+    if ((scores as any).campaignAlignment?.score > 70) {
+      strengths.push('Strong alignment with brand\'s campaign themes');
+    }
+    if ((scores as any).competitorExperience?.score > 50) {
+      strengths.push('Proven track record with similar brands in the industry');
     }
     
     // Identify opportunities
@@ -561,6 +556,96 @@ export class BrandMatchingEngine {
     }
     
     return ideas.slice(0, 3); // Return top 3 ideas
+  }
+  
+  /**
+   * Calculate alignment with recent campaigns
+   */
+  private calculateCampaignAlignment(creator: CreatorProfile, brand: any): {
+    score: number;
+    matchedThemes: string[];
+  } {
+    let score = 0;
+    const matchedThemes: string[] = [];
+    
+    // Check if brand has campaign themes in values
+    const campaignThemes = (brand.values as any)?.campaignThemes || [];
+    const recentCampaigns = (brand.campaigns as any)?.recentCampaigns || [];
+    
+    // Match creator's content pillars with campaign themes
+    for (const theme of campaignThemes) {
+      for (const pillar of creator.identity.contentPillars) {
+        if (pillar.toLowerCase().includes(theme.toLowerCase()) || 
+            theme.toLowerCase().includes(pillar.toLowerCase())) {
+          score += 25;
+          matchedThemes.push(`${pillar} aligns with ${theme} campaigns`);
+        }
+      }
+    }
+    
+    // Check if creator worked with similar campaign types
+    if (recentCampaigns.length > 0) {
+      for (const campaign of recentCampaigns) {
+        if (campaign.hasCelebrity && creator.analytics.followerCount > 100000) {
+          score += 20;  // Big creator for celebrity campaigns
+          matchedThemes.push('Suitable for celebrity-level campaigns');
+        }
+        if (campaign.theme && creator.identity.brandValues.includes(campaign.theme)) {
+          score += 15;
+          matchedThemes.push(`Values align with ${campaign.theme} theme`);
+        }
+      }
+    }
+    
+    return { 
+      score: Math.min(100, score), 
+      matchedThemes 
+    };
+  }
+  
+  /**
+   * Calculate experience with competitor brands
+   */
+  private calculateCompetitorExperience(creator: CreatorProfile, brand: EnhancedBrand, industry?: string): {
+    score: number;
+    relevantExperience: string[];
+  } {
+    let score = 0;
+    const relevantExperience: string[] = [];
+    
+    if (!creator.identity.pastBrands || creator.identity.pastBrands.length === 0) {
+      return { score: 0, relevantExperience: [] };
+    }
+    
+    // Check for same industry experience
+    for (const pastBrand of creator.identity.pastBrands) {
+      const pastBrandLower = pastBrand.toLowerCase();
+      
+      // Direct competitor check (same industry)
+      if (industry && pastBrandLower.includes(industry.toLowerCase().split(' ')[0])) {
+        score += 30;
+        relevantExperience.push(`Worked with ${pastBrand} in ${industry}`);
+      }
+      
+      // Similar market segment
+      const marketSegment = this.getMarketSegment(pastBrand);
+      const brandSegment = (brand as any).positioning?.marketSegment || this.getMarketSegment(brand.name);
+      if (marketSegment === brandSegment) {
+        score += 20;
+        relevantExperience.push(`Experience with ${marketSegment} brands`);
+      }
+    }
+    
+    // Bonus for multiple relevant experiences
+    if (relevantExperience.length >= 3) {
+      score += 20;
+      relevantExperience.push('Extensive industry experience');
+    }
+    
+    return {
+      score: Math.min(100, score),
+      relevantExperience
+    };
   }
   
   /**

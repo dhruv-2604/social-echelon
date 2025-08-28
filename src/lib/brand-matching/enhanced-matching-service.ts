@@ -1,6 +1,11 @@
 import { BrandMatchingEngine } from './matching-algorithm'
 import { CreatorProfile } from './creator-profile-schema'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { 
+  extractCampaignPatterns, 
+  calculateLocationScore,
+  CAMPAIGN_PATTERNS 
+} from './brand-industry-weights'
 
 export class EnhancedBrandMatchingService {
   private matchingEngine: BrandMatchingEngine
@@ -87,8 +92,11 @@ export class EnhancedBrandMatchingService {
         // Convert database brand to enhanced brand format for matching
         const enhancedBrand = this.convertToEnhancedBrand(brand)
         
-        // Calculate match score
-        const match = this.matchingEngine.calculateMatch(creatorProfile as any, enhancedBrand)
+        // Pass industry for weighted scoring
+        const industry = brand.industry as string
+        
+        // Calculate match score with industry-specific weights
+        const match = this.matchingEngine.calculateMatch(creatorProfile as any, enhancedBrand, industry)
         
         // Only include if above minimum score
         if (match.overallScore >= minScore) {
@@ -222,16 +230,30 @@ export class EnhancedBrandMatchingService {
 
   /**
    * Convert database brand to enhanced brand format for matching algorithm
+   * Enhanced with campaign pattern extraction and improved inference
    */
   private convertToEnhancedBrand(dbBrand: any): any {
     // Parse ships_to string to extract countries
-    const shipsToCountries = dbBrand.ships_to ? dbBrand.ships_to.split('|') : []
+    const shipsToCountries = dbBrand.ships_to ? dbBrand.ships_to.split('|') : ['US', 'CA', 'UK'] // Default to major markets
     
-    // Extract values from strategy field
-    const extractedValues = this.extractValuesFromStrategy(dbBrand.strategy || '')
+    // Extract values from strategy AND recent campaigns
+    const strategyValues = this.extractValuesFromStrategy(dbBrand.strategy || '')
+    const campaignValues = this.extractValuesFromCampaigns(dbBrand.recent_campaigns || '')
+    const extractedValues = [...new Set([...strategyValues, ...campaignValues])]  // Combine and dedupe
     
-    // Infer budget from influencer types
-    const budgetRange = this.inferBudgetFromInfluencerTypes(dbBrand.influencer_types || '')
+    // Extract campaign patterns for better matching
+    const campaignPatterns = extractCampaignPatterns(
+      `${dbBrand.strategy || ''} ${dbBrand.recent_campaigns || ''}`
+    )
+    
+    // Infer budget from influencer types and campaign patterns
+    const basebudgetRange = this.inferBudgetFromInfluencerTypes(dbBrand.influencer_types || '')
+    const budgetMultiplier = campaignPatterns.partnershipType ? 
+      (CAMPAIGN_PATTERNS.partnershipTypes as any)[campaignPatterns.partnershipType]?.budgetMultiplier || 1 : 1
+    const budgetRange = {
+      min: Math.round(basebudgetRange.min * budgetMultiplier),
+      max: Math.round(basebudgetRange.max * budgetMultiplier)
+    }
     
     // Map database fields to enhanced brand schema expected by matching algorithm
     return {
@@ -242,10 +264,11 @@ export class EnhancedBrandMatchingService {
       website: dbBrand.website || `https://instagram.com/${dbBrand.instagram_handle}`,
       
       values: {
-        coreValues: extractedValues, // Extracted from strategy
-        esgRating: null,
-        supplyChainEthics: 'unknown',
-        controversyHistory: { hasControversies: false, details: [] }
+        coreValues: extractedValues, // Extracted from strategy AND campaigns
+        esgRating: this.inferESGRating(extractedValues),
+        supplyChainEthics: extractedValues.includes('sustainability') ? 'certified' : 'unknown',
+        controversyHistory: { hasControversies: false, details: [] },
+        campaignThemes: campaignPatterns.themes  // New field for theme matching
       },
       
       targeting: {
@@ -259,9 +282,9 @@ export class EnhancedBrandMatchingService {
             shipsToCities: []
           }
         },
-        niches: [dbBrand.industry_niche?.toLowerCase() || dbBrand.industry.toLowerCase()],
-        contentFormats: ['posts', 'reels', 'stories'], // Default formats
-        aesthetics: [],
+        niches: this.extractNiches(dbBrand),
+        contentFormats: this.inferContentFormats(dbBrand, campaignPatterns),
+        aesthetics: this.extractAesthetics(dbBrand),
         engagementRate: {
           min: 2,
           preferred: 4
@@ -271,10 +294,12 @@ export class EnhancedBrandMatchingService {
       campaigns: {
         budgetRange: budgetRange,
         contentRequirements: {
-          approvalsNeeded: 2,
-          usageRights: '6 months',
-          exclusivity: false
-        }
+          approvalsNeeded: campaignPatterns.contentFocus.includes('professional') ? 3 : 2,
+          usageRights: campaignPatterns.partnershipType === 'ambassador' ? '12 months' : '6 months',
+          exclusivity: campaignPatterns.partnershipType ? 
+            (CAMPAIGN_PATTERNS.partnershipTypes as any)[campaignPatterns.partnershipType]?.exclusivity || false : false
+        },
+        recentCampaigns: this.parseRecentCampaigns(dbBrand.recent_campaigns || '')
       },
       
       contacts: {
@@ -293,9 +318,10 @@ export class EnhancedBrandMatchingService {
       history: {
         preferredCreatorSize: this.inferCreatorSizeFromInfluencerTypes(dbBrand.influencer_types || ''),
         successMetrics: {
-          avgEngagementRate: 3.5,
+          avgEngagementRate: this.inferEngagementRequirement(dbBrand.industry),
           avgROI: null
-        }
+        },
+        hasWorkexWithCompetitors: false  // Will be set during matching
       },
       
       intelligence: {
@@ -314,14 +340,39 @@ export class EnhancedBrandMatchingService {
     const values = []
     const strategyLower = strategy.toLowerCase()
     
+    // Original values
     if (strategyLower.includes('authentic')) values.push('authenticity')
     if (strategyLower.includes('sustainab')) values.push('sustainability')
     if (strategyLower.includes('empower')) values.push('empowerment')
-    if (strategyLower.includes('inclusi')) values.push('inclusivity')
-    if (strategyLower.includes('innovation')) values.push('innovation')
-    if (strategyLower.includes('luxury')) values.push('luxury')
+    if (strategyLower.includes('inclusi') || strategyLower.includes('divers')) values.push('inclusivity')
+    if (strategyLower.includes('innovation') || strategyLower.includes('tech')) values.push('innovation')
+    if (strategyLower.includes('luxury') || strategyLower.includes('premium')) values.push('luxury')
     if (strategyLower.includes('community')) values.push('community')
-    if (strategyLower.includes('wellness')) values.push('wellness')
+    if (strategyLower.includes('wellness') || strategyLower.includes('health')) values.push('wellness')
+    
+    // Additional values
+    if (strategyLower.includes('quality') || strategyLower.includes('craftsmanship')) values.push('quality')
+    if (strategyLower.includes('adventure') || strategyLower.includes('explor')) values.push('adventure')
+    if (strategyLower.includes('creativ')) values.push('creativity')
+    if (strategyLower.includes('education') || strategyLower.includes('learn')) values.push('education')
+    if (strategyLower.includes('family')) values.push('family')
+    if (strategyLower.includes('celebrat')) values.push('celebration')
+    
+    return values
+  }
+  
+  private extractValuesFromCampaigns(campaigns: string): string[] {
+    const values = []
+    const campaignsLower = campaigns.toLowerCase()
+    
+    // Extract values mentioned in campaign descriptions
+    if (campaignsLower.includes('sustainab') || campaignsLower.includes('eco')) values.push('sustainability')
+    if (campaignsLower.includes('divers') || campaignsLower.includes('inclusi')) values.push('inclusivity')
+    if (campaignsLower.includes('empower') || campaignsLower.includes('confidence')) values.push('empowerment')
+    if (campaignsLower.includes('wellness') || campaignsLower.includes('selfcare')) values.push('wellness')
+    if (campaignsLower.includes('luxury') || campaignsLower.includes('premium')) values.push('luxury')
+    if (campaignsLower.includes('innovation') || campaignsLower.includes('future')) values.push('innovation')
+    if (campaignsLower.includes('authentic') || campaignsLower.includes('real')) values.push('authenticity')
     
     return values
   }
@@ -369,6 +420,158 @@ export class EnhancedBrandMatchingService {
     if (avg < 5000) return '$$'
     if (avg < 10000) return '$$$'
     return '$$$$'
+  }
+  
+  private inferESGRating(values: string[]): number | null {
+    // Infer ESG rating based on values
+    let rating = 50 // Base rating
+    if (values.includes('sustainability')) rating += 20
+    if (values.includes('inclusivity')) rating += 15
+    if (values.includes('community')) rating += 10
+    if (values.includes('wellness')) rating += 5
+    return Math.min(100, rating)
+  }
+  
+  private extractNiches(dbBrand: any): string[] {
+    const niches = []
+    
+    // Add industry niche
+    if (dbBrand.industry_niche) {
+      niches.push(...dbBrand.industry_niche.toLowerCase().split(',').map((n: string) => n.trim()))
+    }
+    
+    // Add industry as fallback
+    niches.push(dbBrand.industry.toLowerCase())
+    
+    // Extract from recent campaigns
+    const campaigns = (dbBrand.recent_campaigns || '').toLowerCase()
+    if (campaigns.includes('fitness')) niches.push('fitness')
+    if (campaigns.includes('travel')) niches.push('travel')
+    if (campaigns.includes('food')) niches.push('food')
+    if (campaigns.includes('tech')) niches.push('technology')
+    if (campaigns.includes('beauty')) niches.push('beauty')
+    if (campaigns.includes('fashion')) niches.push('fashion')
+    if (campaigns.includes('wellness')) niches.push('wellness')
+    if (campaigns.includes('lifestyle')) niches.push('lifestyle')
+    
+    return [...new Set(niches)] // Dedupe
+  }
+  
+  private inferContentFormats(dbBrand: any, campaignPatterns: any): string[] {
+    const formats = []
+    
+    // Check campaign patterns
+    if (campaignPatterns.contentFocus.includes('ugc') || campaignPatterns.contentFocus.includes('unboxing')) {
+      formats.push('reels', 'stories')
+    }
+    if (campaignPatterns.contentFocus.includes('tutorial') || campaignPatterns.contentFocus.includes('review')) {
+      formats.push('reels', 'carousel')
+    }
+    if (campaignPatterns.contentFocus.includes('lifestyle')) {
+      formats.push('posts', 'stories')
+    }
+    
+    // Check recent campaigns for format mentions
+    const campaigns = (dbBrand.recent_campaigns || '').toLowerCase()
+    if (campaigns.includes('reel')) formats.push('reels')
+    if (campaigns.includes('story') || campaigns.includes('stories')) formats.push('stories')
+    if (campaigns.includes('post')) formats.push('posts')
+    if (campaigns.includes('carousel')) formats.push('carousel')
+    if (campaigns.includes('video')) formats.push('reels')
+    
+    // Default if nothing found
+    if (formats.length === 0) {
+      formats.push('posts', 'reels', 'stories')
+    }
+    
+    return [...new Set(formats)] // Dedupe
+  }
+  
+  private extractAesthetics(dbBrand: any): string[] {
+    const aesthetics = []
+    const text = `${dbBrand.strategy || ''} ${dbBrand.recent_campaigns || ''} ${dbBrand.industry_niche || ''}`.toLowerCase()
+    
+    // Luxury/Premium aesthetics
+    if (text.includes('luxury') || text.includes('premium')) {
+      aesthetics.push('luxury', 'sophisticated', 'elegant')
+    }
+    
+    // Modern/Tech aesthetics
+    if (text.includes('tech') || text.includes('innovation')) {
+      aesthetics.push('modern', 'minimalist', 'clean')
+    }
+    
+    // Natural/Wellness aesthetics
+    if (text.includes('wellness') || text.includes('natural') || text.includes('organic')) {
+      aesthetics.push('natural', 'earthy', 'calming')
+    }
+    
+    // Fashion aesthetics
+    if (text.includes('fashion') || text.includes('style')) {
+      aesthetics.push('trendy', 'stylish')
+    }
+    
+    // Vibrant/Youthful aesthetics
+    if (text.includes('vibrant') || text.includes('colorful') || text.includes('fun')) {
+      aesthetics.push('colorful', 'vibrant', 'playful')
+    }
+    
+    // Authentic aesthetics
+    if (text.includes('authentic') || text.includes('real')) {
+      aesthetics.push('authentic', 'relatable')
+    }
+    
+    return aesthetics
+  }
+  
+  private inferEngagementRequirement(industry: string): number {
+    // Industry-specific engagement expectations
+    const requirements: Record<string, number> = {
+      'Fashion': 4.0,
+      'Beauty': 4.5,
+      'Jewelry': 3.5,
+      'Jewelry & Accessories': 3.5,
+      'Technology': 3.0,
+      'Food': 3.5,
+      'Beverage': 3.5,
+      'Fitness': 4.0,
+      'Travel': 3.0,
+      'Health & Nutrition': 4.0,
+      'Education': 2.5
+    }
+    
+    return requirements[industry] || 3.5
+  }
+  
+  private parseRecentCampaigns(campaigns: string): any[] {
+    if (!campaigns) return []
+    
+    // Simple parser for campaign mentions
+    const campaignList = []
+    const segments = campaigns.split(',')
+    
+    for (const segment of segments) {
+      if (segment.includes('#') || segment.includes('campaign') || segment.includes('collection')) {
+        const campaign = {
+          name: segment.trim(),
+          theme: this.extractCampaignTheme(segment),
+          hasCelebrity: /celebrity|ambassador|influencer/.test(segment.toLowerCase())
+        }
+        campaignList.push(campaign)
+      }
+    }
+    
+    return campaignList
+  }
+  
+  private extractCampaignTheme(campaign: string): string {
+    const lower = campaign.toLowerCase()
+    if (lower.includes('sustainab') || lower.includes('eco')) return 'sustainability'
+    if (lower.includes('summer') || lower.includes('spring') || lower.includes('fall') || lower.includes('winter')) return 'seasonal'
+    if (lower.includes('launch') || lower.includes('new')) return 'product launch'
+    if (lower.includes('celebrat') || lower.includes('holiday')) return 'celebration'
+    if (lower.includes('empower') || lower.includes('confidence')) return 'empowerment'
+    return 'general'
   }
 
   /**
