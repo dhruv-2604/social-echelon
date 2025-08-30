@@ -1,8 +1,8 @@
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { TrendData, TrendAnalysis } from './types'
 
-// Use system user ID for global trends
-const SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000000'
+// Use existing user ID from profiles table for global trends
+const SYSTEM_USER_ID = 'aa3a46a6-ceca-4a83-bdfa-5b3b241731a5'
 
 export class TrendManager {
   /**

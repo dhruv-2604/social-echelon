@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 // Budget limits for cost control
 const DAILY_BUDGET_USD = 5 // $5 per day max
 const MAX_POSTS_PER_DAY = 10000 // At $0.50 per 1000 posts = $5
-const SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000000' // Proper UUID for system
+const SYSTEM_USER_ID = 'aa3a46a6-ceca-4a83-bdfa-5b3b241731a5' // Use existing user from profiles
 
 // List of niches to collect trends for
 const SUPPORTED_NICHES = [
@@ -145,12 +145,15 @@ export const GET = withSecurityHeaders(
             break
           }
           
-          console.log(`Collecting Instagram trends for ${niche}`)
+          console.log(`Collecting trends for ${niche}`)
           
           try {
-            // Use Apify Instagram collector
+            // Collect from both Instagram and Twitter
             const { ApifyInstagramCollector } = await import('@/lib/trends/apify-instagram-collector')
+            const { TwitterTrendCollector } = await import('@/lib/trends/twitter-trend-collector')
+            
             const instagramCollector = new ApifyInstagramCollector()
+            const twitterCollector = new TwitterTrendCollector()
             
             // Calculate posts per hashtag based on remaining budget
             const hashtagsToAnalyze = getNicheHashtags(niche).slice(0, maxPerNiche)
@@ -211,23 +214,90 @@ export const GET = withSecurityHeaders(
             
             allTrends.push(...trendRecords)
             totalPostsCollected += hashtagsToAnalyze.length * postsPerHashtag
+            
+            // Collect Twitter trends (supplementary, doesn't count against Instagram budget)
+            try {
+              console.log(`📱 Collecting Twitter trends for ${niche}...`)
+              const twitterHashtags = TwitterTrendCollector.getTwitterHashtags(niche)
+              const twitterTrends = await twitterCollector.collectNicheTrends(
+                niche,
+                twitterHashtags.slice(0, 5), // Use top 5 hashtags
+                {
+                  maxTweets: 100,
+                  minLikes: 30,    // Lower threshold for Twitter
+                  minRetweets: 10,
+                  daysBack: 1
+                }
+              )
+              
+              // Convert Twitter trends to database format
+              const twitterRecords = twitterTrends.map(trend => ({
+                user_id: SYSTEM_USER_ID,
+                platform: 'twitter' as const,
+                trend_type: trend.trend_type,
+                trend_name: trend.trend_name,
+                niche: niche,
+                metrics: {
+                  platform: 'twitter',
+                  tweetCount: trend.tweet_count,
+                  avgEngagement: trend.avg_engagement,
+                  totalEngagement: trend.total_engagement,
+                  growthRate: trend.growth_rate,
+                  topTweets: trend.top_tweets.slice(0, 5),
+                  trendingTopics: Array.from(trend.trending_topics.entries()).slice(0, 10)
+                },
+                top_posts: trend.top_tweets.slice(0, 5).map(t => ({
+                  text: t.text,
+                  engagement: t.like_count + t.retweet_count * 2,
+                  url: t.url
+                })),
+                growth_velocity: trend.growth_rate,
+                current_volume: trend.tweet_count,
+                engagement_rate: trend.avg_engagement,
+                saturation_level: Math.min(100, trend.tweet_count / 10),
+                confidence_score: trend.confidence_score,
+                trend_phase: trend.growth_rate > 50 ? 'growing' : trend.growth_rate > 0 ? 'emerging' : 'declining',
+                collected_at: new Date().toISOString()
+              }))
+              
+              allTrends.push(...twitterRecords)
+              console.log(`✅ Collected ${twitterTrends.length} Twitter trends for ${niche}`)
+              
+            } catch (twitterError) {
+              console.error(`Failed to collect Twitter trends for ${niche}:`, twitterError)
+              errors.push({ niche, platform: 'twitter', error: String(twitterError) })
+              // Don't fail Instagram collection if Twitter fails
+            }
 
             // Save directly to trend_analysis table with upsert
             const { getSupabaseAdmin } = await import('@/lib/supabase-admin')
             const supabaseAdmin = getSupabaseAdmin()
             
-            const { error: insertError } = await supabaseAdmin
+            // Check for existing trends today before inserting
+            const today = new Date().toISOString().split('T')[0]
+            const { data: existingToday } = await supabaseAdmin
               .from('trend_analysis')
-              .upsert(trendRecords, {
-                onConflict: 'user_id,platform,trend_type,trend_name,niche,collected_at',
-                ignoreDuplicates: false
-              })
+              .select('trend_name')
+              .eq('user_id', SYSTEM_USER_ID)
+              .eq('niche', niche)
+              .gte('collected_at', today)
             
-            if (insertError) {
-              console.error(`Failed to save trends for ${niche}:`, insertError)
-              errors.push({ niche, error: insertError.message })
+            const existingTrendNames = new Set((existingToday || []).map(t => t.trend_name))
+            const newRecords = trendRecords.filter(t => !existingTrendNames.has(t.trend_name))
+            
+            if (newRecords.length > 0) {
+              const { error: insertError } = await supabaseAdmin
+                .from('trend_analysis')
+                .insert(newRecords)
+              
+              if (insertError) {
+                console.error(`Failed to save trends for ${niche}:`, insertError)
+                errors.push({ niche, error: insertError.message })
+              } else {
+                console.log(`Saved ${newRecords.length} new trends for ${niche}`)
+              }
             } else {
-              console.log(`Saved ${trendRecords.length} trends for ${niche}`)
+              console.log(`All trends for ${niche} already collected today`)
             }
             
             // Add delay to avoid rate limits (2 seconds between niches)
