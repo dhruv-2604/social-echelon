@@ -109,20 +109,22 @@ export const POST = withSecurityHeaders(
   )
 )
 
-// GET - Get stored Instagram trends
+// GET - Get stored Instagram trends (global for all users)
 export const GET = withSecurityHeaders(
   withAuthAndValidation({})(async (request: NextRequest, userId: string) => {
     try {
       const supabase = getSupabaseAdmin()
+      const SYSTEM_USER_ID = 'aa3a46a6-ceca-4a83-bdfa-5b3b241731a5'
       
       // Get trends from last 7 days
       const sevenDaysAgo = new Date()
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
       
+      // Get global trends (collected by system)
       const { data: trends, error } = await supabase
         .from('trend_analysis')
         .select('*')
-        .eq('user_id', userId)
+        .eq('user_id', SYSTEM_USER_ID)  // Use SYSTEM_USER_ID for global trends
         .eq('platform', 'instagram')
         .gte('collected_at', sevenDaysAgo.toISOString())
         .order('collected_at', { ascending: false })
