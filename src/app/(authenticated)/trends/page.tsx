@@ -15,32 +15,61 @@ import {
   MessageCircle,
   Play,
   Calendar,
-  AlertCircle
+  AlertCircle,
+  Twitter,
+  Instagram,
+  Globe
 } from 'lucide-react'
 import { WellnessCard } from '@/components/wellness/WellnessCard'
 import { WellnessButton } from '@/components/wellness/WellnessButton'
 
-interface InstagramTrend {
+interface Trend {
   id: string
   trend_name: string
   trend_type: string
-  platform: string
+  platform: 'instagram' | 'twitter'
+  niche: string
   metrics: {
-    hashtag: string
-    postCount: number
+    hashtag?: string
+    postCount?: number
+    tweetCount?: number
     avgEngagement: number
     totalEngagement: number
     growthRate: number
     trendingAudio?: Array<[string, number]>
+    trendingTopics?: Array<[string, number]>
     topPosts?: Array<{
       url: string
       likes: number
       comments: number
-      caption: string
+      caption?: string
+      text?: string
       createdAt: string
     }>
+    topTweets?: Array<{
+      text: string
+      like_count: number
+      retweet_count: number
+      user: { username: string }
+      url: string
+    }>
   }
+  confidence_score: number
   collected_at: string
+}
+
+interface CrossPlatformTrend {
+  trend_name: string
+  niche: string
+  instagram_score: number | null
+  twitter_score: number | null
+  combined_score: number
+  trending_both: boolean
+  instagram_growth: number | null
+  twitter_growth: number | null
+  recommendation: string
+  predicted_virality: number
+  best_time_to_post: string
 }
 
 interface TrendInsights {
@@ -52,47 +81,92 @@ interface TrendInsights {
 }
 
 export default function TrendGardenPage() {
-  const [trends, setTrends] = useState<InstagramTrend[]>([])
+  const [instagramTrends, setInstagramTrends] = useState<Trend[]>([])
+  const [twitterTrends, setTwitterTrends] = useState<Trend[]>([])
+  const [crossPlatformTrends, setCrossPlatformTrends] = useState<CrossPlatformTrend[]>([])
   const [insights, setInsights] = useState<TrendInsights | null>(null)
   const [loading, setLoading] = useState(true)
   const [niche, setNiche] = useState('all')
+  const [platform, setPlatform] = useState<'all' | 'instagram' | 'twitter'>('all')
   const [refreshing, setRefreshing] = useState(false)
-  const [selectedTrend, setSelectedTrend] = useState<InstagramTrend | null>(null)
+  const [selectedTrend, setSelectedTrend] = useState<Trend | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchInstagramTrends()
-  }, [niche])
+    fetchAllTrends()
+  }, [niche, platform])
 
-  const fetchInstagramTrends = async () => {
+  const fetchAllTrends = async () => {
     try {
       setLoading(true)
       setError(null)
       
-      // Fetch Instagram trends from our database
-      const response = await fetch('/api/trends/instagram', {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
+      // Fetch all trends based on platform selection
+      const promises = []
+      
+      if (platform === 'all' || platform === 'instagram') {
+        promises.push(
+          fetch('/api/trends/instagram', {
+            method: 'GET',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' }
+          })
+        )
+      }
+      
+      if (platform === 'all' || platform === 'twitter') {
+        promises.push(
+          fetch('/api/trends/twitter', {
+            method: 'GET',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' }
+          })
+        )
+      }
+      
+      // Always fetch cross-platform analysis
+      promises.push(
+        fetch(`/api/trends/cross-platform${niche !== 'all' ? `?niche=${niche}` : ''}`, {
+          method: 'GET',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' }
+        })
+      )
+      
+      const responses = await Promise.all(promises)
+      
+      let igTrends: Trend[] = []
+      let twTrends: Trend[] = []
+      let crossTrends: CrossPlatformTrend[] = []
+      
+      let responseIndex = 0
+      if (platform === 'all' || platform === 'instagram') {
+        const igData = await responses[responseIndex++].json()
+        if (igData.success && igData.trends) {
+          igTrends = igData.trends
         }
-      })
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch trends')
       }
       
-      const data = await response.json()
-      
-      if (data.success && data.trends) {
-        setTrends(data.trends)
-        
-        // Calculate insights from the trends
-        const insights = calculateInsights(data.trends)
-        setInsights(insights)
-      } else {
-        setError('No trend data available. Trends are collected daily at 9 AM.')
+      if (platform === 'all' || platform === 'twitter') {
+        const twData = await responses[responseIndex++].json()
+        if (twData.success && twData.trends) {
+          twTrends = twData.trends
+        }
       }
+      
+      const crossData = await responses[responses.length - 1].json()
+      if (crossData.trends) {
+        crossTrends = crossData.trends
+      }
+      
+      setInstagramTrends(igTrends)
+      setTwitterTrends(twTrends)
+      setCrossPlatformTrends(crossTrends)
+      
+      // Calculate insights from all trends
+      const allTrends = [...igTrends, ...twTrends]
+      const insights = calculateInsights(allTrends)
+      setInsights(insights)
     } catch (error) {
       console.error('Error fetching Instagram trends:', error)
       setError('Failed to load trends. Please try again later.')
@@ -102,7 +176,7 @@ export default function TrendGardenPage() {
     }
   }
 
-  const calculateInsights = (trends: InstagramTrend[]): TrendInsights => {
+  const calculateInsights = (trends: Trend[]): TrendInsights => {
     // Aggregate all audio trends
     const audioMap = new Map<string, number>()
     let totalGrowth = 0
@@ -164,7 +238,7 @@ export default function TrendGardenPage() {
         
         // Wait a bit then fetch the new data
         setTimeout(() => {
-          fetchInstagramTrends()
+          fetchAllTrends()
           setRefreshing(false)
         }, 2000)
       } else {
@@ -305,20 +379,34 @@ export default function TrendGardenPage() {
           className="text-center mb-12"
         >
           <h1 className="text-4xl font-light text-gray-800 mb-4">
-            Instagram Trend Garden
+            Social Trend Garden
           </h1>
           <p className="text-gray-600 text-lg">
-            Real-time insights from Instagram's trending content
+            Real-time insights from Instagram and Twitter trends
           </p>
         </motion.div>
 
         {/* Controls */}
         <motion.div 
-          className="flex justify-center items-center gap-6 mb-10"
+          className="flex justify-center items-center gap-6 mb-10 flex-wrap"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
         >
+          {/* Platform Selector */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-600">Platform:</label>
+            <select
+              value={platform}
+              onChange={(e) => setPlatform(e.target.value as 'all' | 'instagram' | 'twitter')}
+              className="px-4 py-2 bg-white border border-gray-200 rounded-full text-gray-700 focus:border-purple-400 focus:outline-none"
+            >
+              <option value="all">All Platforms</option>
+              <option value="instagram">Instagram</option>
+              <option value="twitter">Twitter</option>
+            </select>
+          </div>
+          
           {/* Niche Selector */}
           <div className="flex items-center gap-2">
             <label className="text-sm text-gray-600">Filter by niche:</label>
@@ -467,9 +555,52 @@ export default function TrendGardenPage() {
           </motion.div>
         )}
 
-        {/* Trending Hashtags Grid */}
+        {/* Cross-Platform Hot Trends */}
+        {crossPlatformTrends.filter(t => t.trending_both).length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="mb-10"
+          >
+            <h2 className="text-2xl font-light text-gray-800 mb-6 flex items-center justify-center gap-2">
+              <Sparkles className="w-6 h-6 text-yellow-500" />
+              Trending on Both Platforms
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {crossPlatformTrends
+                .filter(t => t.trending_both)
+                .slice(0, 6)
+                .map((trend, idx) => (
+                  <WellnessCard key={idx} className="bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-medium text-gray-800">{trend.trend_name}</h3>
+                      <div className="flex gap-1">
+                        <Instagram className="w-4 h-4 text-pink-500" />
+                        <Twitter className="w-4 h-4 text-blue-500" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 mb-3">
+                      <div className="text-center p-2 bg-white/50 rounded">
+                        <div className="text-sm font-medium">{trend.instagram_score?.toFixed(0) || '-'}%</div>
+                        <div className="text-xs text-gray-600">Instagram</div>
+                      </div>
+                      <div className="text-center p-2 bg-white/50 rounded">
+                        <div className="text-sm font-medium">{trend.twitter_score?.toFixed(0) || '-'}%</div>
+                        <div className="text-xs text-gray-600">Twitter</div>
+                      </div>
+                    </div>
+                    <p className="text-xs text-purple-700 font-medium">{trend.recommendation}</p>
+                    <p className="text-xs text-gray-600 mt-2">Post: {trend.best_time_to_post}</p>
+                  </WellnessCard>
+                ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* All Trends Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {trends.map((trend, idx) => (
+          {[...instagramTrends, ...twitterTrends].map((trend, idx) => (
             <motion.div
               key={trend.id}
               initial={{ opacity: 0, y: 20 }}
@@ -482,11 +613,17 @@ export default function TrendGardenPage() {
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h3 className="text-lg font-medium text-gray-800 flex items-center gap-2">
-                      <Hash className="w-4 h-4 text-purple-400" />
-                      {trend.metrics.hashtag || trend.trend_name}
+                      {trend.platform === 'twitter' ? (
+                        <Twitter className="w-4 h-4 text-blue-400" />
+                      ) : (
+                        <Instagram className="w-4 h-4 text-pink-400" />
+                      )}
+                      {trend.trend_name}
                     </h3>
                     <p className="text-sm text-gray-500 mt-1">
-                      {trend.metrics.postCount} posts analyzed
+                      {trend.platform === 'twitter' 
+                        ? `${trend.metrics.tweetCount || 0} tweets analyzed`
+                        : `${trend.metrics.postCount || 0} posts analyzed`}
                     </p>
                   </div>
                   {getGrowthIcon(trend.metrics.growthRate)}
@@ -535,7 +672,7 @@ export default function TrendGardenPage() {
         </div>
 
         {/* No Data State */}
-        {trends.length === 0 && !loading && !error && (
+        {instagramTrends.length === 0 && twitterTrends.length === 0 && !loading && !error && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

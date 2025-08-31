@@ -37,7 +37,8 @@ interface TwitterTrendData {
 
 export class TwitterTrendCollector {
   private client: ApifyClient
-  private readonly ACTOR_ID = 'datura/twitter-search-scraper' // Update with actual actor ID
+  // Using the actual Twitter Search Scraper from Apify
+  private readonly ACTOR_ID = 'JZPB1o5RWTUHsBhgB' // Twitter Search Basic API actor
   
   constructor() {
     this.client = new ApifyClient({
