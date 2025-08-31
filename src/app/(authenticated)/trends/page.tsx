@@ -214,23 +214,52 @@ export default function TrendGardenPage() {
     setRefreshing(true)
     setError(null)
     
-    // Trigger new collection
+    // Trigger new collection based on platform
     try {
-      const hashtagsToCollect = getHashtagsForNiche(niche)
-      console.log(`Collecting trends for ${niche} with hashtags:`, hashtagsToCollect)
+      const promises = []
       
-      const response = await fetch('/api/trends/instagram', {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          hashtags: hashtagsToCollect,
-          maxPostsPerTag: 100,
-          analysisType: 'quick'
-        })
-      })
+      // Collect Instagram if needed
+      if (platform === 'all' || platform === 'instagram') {
+        const hashtagsToCollect = getHashtagsForNiche(niche)
+        console.log(`Collecting Instagram trends for ${niche} with hashtags:`, hashtagsToCollect)
+        
+        promises.push(
+          fetch('/api/trends/instagram', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              hashtags: hashtagsToCollect,
+              maxPostsPerTag: 100,
+              analysisType: 'quick'
+            })
+          })
+        )
+      }
+      
+      // Collect Twitter if needed
+      if (platform === 'all' || platform === 'twitter') {
+        console.log(`Collecting Twitter trends for ${niche}`)
+        
+        promises.push(
+          fetch('/api/trends/collect-twitter', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              niche: niche === 'all' ? 'fitness' : niche,
+              test: false
+            })
+          })
+        )
+      }
+      
+      const responses = await Promise.all(promises)
+      const response = responses[0]
       
       if (response.ok) {
         const data = await response.json()
