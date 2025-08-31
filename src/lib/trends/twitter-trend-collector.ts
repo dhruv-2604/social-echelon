@@ -76,16 +76,18 @@ export class TwitterTrendCollector {
       // Build query from hashtags
       const query = hashtags.map(tag => `#${tag}`).join(' OR ')
       
-      // Run the Twitter scraper actor
+      // Run the Twitter scraper actor with correct input format
       const run = await this.client.actor(this.ACTOR_ID).call({
-        query,
-        sort: 'Top',
-        start_date: startDate.toISOString().split('T')[0],
-        end_date: new Date().toISOString().split('T')[0],
+        query,  // The search query
+        sort: 'Latest',  // 'Latest' or 'Top'
+        start_date: startDate.toISOString().split('T')[0],  // YYYY-MM-DD format
+        end_date: new Date().toISOString().split('T')[0],  // YYYY-MM-DD format
         lang: 'en',
         min_likes: minLikes,
-        min_retweets: minRetweets,
-        count: maxTweets
+        blue_verified: true,  // Focus on verified accounts
+        is_image: false,
+        is_quote: false,
+        is_video: false
       })
 
       const tweets = (run.defaultDatasetId 
