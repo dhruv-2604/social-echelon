@@ -105,10 +105,20 @@ export class ApifyInstagramCollector {
       const engagement = post.likeCount + post.commentCount + (post.playCount || 0)
       totalEngagement += engagement
       
-      // Track audio trends
+      // Track audio trends - check multiple possible audio fields
       if (post.audio) {
-        const audioKey = `${post.audio.artist} - ${post.audio.title}`
+        const audioKey = `${post.audio.artist || 'Unknown'} - ${post.audio.title || 'Unknown'}`
         trendingAudio.set(audioKey, (trendingAudio.get(audioKey) || 0) + 1)
+      } else if (post.musicInfo) {
+        // Alternative field for audio
+        const audioKey = `${post.musicInfo.artist || 'Unknown'} - ${post.musicInfo.title || 'Unknown'}`
+        trendingAudio.set(audioKey, (trendingAudio.get(audioKey) || 0) + 1)
+      } else if (post.caption && post.caption.includes('🎵')) {
+        // Try to extract audio mentions from caption
+        const audioMatch = post.caption.match(/🎵\s*([^🎵\n]+)/);
+        if (audioMatch) {
+          trendingAudio.set(audioMatch[1].trim(), (trendingAudio.get(audioMatch[1].trim()) || 0) + 1)
+        }
       }
     })
     
@@ -124,9 +134,15 @@ export class ApifyInstagramCollector {
       sum + post.likeCount + post.commentCount, 0)
     
     // Growth rate: how much better are newer posts doing vs older posts
-    const growthRate = olderEngagement > 0 
-      ? ((newerEngagement - olderEngagement) / olderEngagement) * 100
-      : 0
+    // Cap at reasonable values to avoid extreme percentages
+    let growthRate = 0
+    if (olderEngagement > 0 && olderPosts.length > 0 && newerPosts.length > 0) {
+      const avgOlder = olderEngagement / olderPosts.length
+      const avgNewer = newerEngagement / newerPosts.length
+      growthRate = ((avgNewer - avgOlder) / avgOlder) * 100
+      // Cap growth rate at -90% to +200% to avoid outliers
+      growthRate = Math.max(-90, Math.min(200, growthRate))
+    }
     
     return {
       hashtag: cleanTag,

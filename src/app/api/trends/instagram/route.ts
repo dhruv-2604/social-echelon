@@ -116,17 +116,28 @@ export const GET = withSecurityHeaders(
       const supabase = getSupabaseAdmin()
       const SYSTEM_USER_ID = 'aa3a46a6-ceca-4a83-bdfa-5b3b241731a5'
       
+      // Get niche from query params
+      const { searchParams } = new URL(request.url)
+      const niche = searchParams.get('niche')
+      
       // Get trends from last 7 days
       const sevenDaysAgo = new Date()
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
       
-      // Get global trends (collected by system)
-      const { data: trends, error } = await supabase
+      // Build query
+      let query = supabase
         .from('trend_analysis')
         .select('*')
         .eq('user_id', SYSTEM_USER_ID)  // Use SYSTEM_USER_ID for global trends
         .eq('platform', 'instagram')
         .gte('collected_at', sevenDaysAgo.toISOString())
+      
+      // Filter by niche if provided and not 'all'
+      if (niche && niche !== 'all') {
+        query = query.eq('niche', niche)
+      }
+      
+      const { data: trends, error } = await query
         .order('collected_at', { ascending: false })
         .limit(50)
 

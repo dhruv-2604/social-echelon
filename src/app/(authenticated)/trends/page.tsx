@@ -106,7 +106,7 @@ export default function TrendGardenPage() {
       
       if (platform === 'all' || platform === 'instagram') {
         promises.push(
-          fetch('/api/trends/instagram', {
+          fetch(`/api/trends/instagram${niche !== 'all' ? `?niche=${niche}` : ''}`, {
             method: 'GET',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' }
@@ -135,6 +135,14 @@ export default function TrendGardenPage() {
       
       const responses = await Promise.all(promises)
       
+      // Check for authentication errors
+      for (const response of responses) {
+        if (response.status === 401 || response.status === 403) {
+          setError('Not authenticated. Please sign in again.')
+          return
+        }
+      }
+      
       let igTrends: Trend[] = []
       let twTrends: Trend[] = []
       let crossTrends: CrossPlatformTrend[] = []
@@ -144,6 +152,8 @@ export default function TrendGardenPage() {
         const igData = await responses[responseIndex++].json()
         if (igData.success && igData.trends) {
           igTrends = igData.trends
+        } else if (igData.error) {
+          console.error('Instagram API error:', igData.error)
         }
       }
       

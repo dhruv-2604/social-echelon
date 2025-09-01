@@ -158,7 +158,7 @@ export const GET = withSecurityHeaders(
             // Calculate posts per hashtag based on remaining budget
             const hashtagsToAnalyze = getNicheHashtags(niche).slice(0, maxPerNiche)
             const postsPerHashtag = Math.min(
-              200, 
+              300,  // Increased to 3x for better trend detection
               Math.floor((remainingBudget - totalPostsCollected) / hashtagsToAnalyze.length)
             )
             
