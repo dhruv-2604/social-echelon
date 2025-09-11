@@ -324,9 +324,11 @@ export default function TrendGardenPage() {
   }
 
   const formatEngagement = (num: number): string => {
+    // Handle small engagement rates (like 4.23)
+    if (num < 100) return num.toFixed(2)
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
-    return num.toString()
+    return Math.round(num).toString()
   }
 
   if (loading && !refreshing) {

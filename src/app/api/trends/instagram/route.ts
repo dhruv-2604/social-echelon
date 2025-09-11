@@ -47,20 +47,41 @@ export const POST = withSecurityHeaders(
           maxPosts
         )
 
-        // Store trends in database
+        // Determine niche from hashtags
+        const detectNiche = (hashtag: string): string => {
+          const tag = hashtag.toLowerCase()
+          if (['fitness', 'workout', 'gym', 'fitfam'].some(h => tag.includes(h))) return 'fitness'
+          if (['beauty', 'makeup', 'skincare'].some(h => tag.includes(h))) return 'beauty'
+          if (['fashion', 'style', 'ootd'].some(h => tag.includes(h))) return 'fashion'
+          if (['food', 'foodie', 'recipe'].some(h => tag.includes(h))) return 'food'
+          if (['lifestyle', 'aesthetic'].some(h => tag.includes(h))) return 'lifestyle'
+          return 'general'
+        }
+
+        // Store trends in database with ALL required fields
         const trendRecords = trends.map(trend => ({
           user_id: userId,
           platform: 'instagram',
           trend_type: 'hashtag',
           trend_name: trend.hashtag,
+          niche: detectNiche(trend.hashtag), // Add niche field
           metrics: {
+            hashtag: trend.hashtag,
             postCount: trend.postCount,
             avgEngagement: trend.avgEngagement,
             totalEngagement: trend.totalEngagement,
             growthRate: trend.growthRate,
-            topAudio: Array.from(trend.trendingAudio.entries()).slice(0, 5)
+            trendingAudio: Array.from(trend.trendingAudio.entries()).slice(0, 5),
+            topHashtags: []
           },
           top_posts: trend.topPosts.slice(0, 5),
+          // Add missing fields
+          growth_velocity: trend.growthRate || 0,
+          current_volume: trend.postCount,
+          engagement_rate: trend.avgEngagement,
+          saturation_level: Math.min(100, trend.postCount / 100),
+          confidence_score: (trend.growthRate || 0) > 10 ? 80 : 60,
+          trend_phase: (trend.growthRate || 0) > 20 ? 'growing' : (trend.growthRate || 0) > 0 ? 'emerging' : 'declining',
           collected_at: new Date().toISOString()
         }))
 
