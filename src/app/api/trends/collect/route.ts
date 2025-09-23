@@ -6,8 +6,8 @@ import { z } from 'zod'
 export const dynamic = 'force-dynamic'
 
 // Budget limits for cost control
-const DAILY_BUDGET_USD = 5 // $5 per day max
-const MAX_POSTS_PER_DAY = 10000 // At $0.50 per 1000 posts = $5
+const DAILY_BUDGET_USD = 25 // $25 per day for comprehensive data
+const MAX_POSTS_PER_DAY = 50000 // At $0.50 per 1000 posts = $25
 const SYSTEM_USER_ID = 'aa3a46a6-ceca-4a83-bdfa-5b3b241731a5' // Use existing user from profiles
 
 // List of niches to collect trends for
@@ -156,11 +156,9 @@ export const GET = withSecurityHeaders(
             const twitterCollector = new TwitterTrendCollector()
             
             // Calculate posts per hashtag based on remaining budget
-            const hashtagsToAnalyze = getNicheHashtags(niche).slice(0, maxPerNiche)
-            const postsPerHashtag = Math.min(
-              300,  // Increased to 3x for better trend detection
-              Math.floor((remainingBudget - totalPostsCollected) / hashtagsToAnalyze.length)
-            )
+            // With 50k posts/day, we can do comprehensive collection
+            const hashtagsToAnalyze = getNicheHashtags(niche) // Use ALL 10 hashtags per niche
+            const postsPerHashtag = 500 // 500 posts per hashtag for excellent data quality
             
             if (postsPerHashtag < 50) {
               console.log(`Skipping ${niche} - insufficient budget (${postsPerHashtag} posts/hashtag)`)

@@ -10,7 +10,8 @@ export const dynamic = 'force-dynamic'
 const InstagramTrendSchema = z.object({
   hashtags: z.array(z.string().min(1).max(50)).min(1).max(10),
   maxPostsPerTag: z.number().min(10).max(1000).default(100),
-  analysisType: z.enum(['quick', 'standard', 'deep']).default('standard')
+  analysisType: z.enum(['quick', 'standard', 'deep']).default('standard'),
+  niche: z.string().optional() // Accept niche from frontend
 })
 
 // POST - Collect Instagram trends for hashtags
@@ -64,7 +65,7 @@ export const POST = withSecurityHeaders(
           platform: 'instagram',
           trend_type: 'hashtag',
           trend_name: trend.hashtag,
-          niche: detectNiche(trend.hashtag), // Add niche field
+          niche: validatedBody.niche || detectNiche(trend.hashtag), // Use passed niche or detect
           metrics: {
             hashtag: trend.hashtag,
             postCount: trend.postCount,

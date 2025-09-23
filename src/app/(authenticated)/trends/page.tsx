@@ -242,8 +242,9 @@ export default function TrendGardenPage() {
             },
             body: JSON.stringify({
               hashtags: hashtagsToCollect,
-              maxPostsPerTag: 100,
-              analysisType: 'quick'
+              maxPostsPerTag: 500, // Increased for better trend detection
+              analysisType: 'standard',
+              niche: niche // Pass the actual niche category
             })
           })
         )
