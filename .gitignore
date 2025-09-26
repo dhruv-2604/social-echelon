@@ -45,3 +45,4 @@ test-*.ts
 test-*.js
 *.test.ts
 *.test.js
+test-trend-collection.js
