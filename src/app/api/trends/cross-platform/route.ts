@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { CrossPlatformAnalyzer } from '@/lib/trends/cross-platform-analyzer'
-import { withAuthAndValidation } from '@/lib/validation/middleware'
+import { withSecurityHeaders } from '@/lib/validation/middleware'
 
 // GET cross-platform trend analysis
-export const GET = withAuthAndValidation({})(
-  async (request: NextRequest, userId: string) => {
+// No auth required since these are system-wide trends
+export const GET = withSecurityHeaders(
+  async (request: NextRequest) => {
     try {
       const { searchParams } = new URL(request.url)
       const niche = searchParams.get('niche') || undefined

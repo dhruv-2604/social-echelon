@@ -132,8 +132,9 @@ export const POST = withSecurityHeaders(
 )
 
 // GET - Get stored Instagram trends (global for all users)
+// No auth required since these are system-wide trends
 export const GET = withSecurityHeaders(
-  withAuthAndValidation({})(async (request: NextRequest, userId: string) => {
+  async (request: NextRequest) => {
     try {
       const supabase = getSupabaseAdmin()
       const SYSTEM_USER_ID = 'aa3a46a6-ceca-4a83-bdfa-5b3b241731a5'
@@ -189,5 +190,5 @@ export const GET = withSecurityHeaders(
         { status: 500 }
       )
     }
-  })
+  }
 )

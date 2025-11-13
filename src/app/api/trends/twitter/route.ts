@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
-import { withAuthAndValidation } from '@/lib/validation/middleware'
+import { withSecurityHeaders } from '@/lib/validation/middleware'
 
 // GET Twitter trends from database (global for all users)
-export const GET = withAuthAndValidation({})(
-  async (request: NextRequest, userId: string) => {
+// No auth required since these are system-wide trends
+export const GET = withSecurityHeaders(
+  async (request: NextRequest) => {
     try {
       const supabaseAdmin = getSupabaseAdmin()
       const SYSTEM_USER_ID = 'aa3a46a6-ceca-4a83-bdfa-5b3b241731a5'
