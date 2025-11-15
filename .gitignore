@@ -46,3 +46,7 @@ test-*.js
 *.test.ts
 *.test.js
 test-trend-collection.js
+
+# Documentation files (keep local for solo dev)
+*.md
+!README.md
