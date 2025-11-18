@@ -28,7 +28,9 @@
 export { RateLimiter } from './rate-limiter'
 export { TokenBucket } from './token-bucket'
 export { getRateLimitConfig, RATE_LIMITS, DEFAULT_RATE_LIMIT } from './config'
+export { withRateLimit, getRateLimitStatus } from './middleware'
 
 export type { RateLimitCheckResult } from './rate-limiter'
 export type { TokenBucketConfig, TokenBucketState, TokenBucketResult } from './token-bucket'
 export type { RateLimitConfig } from './config'
+export type { RateLimitOptions } from './middleware'
