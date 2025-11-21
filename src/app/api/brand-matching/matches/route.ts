@@ -87,6 +87,20 @@ export const POST = withSecurityHeaders(
   withAuthAndValidation({
     body: MatchRecalculationSchema
   })(async (request: NextRequest, userId: string, { validatedBody }) => {
+    // Rate limit check (higher cost for recalculation)
+    const rateCheck = await RateLimiter.checkRateLimit(
+      userId,
+      '/api/brand-matching/matches',
+      { cost: 2 }
+    )
+
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded', retryAfter: rateCheck.retryAfter },
+        { status: 429, headers: { 'Retry-After': rateCheck.retryAfter?.toString() || '60' } }
+      )
+    }
+
     try {
       const supabaseAdmin = getSupabaseAdmin()
       const matchingService = new EnhancedBrandMatchingService()

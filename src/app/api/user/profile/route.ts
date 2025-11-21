@@ -3,6 +3,7 @@ import { withAuthAndValidation, withSecurityHeaders, requireAuth } from '@/lib/v
 import { UserProfileUpdateSchema } from '@/lib/validation/schemas'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { InstagramAPI } from '@/lib/instagram'
+import { RateLimiter } from '@/lib/rate-limiting'
 import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
@@ -242,6 +243,19 @@ export const PATCH = withSecurityHeaders(
   withAuthAndValidation({
     body: UserProfileUpdateSchema
   })(async (request: NextRequest, userId: string, { validatedBody }) => {
+    // Rate limit profile updates
+    const rateCheck = await RateLimiter.checkRateLimit(
+      userId,
+      '/api/user/profile'
+    )
+
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded', retryAfter: rateCheck.retryAfter },
+        { status: 429, headers: { 'Retry-After': rateCheck.retryAfter?.toString() || '60' } }
+      )
+    }
+
     try {
       const supabaseAdmin = getSupabaseAdmin()
 
