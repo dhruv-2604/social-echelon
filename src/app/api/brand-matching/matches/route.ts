@@ -3,6 +3,7 @@ import { EnhancedBrandMatchingService } from '@/lib/brand-matching/enhanced-matc
 import { withAuthAndValidation, withSecurityHeaders, requireAuth } from '@/lib/validation/middleware'
 import { BrandMatchingQuerySchema } from '@/lib/validation/schemas'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { RateLimiter } from '@/lib/rate-limiting'
 import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
@@ -11,6 +12,19 @@ export const GET = withSecurityHeaders(
   withAuthAndValidation({
     query: BrandMatchingQuerySchema
   })(async (request: NextRequest, userId: string, { validatedQuery }) => {
+    // Rate limit check
+    const rateCheck = await RateLimiter.checkRateLimit(
+      userId,
+      '/api/brand-matching/matches'
+    )
+
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded', retryAfter: rateCheck.retryAfter },
+        { status: 429, headers: { 'Retry-After': rateCheck.retryAfter?.toString() || '60' } }
+      )
+    }
+
     try {
       const supabaseAdmin = getSupabaseAdmin()
       const matchingService = new EnhancedBrandMatchingService()

@@ -4,6 +4,7 @@ import { ContentAnalyzer, InstagramPost } from '@/lib/ai/content-analyzer'
 import { withAuthAndValidation, withSecurityHeaders } from '@/lib/validation/middleware'
 import { ContentPlanSchema } from '@/lib/validation/schemas'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { RateLimiter } from '@/lib/rate-limiting'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,6 +12,30 @@ export const POST = withSecurityHeaders(
   withAuthAndValidation({
     body: ContentPlanSchema
   })(async (request: NextRequest, userId: string, { validatedBody }) => {
+    // Check rate limit first (expensive OpenAI operation)
+    const rateCheck = await RateLimiter.checkRateLimit(
+      userId,
+      '/api/ai/generate-content-plan',
+      { cost: 2 } // Double cost for AI generation
+    )
+
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: 'Rate limit exceeded',
+          message: 'Too many content plan requests. Please try again later.',
+          retryAfter: rateCheck.retryAfter
+        },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': rateCheck.retryAfter?.toString() || '60',
+            'X-RateLimit-Limit': rateCheck.limit.capacity.toString(),
+            'X-RateLimit-Remaining': rateCheck.tokensRemaining.toString()
+          }
+        }
+      )
+    }
     try {
       const supabaseAdmin = getSupabaseAdmin()
 
