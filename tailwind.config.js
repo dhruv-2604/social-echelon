@@ -58,9 +58,13 @@ module.exports = {
           },
           neutral: {
             900: 'var(--wellness-neutral-900)',
+            800: 'var(--wellness-neutral-800)',
             700: 'var(--wellness-neutral-700)',
+            600: 'var(--wellness-neutral-600)',
             500: 'var(--wellness-neutral-500)',
+            400: 'var(--wellness-neutral-400)',
             300: 'var(--wellness-neutral-300)',
+            200: 'var(--wellness-neutral-200)',
             100: 'var(--wellness-neutral-100)',
           },
           white: 'var(--wellness-white)',
