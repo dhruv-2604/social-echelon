@@ -23,9 +23,9 @@ export default function LoginPage() {
 
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
-  const timeIcon = hour < 12 ? <Sun className="w-5 h-5 text-yellow-500" /> : 
-                   hour < 18 ? <Coffee className="w-5 h-5 text-amber-600" /> : 
-                   <Moon className="w-5 h-5 text-indigo-500" />
+  const timeIcon = hour < 12 ? <Sun className="w-5 h-5 text-wellness-yellow" /> : 
+                   hour < 18 ? <Coffee className="w-5 h-5 text-wellness-coral" /> : 
+                   <Moon className="w-5 h-5 text-wellness-purple" />
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -81,12 +81,12 @@ export default function LoginPage() {
             transition={{ delay: 0.2 }}
           >
             {timeIcon}
-            <span className="text-gray-600">{greeting}</span>
+            <span className="text-wellness-neutral-600">{greeting}</span>
           </motion.div>
 
           {/* Title */}
           <motion.h1 
-            className="text-3xl font-light text-center text-gray-800 mb-2"
+            className="text-3xl font-display font-bold text-center text-wellness-neutral-900 mb-2"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
@@ -95,7 +95,7 @@ export default function LoginPage() {
           </motion.h1>
           
           <motion.p 
-            className="text-center text-gray-600 mb-8"
+            className="text-center text-wellness-neutral-500 mb-8"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
@@ -112,17 +112,17 @@ export default function LoginPage() {
             transition={{ delay: 0.5 }}
           >
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-wellness-neutral-700 mb-2">
                 Email Address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-wellness-neutral-400" />
                 <input
                   type="email"
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900 bg-white"
+                  className="w-full pl-10 pr-3 py-3 border border-wellness-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-wellness-purple focus:border-transparent transition-all text-wellness-neutral-900 bg-white placeholder:text-wellness-neutral-300"
                   placeholder="sarah@example.com"
                   required
                 />
@@ -131,24 +131,24 @@ export default function LoginPage() {
 
             <div>
               <div className="flex justify-between items-center mb-2">
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-wellness-neutral-700">
                   Password
                 </label>
                 <Link 
                   href="/auth/forgot-password" 
-                  className="text-sm text-purple-600 hover:text-purple-700"
+                  className="text-sm text-wellness-purple hover:text-wellness-purple-soft"
                 >
                   Forgot password?
                 </Link>
               </div>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-wellness-neutral-400" />
                 <input
                   type="password"
                   name="password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-gray-900 bg-white"
+                  className="w-full pl-10 pr-3 py-3 border border-wellness-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-wellness-purple focus:border-transparent transition-all text-wellness-neutral-900 bg-white placeholder:text-wellness-neutral-300"
                   placeholder="••••••••"
                   required
                 />
@@ -159,9 +159,9 @@ export default function LoginPage() {
               <input
                 type="checkbox"
                 id="remember"
-                className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                className="w-4 h-4 text-wellness-purple border-wellness-neutral-300 rounded focus:ring-wellness-purple"
               />
-              <label htmlFor="remember" className="ml-2 text-sm text-gray-600">
+              <label htmlFor="remember" className="ml-2 text-sm text-wellness-neutral-600">
                 Keep me signed in
               </label>
             </div>
@@ -189,10 +189,10 @@ export default function LoginPage() {
           {/* Divider */}
           <div className="relative my-8">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200" />
+              <div className="w-full border-t border-wellness-neutral-200" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white text-gray-500">or</span>
+              <span className="px-4 bg-white text-wellness-neutral-500">or</span>
             </div>
           </div>
 
@@ -211,13 +211,13 @@ export default function LoginPage() {
 
           {/* Sign up link */}
           <motion.p 
-            className="text-center text-sm text-gray-600 mt-8"
+            className="text-center text-sm text-wellness-neutral-600 mt-8"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7 }}
           >
             New to Social Echelon?{' '}
-            <Link href="/auth/signup" className="text-purple-600 hover:text-purple-700 font-medium">
+            <Link href="/auth/signup" className="text-wellness-purple hover:text-wellness-purple-soft font-medium">
               Create an account
             </Link>
           </motion.p>
@@ -230,7 +230,7 @@ export default function LoginPage() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
         >
-          <Link href="/" className="text-gray-600 hover:text-gray-800 text-sm">
+          <Link href="/" className="text-wellness-neutral-500 hover:text-wellness-neutral-700 text-sm">
             ← Back to home
           </Link>
         </motion.div>

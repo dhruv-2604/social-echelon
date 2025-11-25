@@ -2,6 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { Globe, TrendingUp, DollarSign, Users, Calendar, Mail } from 'lucide-react'
+import { WellnessCard } from './wellness/WellnessCard'
+import { WellnessButton } from './wellness/WellnessButton'
+import { BreathingLoader } from './wellness/BreathingLoader'
+import { cn } from '@/lib/utils'
 
 interface ScrapedOpportunity {
   id: string
@@ -61,127 +65,133 @@ export default function ScrapedOpportunities() {
   const getOpportunityColor = (type: string) => {
     switch (type) {
       case 'open_application':
-        return 'bg-green-100 text-green-800'
+        return 'bg-wellness-green-light text-wellness-green border-wellness-green/20'
       case 'campaign_announcement':
-        return 'bg-blue-100 text-blue-800'
+        return 'bg-wellness-blue-light text-wellness-blue border-wellness-blue/20'
       case 'budget_announcement':
-        return 'bg-purple-100 text-purple-800'
+        return 'bg-wellness-purple-light text-wellness-purple border-wellness-purple/20'
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-wellness-neutral-100 text-wellness-neutral-700 border-wellness-neutral-200'
     }
   }
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-          <div className="h-20 bg-gray-200 rounded"></div>
-          <div className="h-20 bg-gray-200 rounded"></div>
-        </div>
-      </div>
+      <WellnessCard className="min-h-[300px] flex flex-col items-center justify-center">
+        <BreathingLoader text="Scanning for aligned opportunities..." size="md" />
+      </WellnessCard>
     )
   }
 
   return (
     <div className="space-y-6">
       {/* Scraped Opportunities */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold">Discovered Brand Opportunities</h2>
-          <span className="text-sm text-gray-600">
-            {opportunities.length} qualified opportunities
+      <WellnessCard padding="lg">
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="text-xl font-display font-bold text-wellness-neutral-900">Discovered Brand Opportunities</h2>
+          <span className="px-3 py-1 bg-wellness-purple-light text-wellness-purple text-sm font-medium rounded-full">
+            {opportunities.length} qualified matches
           </span>
         </div>
 
         {opportunities.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <Globe className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-            <p>No opportunities discovered yet</p>
-            <p className="text-sm mt-1">The scraper runs daily at 9 AM</p>
+          <div className="flex flex-col items-center justify-center py-12 text-wellness-neutral-500">
+            <div className="w-16 h-16 bg-wellness-neutral-100 rounded-full flex items-center justify-center mb-4">
+              <Globe className="w-8 h-8 text-wellness-neutral-300" />
+            </div>
+            <p className="font-medium">No opportunities discovered yet</p>
+            <p className="text-sm mt-1 text-wellness-neutral-400">The scraper runs daily at 9 AM</p>
           </div>
         ) : (
           <div className="space-y-4">
             {opportunities.map((opp) => (
-              <div key={opp.id} className="border rounded-lg p-4 hover:border-blue-300 transition-colors">
-                <div className="flex items-start justify-between">
+              <div 
+                key={opp.id} 
+                className="rounded-2xl p-5 transition-all duration-300 bg-wellness-neutral-100/30 border border-transparent hover:bg-white hover:shadow-wellness-sm hover:border-wellness-purple/20"
+              >
+                <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm ${getOpportunityColor(opp.opportunity_type)}`}>
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border ${getOpportunityColor(opp.opportunity_type)}`}>
                         {getOpportunityIcon(opp.opportunity_type)}
                         <span className="capitalize">{opp.opportunity_type.replace('_', ' ')}</span>
                       </div>
-                      <span className="text-sm text-gray-600">
+                      <span className="text-sm text-wellness-neutral-500 flex items-center gap-1">
+                        <TrendingUp className="w-3 h-3" />
                         {Math.round((opp.relevance_score || 0) * 100)}% relevant
                       </span>
                     </div>
                     
-                    <h3 className="font-medium text-lg">{opp.title}</h3>
-                    <p className="text-sm text-gray-600 mt-1">
-                      <span className="font-medium">{opp.brand_name}</span>
+                    <h3 className="font-display font-bold text-lg text-wellness-neutral-900 mb-1">{opp.title}</h3>
+                    <p className="text-sm text-wellness-neutral-600 mb-3">
+                      <span className="font-medium text-wellness-purple">{opp.brand_name}</span>
                       {opp.published_date && (
-                        <span> • Published {new Date(opp.published_date).toLocaleDateString()}</span>
+                        <span className="text-wellness-neutral-400"> • Published {new Date(opp.published_date).toLocaleDateString()}</span>
                       )}
                     </p>
 
                     {opp.description && (
-                      <p className="text-sm text-gray-700 mt-2 line-clamp-2">{opp.description}</p>
+                      <p className="text-sm text-wellness-neutral-600 mb-4 line-clamp-2 leading-relaxed">{opp.description}</p>
                     )}
 
-                    {opp.creator_requirements && (
-                      <div className="mt-3 flex items-center gap-4 text-sm text-gray-600">
-                        {opp.creator_requirements.followers?.min && (
-                          <span>Min {opp.creator_requirements.followers.min.toLocaleString()} followers</span>
-                        )}
-                        {opp.creator_requirements.engagement_rate && (
-                          <span>{opp.creator_requirements.engagement_rate}% engagement</span>
-                        )}
-                      </div>
-                    )}
+                    <div className="flex flex-wrap gap-4">
+                      {opp.creator_requirements && (
+                        <div className="flex items-center gap-3 text-xs text-wellness-neutral-500 bg-wellness-neutral-100 px-3 py-1.5 rounded-lg">
+                          {opp.creator_requirements.followers?.min && (
+                            <span>Min {opp.creator_requirements.followers.min.toLocaleString()} followers</span>
+                          )}
+                          {opp.creator_requirements.engagement_rate && (
+                            <span>• {opp.creator_requirements.engagement_rate}% engagement</span>
+                          )}
+                        </div>
+                      )}
 
-                    {opp.contact_info && (
-                      <div className="mt-3 flex items-center gap-4">
-                        {opp.contact_info.email && (
-                          <a 
-                            href={`mailto:${opp.contact_info.email}`}
-                            className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                          >
-                            <Mail className="w-4 h-4" />
-                            {opp.contact_info.email}
-                          </a>
-                        )}
-                      </div>
-                    )}
+                      {opp.contact_info && opp.contact_info.email && (
+                        <a 
+                          href={`mailto:${opp.contact_info.email}`}
+                          className="text-xs text-wellness-blue hover:text-wellness-blue-soft flex items-center gap-1.5 px-3 py-1.5 bg-wellness-blue-light/50 rounded-lg transition-colors"
+                        >
+                          <Mail className="w-3 h-3" />
+                          {opp.contact_info.email}
+                        </a>
+                      )}
+                    </div>
                   </div>
 
-                  <a
-                    href={opp.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="ml-4 px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                  <WellnessButton
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => window.open(opp.url, '_blank')}
+                    className="shrink-0 text-wellness-neutral-600 hover:text-wellness-purple"
                   >
                     View Source
-                  </a>
+                  </WellnessButton>
                 </div>
               </div>
             ))}
           </div>
         )}
-      </div>
+      </WellnessCard>
 
       {/* Brand Research Queue */}
       {brandQueue.length > 0 && (
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold mb-4">Brands Queued for Research</h3>
+        <WellnessCard padding="md" className="bg-wellness-neutral-100/50">
+          <h3 className="font-display font-semibold text-wellness-neutral-900 mb-4 text-lg">Brands Queued for Research</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {brandQueue.map((brand, index) => (
-              <div key={brand.id || index} className="border rounded-lg p-3 text-sm">
-                <p className="font-medium capitalize">{brand.brand_name}</p>
-                <p className="text-xs text-gray-600 mt-1">Priority: {brand.priority}/10</p>
+              <div key={brand.id || index} className="bg-white rounded-xl p-3 text-sm border border-wellness-neutral-200 shadow-sm">
+                <p className="font-medium capitalize text-wellness-neutral-900">{brand.brand_name}</p>
+                <p className="text-xs text-wellness-neutral-500 mt-1 flex items-center gap-1">
+                  Priority: 
+                  <span className={cn(
+                    "font-medium",
+                    brand.priority > 7 ? "text-wellness-coral" : "text-wellness-blue"
+                  )}>{brand.priority}/10</span>
+                </p>
               </div>
             ))}
           </div>
-        </div>
+        </WellnessCard>
       )}
     </div>
   )
