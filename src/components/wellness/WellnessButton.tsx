@@ -81,7 +81,10 @@ export function WellnessButton({
       type={type}
       aria-disabled={disabled}
     >
-      <span className={disabled ? 'opacity-60' : 'opacity-100'}>
+      <span className={cn(
+        "flex items-center justify-center gap-2",
+        disabled ? 'opacity-60' : 'opacity-100'
+      )}>
         {children}
       </span>
     </motion.button>

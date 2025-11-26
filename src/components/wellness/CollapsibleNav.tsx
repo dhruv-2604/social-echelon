@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -67,7 +67,9 @@ export function CollapsibleNav() {
               transition={{ duration: 0.2 }}
               className="px-6 absolute inset-0 flex items-center justify-center"
             >
-              <span className="font-medium text-gray-800 whitespace-nowrap">Social Echelon</span>
+              <span className="font-display font-medium text-wellness-neutral-800 whitespace-nowrap text-lg tracking-tight">
+                Social Echelon
+              </span>
             </motion.div>
           ) : (
             /* Show menu items when expanded */

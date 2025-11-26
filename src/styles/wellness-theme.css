@@ -39,9 +39,13 @@
   --wellness-lavender-light: #FAF8FF;
   
   --wellness-neutral-900: #2C2C2C;
+  --wellness-neutral-800: #3D3D3D;
   --wellness-neutral-700: #4A4A4A;
+  --wellness-neutral-600: #5E5E5E;
   --wellness-neutral-500: #717171;
+  --wellness-neutral-400: #929292;
   --wellness-neutral-300: #B3B3B3;
+  --wellness-neutral-200: #D6D6D6;
   --wellness-neutral-100: #F8F9FA;
   --wellness-white: #FFFFFF;
   
@@ -164,30 +168,14 @@ body {
   transition: outline var(--transition-fast);
 }
 
-/* Scrollbar - subtle with color */
+/* Scrollbar - hidden but functional */
+html, body {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
 ::-webkit-scrollbar {
-  width: 12px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--wellness-neutral-100);
-}
-
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(
-    180deg,
-    var(--wellness-purple-soft) 0%,
-    var(--wellness-teal-soft) 100%
-  );
-  border-radius: var(--radius-full);
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(
-    180deg,
-    var(--wellness-purple) 0%,
-    var(--wellness-teal) 100%
-  );
+  display: none; /* Chrome, Safari, Opera */
 }
 
 /* Breathing animation for loading states */
