@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -27,7 +27,7 @@ export function CollapsibleNav() {
   ]
   
   return (
-    <motion.nav 
+    <motion.div 
       className="fixed top-6 w-full z-50 flex justify-center pointer-events-none"
       initial={{ y: 0, opacity: 0 }}
       animate={{ 
@@ -37,14 +37,13 @@ export function CollapsibleNav() {
       }}
     >
       <motion.div
-        layout
         onMouseEnter={() => setIsExpanded(true)}
         onMouseLeave={() => setIsExpanded(false)}
         className={cn(
           "pointer-events-auto cursor-pointer rounded-full",
           "bg-white/90 backdrop-blur-md border border-white/50",
           "shadow-wellness-lg hover:shadow-wellness-xl transition-shadow duration-300",
-          "flex items-center justify-center h-14 overflow-hidden"
+          "flex items-center justify-center h-14 overflow-hidden min-w-[180px]"
         )}
         initial={false}
         animate={{
@@ -114,6 +113,6 @@ export function CollapsibleNav() {
           )}
         </AnimatePresence>
       </motion.div>
-    </motion.nav>
+    </motion.div>
   )
 }
