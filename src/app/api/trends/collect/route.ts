@@ -54,6 +54,44 @@ function verifyCronAuth(request: NextRequest): boolean {
   return isVercelCron || (!!process.env.CRON_SECRET && authHeader === `Bearer ${process.env.CRON_SECRET}`)
 }
 
+// Helper to calculate growth rate from historical data
+async function calculateHistoricalGrowthRate(
+  trendName: string,
+  currentEngagement: number,
+  supabase: any
+): Promise<number> {
+  try {
+    // Get yesterday's data for this trend
+    const yesterday = new Date()
+    yesterday.setDate(yesterday.getDate() - 1)
+    const twoDaysAgo = new Date()
+    twoDaysAgo.setDate(twoDaysAgo.getDate() - 2)
+
+    const { data: historicalTrend } = await supabase
+      .from('trend_analysis')
+      .select('engagement_rate, collected_at')
+      .eq('trend_name', trendName)
+      .eq('user_id', SYSTEM_USER_ID)
+      .gte('collected_at', twoDaysAgo.toISOString())
+      .lt('collected_at', yesterday.toISOString())
+      .order('collected_at', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (historicalTrend && (historicalTrend as any).engagement_rate > 0) {
+      const previousEngagement = (historicalTrend as any).engagement_rate
+      const growthRate = ((currentEngagement - previousEngagement) / previousEngagement) * 100
+      // Cap at reasonable values
+      return Math.max(-50, Math.min(100, growthRate))
+    }
+
+    // No historical data - return 0 (neutral) instead of fake 200%
+    return 0
+  } catch {
+    return 0
+  }
+}
+
 // Helper to check daily budget
 async function checkDailyBudget(): Promise<{ withinBudget: boolean; postsCollectedToday: number }> {
   try {
@@ -85,6 +123,22 @@ async function checkDailyBudget(): Promise<{ withinBudget: boolean; postsCollect
   }
 }
 
+// Determine which niches to collect today (rotation for cron)
+function getNichesForToday(): string[] {
+  const dayOfWeek = new Date().getDay() // 0-6
+  // Split 10 niches across days: 2 niches per weekday, all on weekends
+  const nicheRotation: Record<number, string[]> = {
+    0: [...SUPPORTED_NICHES], // Sunday: all
+    1: ['fitness', 'beauty'], // Monday
+    2: ['lifestyle', 'fashion'], // Tuesday
+    3: ['food', 'travel'], // Wednesday
+    4: ['business', 'parenting'], // Thursday
+    5: ['tech', 'education'], // Friday
+    6: [...SUPPORTED_NICHES], // Saturday: all
+  }
+  return nicheRotation[dayOfWeek] || SUPPORTED_NICHES.slice(0, 2)
+}
+
 // GET - Scheduled trend collection (Vercel cron jobs use GET)
 export const GET = withSecurityHeaders(
   rateLimit(10, 3600000)( // 10 collections per hour max
@@ -92,11 +146,11 @@ export const GET = withSecurityHeaders(
       const startTime = Date.now()
       let totalPostsCollected = 0
       const errors: any[] = []
-      
+
       try {
         // Verify cron authorization
         if (!verifyCronAuth(request)) {
-          return NextResponse.json({ 
+          return NextResponse.json({
             error: 'Unauthorized - Cron authentication required',
             hint: 'Set CRON_SECRET env var and use Bearer token'
           }, { status: 401 })
@@ -117,6 +171,9 @@ export const GET = withSecurityHeaders(
           })
         }
 
+        // Check if this is a cron job (limited time) or manual trigger
+        const isVercelCron = request.headers.get('x-vercel-cron') === '1'
+
         // Parse optional body for custom collection params
         let body: any = {}
         try {
@@ -129,8 +186,14 @@ export const GET = withSecurityHeaders(
         }
 
         const validatedBody = TrendCollectionSchema.parse(body)
-        const nichesToCollect = validatedBody?.niches || SUPPORTED_NICHES
+
+        // For cron jobs: use rotation and fewer posts to stay within timeout
+        // For manual triggers: collect all niches with full data
+        const nichesToCollect = validatedBody?.niches || (isVercelCron ? getNichesForToday() : SUPPORTED_NICHES)
         const maxPerNiche = validatedBody?.maxPerNiche || 5
+
+        // Reduce posts per hashtag for cron to stay within 10sec timeout
+        const postsPerHashtagOverride = isVercelCron ? 50 : 500
 
         console.log(`Starting Instagram trend collection for ${nichesToCollect.length} niches`)
         
@@ -155,10 +218,13 @@ export const GET = withSecurityHeaders(
             const instagramCollector = new ApifyInstagramCollector()
             const twitterCollector = new TwitterTrendCollector()
             
-            // Calculate posts per hashtag based on remaining budget
-            // With 50k posts/day, we can do comprehensive collection
-            const hashtagsToAnalyze = getNicheHashtags(niche) // Use ALL 10 hashtags per niche
-            const postsPerHashtag = 500 // 500 posts per hashtag for excellent data quality
+            // Calculate posts per hashtag based on remaining budget and cron limits
+            // For cron: use 3 hashtags with 50 posts each (fast)
+            // For manual: use all 10 hashtags with 500 posts each (comprehensive)
+            const hashtagsToAnalyze = isVercelCron
+              ? getNicheHashtags(niche).slice(0, 3) // Only 3 hashtags for cron
+              : getNicheHashtags(niche) // All 10 for manual
+            const postsPerHashtag = postsPerHashtagOverride
             
             if (postsPerHashtag < 50) {
               console.log(`Skipping ${niche} - insufficient budget (${postsPerHashtag} posts/hashtag)`)
@@ -182,39 +248,50 @@ export const GET = withSecurityHeaders(
             }
             
             if (!instagramTrends) continue
-            
+
             // Convert to trend_analysis table format with proper fields
-            const trendRecords = instagramTrends.map(trend => ({
-              user_id: SYSTEM_USER_ID, // Use proper UUID
-              platform: 'instagram',
-              trend_type: 'hashtag',
-              trend_name: trend.hashtag,
-              niche: niche, // Add niche field
-              metrics: {
-                hashtag: trend.hashtag,
-                postCount: trend.postCount,
-                avgEngagement: trend.avgEngagement,
-                totalEngagement: trend.totalEngagement,
-                growthRate: trend.growthRate,
-                trendingAudio: Array.from(trend.trendingAudio.entries()).slice(0, 10),
-                topHashtags: []  // relatedHashtags not available from Apify collector yet
-              },
-              top_posts: trend.topPosts.slice(0, 5),
-              // Add individual fields for querying
-              growth_velocity: trend.growthRate || 0,
-              current_volume: trend.postCount,
-              engagement_rate: trend.avgEngagement,
-              saturation_level: Math.min(100, trend.postCount / 100),
-              confidence_score: (trend.growthRate || 0) > 10 ? 80 : 60,
-              trend_phase: (trend.growthRate || 0) > 20 ? 'growing' : (trend.growthRate || 0) > 0 ? 'emerging' : 'declining',
-              collected_at: new Date().toISOString()
+            // Calculate historical growth rates for each trend
+            const trendRecords = await Promise.all(instagramTrends.map(async trend => {
+              const historicalGrowthRate = await calculateHistoricalGrowthRate(
+                trend.hashtag,
+                trend.avgEngagement,
+                supabaseAdmin
+              )
+
+              return {
+                user_id: SYSTEM_USER_ID, // Use proper UUID
+                platform: 'instagram',
+                trend_type: 'hashtag',
+                trend_name: trend.hashtag,
+                niche: niche, // Add niche field
+                metrics: {
+                  hashtag: trend.hashtag,
+                  postCount: trend.postCount,
+                  avgEngagement: trend.avgEngagement,
+                  totalEngagement: trend.totalEngagement,
+                  growthRate: historicalGrowthRate,
+                  trendingAudio: Array.from(trend.trendingAudio.entries()).slice(0, 10),
+                  topHashtags: []  // relatedHashtags not available from Apify collector yet
+                },
+                top_posts: trend.topPosts.slice(0, 5),
+                // Add individual fields for querying
+                growth_velocity: historicalGrowthRate,
+                current_volume: trend.postCount,
+                engagement_rate: trend.avgEngagement,
+                saturation_level: Math.min(100, trend.postCount / 100),
+                confidence_score: historicalGrowthRate > 10 ? 80 : historicalGrowthRate > 0 ? 70 : 60,
+                trend_phase: historicalGrowthRate > 20 ? 'growing' : historicalGrowthRate > 0 ? 'emerging' : 'declining',
+                collected_at: new Date().toISOString()
+              }
             }))
             
             allTrends.push(...trendRecords)
             totalPostsCollected += hashtagsToAnalyze.length * postsPerHashtag
             
-            // Collect Twitter trends (supplementary, doesn't count against Instagram budget)
-            try {
+            // Collect Twitter trends (supplementary, skip for cron to save time)
+            if (isVercelCron) {
+              console.log(`⏩ Skipping Twitter for cron (time limit)`)
+            } else try {
               console.log(`📱 Collecting Twitter trends for ${niche}...`)
               const twitterHashtags = TwitterTrendCollector.getTwitterHashtags(niche)
               const twitterTrends = await twitterCollector.collectNicheTrends(

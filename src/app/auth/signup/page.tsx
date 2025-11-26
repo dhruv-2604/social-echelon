@@ -184,19 +184,19 @@ export default function SignupPage() {
         {/* Progress indicators */}
         <div className="flex items-center justify-center gap-2 mb-8">
           <div className={`w-2 h-2 rounded-full transition-colors ${
-            step === 'info' ? 'bg-purple-600' : 'bg-gray-300'
+            step === 'info' ? 'bg-wellness-purple' : 'bg-wellness-neutral-300'
           }`} />
           <div className={`w-8 h-0.5 transition-colors ${
-            step !== 'info' ? 'bg-purple-600' : 'bg-gray-300'
+            step !== 'info' ? 'bg-wellness-purple' : 'bg-wellness-neutral-300'
           }`} />
           <div className={`w-2 h-2 rounded-full transition-colors ${
-            step === 'plan' ? 'bg-purple-600' : step === 'payment' ? 'bg-purple-600' : 'bg-gray-300'
+            step === 'plan' ? 'bg-wellness-purple' : step === 'payment' ? 'bg-wellness-purple' : 'bg-wellness-neutral-300'
           }`} />
           <div className={`w-8 h-0.5 transition-colors ${
-            step === 'payment' ? 'bg-purple-600' : 'bg-gray-300'
+            step === 'payment' ? 'bg-wellness-purple' : 'bg-wellness-neutral-300'
           }`} />
           <div className={`w-2 h-2 rounded-full transition-colors ${
-            step === 'payment' ? 'bg-purple-600' : 'bg-gray-300'
+            step === 'payment' ? 'bg-wellness-purple' : 'bg-wellness-neutral-300'
           }`} />
         </div>
 
@@ -210,22 +210,22 @@ export default function SignupPage() {
               exit={{ opacity: 0, x: -20 }}
             >
               <WellnessCard className="p-8">
-                <h1 className="text-3xl font-light text-gray-800 mb-2">Welcome to your wellness journey</h1>
-                <p className="text-gray-600 mb-8">Let's create your account and get you started</p>
+                <h1 className="text-3xl font-display font-light text-wellness-neutral-800 mb-2">Welcome to your wellness journey</h1>
+                <p className="text-wellness-neutral-600 mb-8">Let's create your account and get you started</p>
 
                 <form onSubmit={handleInfoSubmit} className="space-y-5">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-wellness-neutral-700 mb-2">
                       Full Name
                     </label>
                     <div className="relative">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-wellness-neutral-400" />
                       <input
                         type="text"
                         name="fullName"
                         value={formData.fullName}
                         onChange={handleInputChange}
-                        className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900 bg-white"
+                        className="w-full pl-10 pr-3 py-3 border border-wellness-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-wellness-purple focus:border-transparent text-wellness-neutral-900 bg-white placeholder:text-wellness-neutral-300"
                         placeholder="Sarah Johnson"
                         required
                       />
@@ -233,114 +233,114 @@ export default function SignupPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-wellness-neutral-700 mb-2">
                       Email Address
                     </label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-wellness-neutral-400" />
                       <input
                         type="email"
                         name="email"
                         value={formData.email}
                         onChange={handleInputChange}
-                        className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900 bg-white"
+                        className="w-full pl-10 pr-3 py-3 border border-wellness-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-wellness-purple focus:border-transparent text-wellness-neutral-900 bg-white placeholder:text-wellness-neutral-300"
                         placeholder="sarah@example.com"
                         required
                       />
                     </div>
                     {errors.email && (
-                      <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+                      <p className="mt-1 text-sm text-wellness-coral">{errors.email}</p>
                     )}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-wellness-neutral-700 mb-2">
                       Instagram Handle
                     </label>
                     <div className="relative">
-                      <Instagram className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <Instagram className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-wellness-neutral-400" />
                       <input
                         type="text"
                         name="instagramHandle"
                         value={formData.instagramHandle}
                         onChange={handleInputChange}
-                        className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900 bg-white"
+                        className="w-full pl-10 pr-3 py-3 border border-wellness-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-wellness-purple focus:border-transparent text-wellness-neutral-900 bg-white placeholder:text-wellness-neutral-300"
                         placeholder="@sarahcreates"
                         required
                       />
                     </div>
                     {errors.instagramHandle && (
-                      <p className="mt-1 text-sm text-red-600">{errors.instagramHandle}</p>
+                      <p className="mt-1 text-sm text-wellness-coral">{errors.instagramHandle}</p>
                     )}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-wellness-neutral-700 mb-2">
                       Phone Number
                     </label>
                     <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-wellness-neutral-400" />
                       <input
                         type="tel"
                         name="phone"
                         value={formData.phone}
                         onChange={handleInputChange}
-                        className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900 bg-white"
+                        className="w-full pl-10 pr-3 py-3 border border-wellness-neutral-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-wellness-purple focus:border-transparent text-wellness-neutral-900 bg-white placeholder:text-wellness-neutral-300"
                         placeholder="+1 (555) 123-4567"
                         required
                       />
                     </div>
                     {errors.phone && (
-                      <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
+                      <p className="mt-1 text-sm text-wellness-coral">{errors.phone}</p>
                     )}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-wellness-neutral-700 mb-2">
                       Password
-                      <span className="text-xs text-gray-500 ml-2">
+                      <span className="text-xs text-wellness-neutral-500 ml-2">
                         (8+ chars, uppercase, lowercase, number, special char)
                       </span>
                     </label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-wellness-neutral-400" />
                       <input
                         type="password"
                         name="password"
                         value={formData.password}
                         onChange={handleInputChange}
-                        className={`w-full pl-10 pr-3 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900 bg-white ${
-                          errors.password ? 'border-red-500' : 'border-gray-200'
+                        className={`w-full pl-10 pr-3 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-wellness-purple focus:border-transparent text-wellness-neutral-900 bg-white placeholder:text-wellness-neutral-300 ${
+                          errors.password ? 'border-wellness-coral' : 'border-wellness-neutral-200'
                         }`}
                         placeholder="••••••••"
                         required
                       />
                     </div>
                     {errors.password && (
-                      <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+                      <p className="mt-1 text-sm text-wellness-coral">{errors.password}</p>
                     )}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-wellness-neutral-700 mb-2">
                       Confirm Password
                     </label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-wellness-neutral-400" />
                       <input
                         type="password"
                         name="confirmPassword"
                         value={formData.confirmPassword}
                         onChange={handleInputChange}
-                        className={`w-full pl-10 pr-3 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900 bg-white ${
-                          errors.confirmPassword ? 'border-red-500' : 'border-gray-200'
+                        className={`w-full pl-10 pr-3 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-wellness-purple focus:border-transparent text-wellness-neutral-900 bg-white placeholder:text-wellness-neutral-300 ${
+                          errors.confirmPassword ? 'border-wellness-coral' : 'border-wellness-neutral-200'
                         }`}
                         placeholder="••••••••"
                         required
                       />
                     </div>
                     {errors.confirmPassword && (
-                      <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
+                      <p className="mt-1 text-sm text-wellness-coral">{errors.confirmPassword}</p>
                     )}
                   </div>
 
@@ -350,9 +350,9 @@ export default function SignupPage() {
                   </WellnessButton>
                 </form>
 
-                <p className="text-center text-sm text-gray-600 mt-6">
+                <p className="text-center text-sm text-wellness-neutral-600 mt-6">
                   Already have an account?{' '}
-                  <Link href="/auth/login" className="text-purple-600 hover:text-purple-700">
+                  <Link href="/auth/login" className="text-wellness-purple hover:text-wellness-purple-soft">
                     Sign in
                   </Link>
                 </p>
@@ -369,19 +369,19 @@ export default function SignupPage() {
               exit={{ opacity: 0, x: -20 }}
             >
               <div className="text-center mb-8">
-                <h1 className="text-3xl font-light text-gray-800 mb-2">Choose your wellness level</h1>
-                <p className="text-gray-600">Select the plan that aligns with your growth goals</p>
+                <h1 className="text-3xl font-display font-light text-wellness-neutral-800 mb-2">Choose your wellness level</h1>
+                <p className="text-wellness-neutral-600">Select the plan that aligns with your growth goals</p>
               </div>
 
               {/* Billing Toggle */}
               <div className="flex items-center justify-center mb-8">
-                <div className="bg-gray-100 rounded-full p-1 flex">
+                <div className="bg-wellness-neutral-100 rounded-full p-1 flex">
                   <button
                     onClick={() => setBillingCycle('monthly')}
                     className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${
                       billingCycle === 'monthly'
-                        ? 'bg-white text-gray-800 shadow-sm'
-                        : 'text-gray-600'
+                        ? 'bg-white text-wellness-neutral-800 shadow-sm'
+                        : 'text-wellness-neutral-600'
                     }`}
                   >
                     Monthly
@@ -390,12 +390,12 @@ export default function SignupPage() {
                     onClick={() => setBillingCycle('annual')}
                     className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${
                       billingCycle === 'annual'
-                        ? 'bg-white text-gray-800 shadow-sm'
-                        : 'text-gray-600'
+                        ? 'bg-white text-wellness-neutral-800 shadow-sm'
+                        : 'text-wellness-neutral-600'
                     }`}
                   >
                     Annual
-                    <span className="ml-2 text-green-600 text-xs">Save ${getSavings()}/yr</span>
+                    <span className="ml-2 text-wellness-green text-xs">Save ${getSavings()}/yr</span>
                   </button>
                 </div>
               </div>
@@ -411,38 +411,38 @@ export default function SignupPage() {
                   <WellnessCard 
                     className={`p-6 h-full transition-all ${
                       selectedPlan === 'balance' 
-                        ? 'ring-2 ring-purple-500 bg-purple-50/30' 
+                        ? 'ring-2 ring-wellness-purple bg-wellness-purple-light/30' 
                         : ''
                     }`}
                   >
                     <div className="flex items-start justify-between mb-4">
                       <div>
-                        <h3 className="text-2xl font-medium text-gray-800 flex items-center gap-2">
-                          <Heart className="w-6 h-6 text-purple-600" />
+                        <h3 className="text-2xl font-display font-medium text-wellness-neutral-800 flex items-center gap-2">
+                          <Heart className="w-6 h-6 text-wellness-purple" />
                           {plans.balance.name}
                         </h3>
-                        <p className="text-sm text-gray-600 mt-1">{plans.balance.tagline}</p>
+                        <p className="text-sm text-wellness-neutral-600 mt-1">{plans.balance.tagline}</p>
                       </div>
                       {selectedPlan === 'balance' && (
-                        <div className="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center">
+                        <div className="w-6 h-6 bg-wellness-purple rounded-full flex items-center justify-center">
                           <Check className="w-4 h-4 text-white" />
                         </div>
                       )}
                     </div>
 
                     <div className="mb-6">
-                      <span className="text-4xl font-light text-gray-800">
+                      <span className="text-4xl font-light text-wellness-neutral-800">
                         ${billingCycle === 'monthly' ? plans.balance.monthly : plans.balance.annual}
                       </span>
-                      <span className="text-gray-600 ml-2">
+                      <span className="text-wellness-neutral-600 ml-2">
                         /{billingCycle === 'monthly' ? 'month' : 'year'}
                       </span>
                     </div>
 
                     <ul className="space-y-3">
                       {plans.balance.features.map((feature, index) => (
-                        <li key={index} className="flex items-start gap-2 text-sm text-gray-700">
-                          <Check className="w-4 h-4 text-purple-600 mt-0.5" />
+                        <li key={index} className="flex items-start gap-2 text-sm text-wellness-neutral-700">
+                          <Check className="w-4 h-4 text-wellness-purple mt-0.5" />
                           {feature}
                         </li>
                       ))}
@@ -459,7 +459,7 @@ export default function SignupPage() {
                 >
                   {plans.harmony.popular && (
                     <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
-                      <span className="bg-gradient-to-r from-purple-600 to-teal-600 text-white px-4 py-1 rounded-full text-sm">
+                      <span className="bg-gradient-to-r from-wellness-purple to-wellness-teal text-white px-4 py-1 rounded-full text-sm">
                         Most Popular
                       </span>
                     </div>
@@ -467,39 +467,39 @@ export default function SignupPage() {
                   <WellnessCard 
                     className={`p-6 h-full transition-all ${
                       selectedPlan === 'harmony' 
-                        ? 'ring-2 ring-teal-500 bg-teal-50/30' 
+                        ? 'ring-2 ring-wellness-teal bg-wellness-teal-light/30' 
                         : ''
                     }`}
                     glow={plans.harmony.popular}
                   >
                     <div className="flex items-start justify-between mb-4">
                       <div>
-                        <h3 className="text-2xl font-medium text-gray-800 flex items-center gap-2">
-                          <Sparkles className="w-6 h-6 text-teal-600" />
+                        <h3 className="text-2xl font-display font-medium text-wellness-neutral-800 flex items-center gap-2">
+                          <Sparkles className="w-6 h-6 text-wellness-teal" />
                           {plans.harmony.name}
                         </h3>
-                        <p className="text-sm text-gray-600 mt-1">{plans.harmony.tagline}</p>
+                        <p className="text-sm text-wellness-neutral-600 mt-1">{plans.harmony.tagline}</p>
                       </div>
                       {selectedPlan === 'harmony' && (
-                        <div className="w-6 h-6 bg-teal-600 rounded-full flex items-center justify-center">
+                        <div className="w-6 h-6 bg-wellness-teal rounded-full flex items-center justify-center">
                           <Check className="w-4 h-4 text-white" />
                         </div>
                       )}
                     </div>
 
                     <div className="mb-6">
-                      <span className="text-4xl font-light text-gray-800">
+                      <span className="text-4xl font-light text-wellness-neutral-800">
                         ${billingCycle === 'monthly' ? plans.harmony.monthly : plans.harmony.annual}
                       </span>
-                      <span className="text-gray-600 ml-2">
+                      <span className="text-wellness-neutral-600 ml-2">
                         /{billingCycle === 'monthly' ? 'month' : 'year'}
                       </span>
                     </div>
 
                     <ul className="space-y-3">
                       {plans.harmony.features.map((feature, index) => (
-                        <li key={index} className="flex items-start gap-2 text-sm text-gray-700">
-                          <Check className="w-4 h-4 text-teal-600 mt-0.5" />
+                        <li key={index} className="flex items-start gap-2 text-sm text-wellness-neutral-700">
+                          <Check className="w-4 h-4 text-wellness-teal mt-0.5" />
                           {feature}
                         </li>
                       ))}
@@ -537,30 +537,30 @@ export default function SignupPage() {
               exit={{ opacity: 0, x: -20 }}
             >
               <WellnessCard className="p-8">
-                <h1 className="text-3xl font-light text-gray-800 mb-2">Complete your journey</h1>
-                <p className="text-gray-600 mb-8">Secure payment via Stripe</p>
+                <h1 className="text-3xl font-display font-light text-wellness-neutral-800 mb-2">Complete your journey</h1>
+                <p className="text-wellness-neutral-600 mb-8">Secure payment via Stripe</p>
 
                 {/* Order Summary */}
-                <div className="bg-gray-50 rounded-xl p-6 mb-8">
-                  <h3 className="font-medium text-gray-800 mb-4">Order Summary</h3>
+                <div className="bg-wellness-neutral-50 rounded-xl p-6 mb-8">
+                  <h3 className="font-medium text-wellness-neutral-800 mb-4">Order Summary</h3>
                   <div className="space-y-3">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">
+                      <span className="text-wellness-neutral-600">
                         {plans[selectedPlan].name} Plan ({billingCycle})
                       </span>
-                      <span className="font-medium text-gray-800">
+                      <span className="font-medium text-wellness-neutral-800">
                         ${getPrice()}
                       </span>
                     </div>
                     {billingCycle === 'annual' && (
-                      <div className="flex justify-between text-green-600 text-sm">
+                      <div className="flex justify-between text-wellness-green text-sm">
                         <span>Annual savings</span>
                         <span>-${getSavings()}</span>
                       </div>
                     )}
-                    <div className="border-t pt-3 flex justify-between">
-                      <span className="font-medium text-gray-800">Total due today</span>
-                      <span className="text-2xl font-light text-gray-800">
+                    <div className="border-t border-wellness-neutral-200 pt-3 flex justify-between">
+                      <span className="font-medium text-wellness-neutral-800">Total due today</span>
+                      <span className="text-2xl font-light text-wellness-neutral-800">
                         ${getPrice()}
                       </span>
                     </div>
@@ -569,10 +569,10 @@ export default function SignupPage() {
 
                 {/* Payment Form Placeholder */}
                 <div className="space-y-4">
-                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center">
-                    <Shield className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                    <p className="text-gray-600">Stripe payment form will be integrated here</p>
-                    <p className="text-sm text-gray-500 mt-2">Secure payment processing</p>
+                  <div className="border-2 border-dashed border-wellness-neutral-300 rounded-xl p-8 text-center">
+                    <Shield className="w-12 h-12 text-wellness-neutral-400 mx-auto mb-3" />
+                    <p className="text-wellness-neutral-600">Stripe payment form will be integrated here</p>
+                    <p className="text-sm text-wellness-neutral-500 mt-2">Secure payment processing</p>
                   </div>
 
                   <div className="flex gap-4">
@@ -596,11 +596,11 @@ export default function SignupPage() {
                     </WellnessButton>
                   </div>
 
-                  <p className="text-center text-xs text-gray-500 mt-4">
+                  <p className="text-center text-xs text-wellness-neutral-500 mt-4">
                     By continuing, you agree to our{' '}
-                    <Link href="/terms" className="text-purple-600 hover:text-purple-700">Terms</Link>
+                    <Link href="/terms" className="text-wellness-purple hover:text-wellness-purple-soft">Terms</Link>
                     {' '}and{' '}
-                    <Link href="/privacy" className="text-purple-600 hover:text-purple-700">Privacy Policy</Link>
+                    <Link href="/privacy" className="text-wellness-purple hover:text-wellness-purple-soft">Privacy Policy</Link>
                   </p>
                 </div>
               </WellnessCard>

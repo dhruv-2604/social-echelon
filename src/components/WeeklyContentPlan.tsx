@@ -3,6 +3,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { ChevronLeft, ChevronRight, Calendar, Clock, TrendingUp, Target, Lightbulb, Settings } from 'lucide-react'
 import UserPreferencesModal from './UserPreferencesModal'
+import { WellnessCard } from './wellness/WellnessCard'
+import { WellnessButton } from './wellness/WellnessButton'
+import { BreathingLoader } from './wellness/BreathingLoader'
+import { cn } from '@/lib/utils'
 
 interface ContentSuggestion {
   day: number
@@ -37,25 +41,25 @@ const PostTypeIcon = ({ type }: { type: string }) => {
     'IMAGE': '🖼️',
     'VIDEO': '🎥'
   }
-  return <span className="text-2xl">{icons[type as keyof typeof icons] || '📱'}</span>
+  return <span className="text-2xl filter drop-shadow-sm">{icons[type as keyof typeof icons] || '📱'}</span>
 }
 
 const ConfidenceIndicator = ({ score }: { score: number }) => {
   const getColor = (score: number) => {
-    if (score >= 80) return 'bg-green-500'
-    if (score >= 60) return 'bg-yellow-500'
-    return 'bg-red-500'
+    if (score >= 80) return 'bg-wellness-green'
+    if (score >= 60) return 'bg-wellness-yellow'
+    return 'bg-wellness-coral'
   }
 
   return (
     <div className="flex items-center space-x-2">
-      <div className="w-12 h-2 bg-gray-200 rounded-full overflow-hidden">
+      <div className="w-12 h-2 bg-wellness-neutral-100 rounded-full overflow-hidden">
         <div 
           className={`h-full ${getColor(score)} transition-all duration-500`}
           style={{ width: `${score}%` }}
         />
       </div>
-      <span className="text-xs text-gray-600 font-medium">{score}%</span>
+      <span className="text-xs text-wellness-neutral-500 font-medium">{score}%</span>
     </div>
   )
 }
@@ -161,7 +165,7 @@ export default function WeeklyContentPlan() {
 
   const scrollToIndex = (index: number) => {
     if (scrollRef.current) {
-      const cardWidth = 320 // Card width + margin
+      const cardWidth = 340 // Card width + margin (increased for wellness spacing)
       scrollRef.current.scrollTo({
         left: index * cardWidth,
         behavior: 'smooth'
@@ -172,7 +176,7 @@ export default function WeeklyContentPlan() {
 
   const handleScroll = () => {
     if (scrollRef.current) {
-      const cardWidth = 320
+      const cardWidth = 340
       const scrollLeft = scrollRef.current.scrollLeft
       const newIndex = Math.round(scrollLeft / cardWidth)
       setCurrentIndex(newIndex)
@@ -181,194 +185,194 @@ export default function WeeklyContentPlan() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border p-6 mb-8">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-900">This Week's AI Content Plan</h2>
-          <div className="animate-pulse">
-            <div className="h-4 w-24 bg-gray-200 rounded"></div>
-          </div>
-        </div>
-        <div className="flex space-x-4 overflow-hidden">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="flex-shrink-0 w-80 h-64 bg-gray-100 rounded-lg animate-pulse"></div>
-          ))}
-        </div>
-      </div>
+      <WellnessCard className="mb-8 min-h-[400px] flex flex-col items-center justify-center">
+        <BreathingLoader text="Curating your mindful content plan..." size="lg" />
+      </WellnessCard>
     )
   }
 
   if (!contentPlan) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border p-6 mb-8">
-        <div className="text-center py-8">
-          <Lightbulb className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-600 mb-2">No Content Plan Available</h3>
-          <p className="text-gray-500">We'll generate your personalized content plan soon!</p>
-          <button
-            onClick={() => setShowPreferences(true)}
-            className="mt-4 px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all"
-          >
-            Set Your Preferences
-          </button>
+      <WellnessCard className="mb-8 text-center py-12" padding="xl">
+        <div className="mb-6 bg-wellness-yellow-light w-20 h-20 rounded-full flex items-center justify-center mx-auto">
+          <Lightbulb className="w-10 h-10 text-wellness-yellow" />
         </div>
+        <h3 className="text-2xl font-display font-bold text-wellness-neutral-900 mb-3">No Content Plan Yet</h3>
+        <p className="text-wellness-neutral-500 mb-8 max-w-md mx-auto">
+          Let's create a personalized strategy that aligns with your goals and wellness journey.
+        </p>
+        <WellnessButton
+          onClick={() => setShowPreferences(true)}
+          variant="primary"
+        >
+          Set Your Preferences
+        </WellnessButton>
         
-        {/* User Preferences Modal */}
         <UserPreferencesModal
           isOpen={showPreferences}
           onClose={() => setShowPreferences(false)}
           onSave={handlePreferencesSave}
         />
-      </div>
+      </WellnessCard>
     )
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border p-6 mb-8">
+    <WellnessCard className="mb-8" padding="lg">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">This Week's AI Content Plan</h2>
-          <p className="text-sm text-gray-600">
+          <h2 className="text-2xl font-display font-bold text-wellness-neutral-900 mb-1">This Week's Content Flow</h2>
+          <p className="text-wellness-neutral-500 flex items-center">
+            <Calendar className="w-4 h-4 mr-2 opacity-70" />
             Week of {new Date(contentPlan.week_starting).toLocaleDateString('en-US', { 
-              month: 'short', 
+              month: 'long', 
               day: 'numeric' 
-            })} • {contentPlan.suggestions.length} posts planned
+            })}
           </p>
         </div>
         
         {/* Navigation */}
-        <div className="flex items-center space-x-2">
-          <button
+        <div className="flex items-center space-x-3">
+          <WellnessButton
+            variant="ghost"
+            size="sm"
             onClick={async () => {
               await fetch('/api/ai/clear-content-plans', { method: 'DELETE' })
               window.location.reload()
             }}
-            className="px-3 py-1 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-            title="Clear content plans"
+            className="text-wellness-coral hover:text-wellness-coral-soft hover:bg-wellness-coral-light"
           >
-            Clear & Regenerate
-          </button>
+            Reset & Regenerate
+          </WellnessButton>
           
           <button
             onClick={() => setShowPreferences(true)}
-            className="p-2 rounded-lg border hover:bg-gray-50 transition-colors"
+            className="p-2 rounded-xl hover:bg-wellness-neutral-100 transition-colors text-wellness-neutral-500 hover:text-wellness-purple"
             title="Update preferences"
           >
-            <Settings className="w-4 h-4" />
+            <Settings className="w-5 h-5" />
           </button>
           
-          <button
-            onClick={() => scrollToIndex(Math.max(0, currentIndex - 1))}
-            disabled={currentIndex === 0}
-            className="p-2 rounded-lg border hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          
-          <div className="flex space-x-1">
-            {contentPlan.suggestions.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => scrollToIndex(index)}
-                className={`w-2 h-2 rounded-full transition-all ${
-                  index === currentIndex ? 'bg-purple-500' : 'bg-gray-300'
-                }`}
-              />
-            ))}
+          <div className="flex items-center space-x-1 bg-wellness-neutral-100 rounded-xl p-1">
+            <button
+              onClick={() => scrollToIndex(Math.max(0, currentIndex - 1))}
+              disabled={currentIndex === 0}
+              className="p-2 rounded-lg hover:bg-white disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            
+            <button
+              onClick={() => scrollToIndex(Math.min(contentPlan.suggestions.length - 1, currentIndex + 1))}
+              disabled={currentIndex === contentPlan.suggestions.length - 1}
+              className="p-2 rounded-lg hover:bg-white disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
-          
-          <button
-            onClick={() => scrollToIndex(Math.min(contentPlan.suggestions.length - 1, currentIndex + 1))}
-            disabled={currentIndex === contentPlan.suggestions.length - 1}
-            className="p-2 rounded-lg border hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
         </div>
       </div>
 
-      {/* Content Cards */}
+      {/* Content Cards - Horizontal Scroll */}
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex space-x-4 overflow-x-auto scrollbar-hide pb-4"
+        className="flex space-x-6 overflow-x-auto scrollbar-hide pb-6 -mx-8 px-8"
         style={{ scrollSnapType: 'x mandatory' }}
       >
         {contentPlan.suggestions.map((suggestion, index) => {
           const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
           const dayName = dayNames[suggestion.day - 1] || `Day ${suggestion.day}`
+          const isActive = index === currentIndex
           
           return (
             <div
               key={index}
-              className="flex-shrink-0 w-80 bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-5 border border-purple-100"
-              style={{ scrollSnapAlign: 'start' }}
-            >
-              {/* Card Header */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-3">
-                  <PostTypeIcon type={suggestion.post_type} />
-                  <div>
-                    <h3 className="font-bold text-gray-900">{dayName}</h3>
-                    <p className="text-sm text-gray-600">{suggestion.post_type.replace('_', ' ')}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="flex items-center text-sm text-gray-600 mb-1">
-                    <Clock className="w-4 h-4 mr-1" />
-                    {suggestion.optimal_posting_time}
-                  </div>
-                  <ConfidenceIndicator score={suggestion.confidence_score} />
-                </div>
-              </div>
-
-              {/* Content Topic */}
-              <div className="mb-4">
-                <h4 className="font-semibold text-gray-900 mb-2 line-clamp-2">
-                  {suggestion.content_topic}
-                </h4>
-                <p className="text-sm text-gray-700 line-clamp-3">
-                  {suggestion.caption_outline}
-                </p>
-              </div>
-
-              {/* Hashtags */}
-              <div className="mb-4">
-                <div className="flex flex-wrap gap-1">
-                  {suggestion.suggested_hashtags.slice(0, 4).map((hashtag, i) => (
-                    <span key={i} className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">
-                      {hashtag}
-                    </span>
-                  ))}
-                  {suggestion.suggested_hashtags.length > 4 && (
-                    <span className="text-xs text-gray-500">+{suggestion.suggested_hashtags.length - 4}</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Performance Indicators */}
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="flex items-center space-x-1">
-                  <TrendingUp className="w-3 h-3 text-green-500" />
-                  <span className="text-gray-600">Trend: {suggestion.reasoning.trend_alignment}%</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <Target className="w-3 h-3 text-blue-500" />
-                  <span className="text-gray-600">Goal: {suggestion.reasoning.goal_progression}%</span>
-                </div>
-              </div>
-              
-              {/* Algorithm Optimization Indicator */}
-              {suggestion.reasoning.algorithm_optimization && (
-                <div className="mt-2 flex items-center space-x-1 text-xs">
-                  <span className="text-purple-600">🤖</span>
-                  <span className="text-gray-600">
-                    Algorithm: {suggestion.reasoning.algorithm_optimization}%
-                    {suggestion.reasoning.algorithm_optimization < 60 && ' (Deprioritized)'}
-                    {suggestion.reasoning.algorithm_optimization > 80 && ' (Favored)'}
-                  </span>
-                </div>
+              className={cn(
+                "flex-shrink-0 w-80 transition-all duration-500",
+                isActive ? "scale-100 opacity-100" : "scale-95 opacity-70 hover:opacity-90"
               )}
+              style={{ scrollSnapAlign: 'center' }}
+              onClick={() => scrollToIndex(index)}
+            >
+              <WellnessCard 
+                hover={isActive}
+                glow={isActive}
+                padding="md"
+                className={cn(
+                  "h-full border-2",
+                  isActive ? "border-wellness-purple-soft/30" : "border-transparent bg-wellness-neutral-100/50"
+                )}
+              >
+                {/* Card Header */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-full bg-wellness-white shadow-sm flex items-center justify-center">
+                      <PostTypeIcon type={suggestion.post_type} />
+                    </div>
+                    <div>
+                      <h3 className="font-display font-bold text-lg text-wellness-neutral-900">{dayName}</h3>
+                      <p className="text-xs font-medium text-wellness-purple uppercase tracking-wider">
+                        {suggestion.post_type.replace('_', ' ')}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="flex items-center text-sm text-wellness-neutral-500 mb-1 bg-wellness-neutral-100 px-2 py-1 rounded-full">
+                      <Clock className="w-3 h-3 mr-1" />
+                      {suggestion.optimal_posting_time}
+                    </div>
+                    <ConfidenceIndicator score={suggestion.confidence_score} />
+                  </div>
+                </div>
+
+                {/* Content Topic */}
+                <div className="mb-5">
+                  <h4 className="font-medium text-wellness-neutral-900 mb-2 line-clamp-2 leading-tight">
+                    {suggestion.content_topic}
+                  </h4>
+                  <p className="text-sm text-wellness-neutral-500 line-clamp-3 leading-relaxed">
+                    {suggestion.caption_outline}
+                  </p>
+                </div>
+
+                {/* Hashtags */}
+                <div className="mb-5">
+                  <div className="flex flex-wrap gap-2">
+                    {suggestion.suggested_hashtags.slice(0, 3).map((hashtag, i) => (
+                      <span key={i} className="text-xs bg-wellness-purple-light text-wellness-purple px-2.5 py-1 rounded-md font-medium">
+                        {hashtag}
+                      </span>
+                    ))}
+                    {suggestion.suggested_hashtags.length > 3 && (
+                      <span className="text-xs text-wellness-neutral-500 px-2 py-1">+{suggestion.suggested_hashtags.length - 3}</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Performance Indicators */}
+                <div className="grid grid-cols-2 gap-2 text-xs mb-4">
+                  <div className="flex items-center space-x-2 bg-wellness-green-light/50 p-2 rounded-lg">
+                    <TrendingUp className="w-3 h-3 text-wellness-green" />
+                    <span className="text-wellness-neutral-700">Trend: {suggestion.reasoning.trend_alignment}%</span>
+                  </div>
+                  <div className="flex items-center space-x-2 bg-wellness-blue-light/50 p-2 rounded-lg">
+                    <Target className="w-3 h-3 text-wellness-blue" />
+                    <span className="text-wellness-neutral-700">Goal: {suggestion.reasoning.goal_progression}%</span>
+                  </div>
+                </div>
+                
+                {/* Algorithm Optimization Indicator */}
+                {suggestion.reasoning.algorithm_optimization && (
+                  <div className="flex items-center space-x-2 text-xs bg-wellness-purple-light/30 p-2 rounded-lg border border-wellness-purple-light">
+                    <span className="text-lg">🤖</span>
+                    <span className="text-wellness-purple-soft font-medium">
+                      Algorithm Match: {suggestion.reasoning.algorithm_optimization}%
+                    </span>
+                  </div>
+                )}
+              </WellnessCard>
             </div>
           )
         })}
@@ -376,20 +380,12 @@ export default function WeeklyContentPlan() {
 
       {/* Strategy Summary */}
       {contentPlan.overall_strategy && (
-        <div className="mt-6 p-4 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg border border-purple-200">
-          <h3 className="font-semibold text-gray-900 mb-2 flex items-center">
-            <Lightbulb className="w-4 h-4 mr-2 text-purple-600" />
-            This Week's Strategy
+        <div className="mt-6 p-6 bg-gradient-to-br from-wellness-purple-light to-white rounded-2xl border border-wellness-purple-light/50">
+          <h3 className="font-display font-bold text-wellness-neutral-900 mb-3 flex items-center text-lg">
+            <Lightbulb className="w-5 h-5 mr-2 text-wellness-purple" />
+            Weekly Intention
           </h3>
-          <p className="text-sm text-gray-700">{contentPlan.overall_strategy}</p>
-          
-          {/* Algorithm Insights Notice */}
-          {contentPlan.suggestions.some(s => s.reasoning.algorithm_optimization !== undefined) && (
-            <div className="mt-3 flex items-center space-x-2 text-xs text-purple-700">
-              <span className="text-purple-600">🤖</span>
-              <span>This plan adapts to recent Instagram algorithm changes</span>
-            </div>
-          )}
+          <p className="text-wellness-neutral-700 leading-relaxed">{contentPlan.overall_strategy}</p>
         </div>
       )}
       
@@ -399,6 +395,6 @@ export default function WeeklyContentPlan() {
         onClose={() => setShowPreferences(false)}
         onSave={handlePreferencesSave}
       />
-    </div>
+    </WellnessCard>
   )
 }
