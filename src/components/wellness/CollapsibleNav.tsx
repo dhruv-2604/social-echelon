@@ -16,27 +16,7 @@ import { cn } from '@/lib/utils'
 
 export function CollapsibleNav() {
   const [isExpanded, setIsExpanded] = useState(false)
-  const [isVisible, setIsVisible] = useState(true)
-  const [lastScrollY, setLastScrollY] = useState(0)
   const pathname = usePathname()
-  
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY
-      
-      // Show nav when scrolling up, hide when scrolling down
-      if (currentScrollY > lastScrollY && currentScrollY > 100) {
-        setIsVisible(false) // Scrolling down
-      } else {
-        setIsVisible(true) // Scrolling up
-      }
-      
-      setLastScrollY(currentScrollY)
-    }
-    
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [lastScrollY])
   
   const navItems = [
     { href: '/dashboard', label: 'Wellness Hub', icon: <Home className="w-4 h-4" /> },
@@ -51,7 +31,7 @@ export function CollapsibleNav() {
       className="fixed top-6 w-full z-50 flex justify-center pointer-events-none"
       initial={{ y: 0, opacity: 0 }}
       animate={{ 
-        y: isVisible ? 0 : -100,
+        y: 0,
         opacity: 1,
         transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }
       }}
