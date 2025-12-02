@@ -126,17 +126,31 @@ export class EnhancedBrandMatchingService {
         
         // Only include if above minimum score
         if (match.overallScore >= minScore) {
+          // Calculate real response rate if we have data
+          const totalOutreach = (brand as any).total_outreach_sent || 0
+          const totalResponses = (brand as any).total_responses || 0
+          const realResponseRate = totalOutreach > 5
+            ? Math.round((totalResponses / totalOutreach) * 100)
+            : null
+
           brandMatches.push({
             ...match,
             brand: {
               id: brand.id,
-              name: brand.name, // Changed from display_name
-              instagram: brand.instagram_handle,
-              website: brand.website || `https://instagram.com/${brand.instagram_handle}`,
+              name: brand.name,
+              instagram: (brand as any).instagram_handle,
+              website: brand.website || `https://instagram.com/${(brand as any).instagram_handle}`,
               industry: brand.industry,
-              pr_email: `partnerships@${(brand.name as string).toLowerCase().replace(/\s+/g, '')}.com`, // Generated
+              // Use verified email if available, otherwise generate
+              pr_email: (brand as any).pr_email || `partnerships@${(brand.name as string).toLowerCase().replace(/\s+/g, '')}.com`,
+              email_verified: (brand as any).email_verified || false,
+              contact_name: (brand as any).contact_name,
+              contact_role: (brand as any).contact_role,
               typical_budget: this.inferBudgetFromInfluencerTypes((brand as any).influencer_types || ''),
-              response_rate: 30 // Default estimate
+              // Use real response rate if available
+              response_rate: realResponseRate || 30,
+              hiring_confidence: (brand as any).hiring_confidence || 50,
+              data_confidence: (brand as any).data_confidence || 30
             }
           })
         }

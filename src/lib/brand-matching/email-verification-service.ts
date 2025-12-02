@@ -278,6 +278,7 @@ export class EmailVerificationService {
 
       results.set(brand.id as string, result)
 
+      const brandId = brand.id as string
       await supabase
         .from('brands')
         .update({
@@ -289,7 +290,7 @@ export class EmailVerificationService {
           contact_role: result.contactRole || null,
           data_confidence: result.confidence
         })
-        .eq('id', brand.id)
+        .eq('id', brandId)
 
       // Rate limit
       await new Promise(resolve => setTimeout(resolve, 200))
