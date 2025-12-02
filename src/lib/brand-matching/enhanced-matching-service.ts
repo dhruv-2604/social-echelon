@@ -1,11 +1,12 @@
 import { BrandMatchingEngine } from './matching-algorithm'
 import { CreatorProfile } from './creator-profile-schema'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
-import { 
-  extractCampaignPatterns, 
+import {
+  extractCampaignPatterns,
   calculateLocationScore,
-  CAMPAIGN_PATTERNS 
+  CAMPAIGN_PATTERNS
 } from './brand-industry-weights'
+import { getEmailVerificationService } from './email-verification-service'
 
 export class EnhancedBrandMatchingService {
   private matchingEngine: BrandMatchingEngine
@@ -21,8 +22,16 @@ export class EnhancedBrandMatchingService {
     limit?: number
     minScore?: number
     excludeMatched?: boolean
+    verifiedEmailsOnly?: boolean // New: only show brands with verified emails
+    minHiringConfidence?: number // New: filter by hiring likelihood
   } = {}) {
-    const { limit = 100, minScore = 50, excludeMatched = true } = options
+    const {
+      limit = 100,
+      minScore = 50,
+      excludeMatched = true,
+      verifiedEmailsOnly = false,
+      minHiringConfidence = 0
+    } = options
 
     try {
       const supabase = getSupabaseAdmin()
@@ -59,17 +68,34 @@ export class EnhancedBrandMatchingService {
         throw new Error('Failed to fetch brands')
       }
       
-      // Filter brands by shipping locations
+      // Filter brands by shipping locations + new quality filters
       const brands = allBrands.filter((brand: any) => {
-        // If no ships_to data, assume global
-        if (!brand.ships_to) return true
-        if (brand.ships_to === 'GLOBAL') return true
-        
-        // Check if brand ships to any of creator's audience countries
-        const brandShipsTo = brand.ships_to.split('|')
-        return creatorCountries.some((country: string) => 
-          brandShipsTo.includes(country)
-        )
+        // Filter 1: Shipping locations
+        if (brand.ships_to && brand.ships_to !== 'GLOBAL') {
+          const brandShipsTo = brand.ships_to.split('|')
+          const hasLocationMatch = creatorCountries.some((country: string) =>
+            brandShipsTo.includes(country)
+          )
+          if (!hasLocationMatch) return false
+        }
+
+        // Filter 2: Verified emails only (wellness feature - don't waste creator time)
+        if (verifiedEmailsOnly && !brand.email_verified) {
+          return false
+        }
+
+        // Filter 3: Hiring confidence threshold
+        if (minHiringConfidence > 0) {
+          const confidence = brand.hiring_confidence || 50
+          if (confidence < minHiringConfidence) return false
+        }
+
+        // Filter 4: Only actively hiring brands
+        if (brand.is_actively_hiring === false) {
+          return false
+        }
+
+        return true
       })
 
       // Get already matched brands if excluding
