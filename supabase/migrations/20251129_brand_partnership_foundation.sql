@@ -55,8 +55,14 @@ ALTER TABLE brands ADD COLUMN IF NOT EXISTS data_confidence INTEGER DEFAULT 50; 
 -- PART 4: Helper functions
 -- =============================================================================
 
+-- Drop existing functions first to avoid parameter name conflicts
+DROP FUNCTION IF EXISTS calculate_brand_response_rate(UUID);
+DROP FUNCTION IF EXISTS increment_brand_outreach(UUID);
+DROP FUNCTION IF EXISTS increment_brand_responses(UUID);
+DROP FUNCTION IF EXISTS increment_brand_responses(UUID, BOOLEAN);
+
 -- Calculate real response rate for a brand
-CREATE OR REPLACE FUNCTION calculate_brand_response_rate(brand_id UUID)
+CREATE OR REPLACE FUNCTION calculate_brand_response_rate(p_brand_id UUID)
 RETURNS DECIMAL AS $$
 DECLARE
   outreach_count INTEGER;
@@ -64,11 +70,10 @@ DECLARE
 BEGIN
   SELECT total_outreach_sent, total_responses
   INTO outreach_count, response_count
-  FROM brands WHERE id = brand_id;
+  FROM brands WHERE id = p_brand_id;
 
   IF outreach_count IS NULL OR outreach_count < 5 THEN
-    -- Not enough data, return default
-    RETURN 0.15; -- 15% default
+    RETURN 0.15;
   END IF;
 
   RETURN response_count::DECIMAL / outreach_count::DECIMAL;
