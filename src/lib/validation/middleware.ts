@@ -2,11 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { validateRequest, validateQueryParams, validatePathParams } from './schemas'
 
+// Route context type for Next.js 15
+type RouteContext = { params?: Promise<Record<string, string>> }
+
 // Generic validation middleware for API routes
 export function withValidation<TBody = any, TQuery = any, TParams = any>(
   options: {
     body?: z.ZodSchema<TBody>
-    query?: z.ZodSchema<TQuery>  
+    query?: z.ZodSchema<TQuery>
     params?: z.ZodSchema<TParams>
   }
 ) {
@@ -23,7 +26,7 @@ export function withValidation<TBody = any, TQuery = any, TParams = any>(
   ) {
     return async function validatedHandler(
       request: NextRequest,
-      context?: { params?: Promise<any> | any }
+      context?: RouteContext
     ): Promise<NextResponse> {
       try {
         const validationContext: {
