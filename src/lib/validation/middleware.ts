@@ -165,12 +165,86 @@ export function withAuthAndValidation<TBody = any, TQuery = any, TParams = any>(
         params?: any
       }
     ) => Promise<NextResponse>
-  ) {
-    return withValidation(options)(
-      requireAuth(async (request, userId, validationContext) => {
-        return await handler(request, userId, validationContext || {})
-      })
-    )
+  ): RouteHandler {
+    return async function combinedHandler(
+      request: NextRequest,
+      context: RouteContext
+    ): Promise<NextResponse> {
+      try {
+        // Auth check
+        const { cookies } = await import('next/headers')
+        const cookieStore = await cookies()
+        const userId = cookieStore.get('user_id')?.value
+
+        if (!userId) {
+          return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+        }
+
+        if (!/^[a-zA-Z0-9-_]+$/.test(userId)) {
+          return NextResponse.json({ error: 'Invalid user session' }, { status: 401 })
+        }
+
+        // Validation
+        const validationContext: {
+          validatedBody?: TBody
+          validatedQuery?: TQuery
+          validatedParams?: TParams
+          params?: any
+        } = {}
+
+        // Validate body
+        if (options.body && (request.method === 'POST' || request.method === 'PATCH' || request.method === 'PUT')) {
+          try {
+            const body = await request.json()
+            const bodyValidation = validateRequest(options.body, body, 'request body')
+
+            if (!bodyValidation.success) {
+              return NextResponse.json(
+                { error: bodyValidation.error, details: bodyValidation.details },
+                { status: 400 }
+              )
+            }
+            validationContext.validatedBody = bodyValidation.data
+          } catch {
+            return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 })
+          }
+        }
+
+        // Validate query
+        if (options.query) {
+          const queryValidation = validateQueryParams(options.query, request.nextUrl.searchParams)
+          if (!queryValidation.success) {
+            return NextResponse.json(
+              { error: queryValidation.error, details: queryValidation.details },
+              { status: 400 }
+            )
+          }
+          validationContext.validatedQuery = queryValidation.data
+        }
+
+        // Validate params
+        if (options.params && context.params) {
+          const resolvedParams = await context.params
+          const paramsValidation = validatePathParams(options.params, resolvedParams)
+          if (!paramsValidation.success) {
+            return NextResponse.json(
+              { error: paramsValidation.error, details: paramsValidation.details },
+              { status: 400 }
+            )
+          }
+          validationContext.validatedParams = paramsValidation.data
+        }
+
+        if (context.params) {
+          validationContext.params = await context.params
+        }
+
+        return await handler(request, userId, validationContext)
+      } catch (error) {
+        console.error('Auth/validation middleware error:', error)
+        return NextResponse.json({ error: 'Request processing failed' }, { status: 500 })
+      }
+    }
   }
 }
 

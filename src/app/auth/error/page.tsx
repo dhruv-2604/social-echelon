@@ -1,13 +1,18 @@
 'use client'
 
+import { Suspense } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { AlertCircle, Home, RefreshCw } from 'lucide-react'
+import { useSearchParams } from 'next/navigation'
+import { AlertCircle, Home, RefreshCw, Loader2 } from 'lucide-react'
 import { WellnessButton } from '@/components/wellness/WellnessButton'
 import { WellnessCard } from '@/components/wellness/WellnessCard'
 
-export default function AuthError({ searchParams }: { searchParams: { error?: string } }) {
-  const getErrorMessage = (error: string | undefined) => {
+function AuthErrorContent() {
+  const searchParams = useSearchParams()
+  const error = searchParams.get('error')
+
+  const getErrorMessage = (error: string | null) => {
     switch (error) {
       case 'instagram_auth_denied':
         return {
@@ -36,7 +41,7 @@ export default function AuthError({ searchParams }: { searchParams: { error?: st
     }
   }
 
-  const errorInfo = getErrorMessage(searchParams.error)
+  const errorInfo = getErrorMessage(error)
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
@@ -121,5 +126,21 @@ export default function AuthError({ searchParams }: { searchParams: { error?: st
         </WellnessCard>
       </motion.div>
     </div>
+  )
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center px-4">
+      <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+    </div>
+  )
+}
+
+export default function AuthError() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <AuthErrorContent />
+    </Suspense>
   )
 }

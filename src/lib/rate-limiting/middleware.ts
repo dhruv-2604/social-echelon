@@ -51,8 +51,10 @@ export function withRateLimit(options: RateLimitOptions) {
         )
       }
 
-      // Extract request metadata
-      const ipAddress = request.ip || request.headers.get('x-forwarded-for') || undefined
+      // Extract request metadata (request.ip removed in Next.js 15)
+      const ipAddress = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+                        request.headers.get('x-real-ip') ||
+                        undefined
       const userAgent = request.headers.get('user-agent') || undefined
 
       // Check rate limit
