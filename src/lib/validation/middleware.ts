@@ -2,8 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { validateRequest, validateQueryParams, validatePathParams } from './schemas'
 
-// Route context type for Next.js 15
-type RouteContext = { params?: Promise<Record<string, string>> }
+// Route context type for Next.js 15 - params is always a Promise now
+type RouteContext = { params: Promise<Record<string, string>> }
+
+// Next.js 15 route handler type
+type RouteHandler = (
+  request: NextRequest,
+  context: RouteContext
+) => Promise<NextResponse> | NextResponse
 
 // Generic validation middleware for API routes
 export function withValidation<TBody = any, TQuery = any, TParams = any>(
@@ -23,10 +29,10 @@ export function withValidation<TBody = any, TQuery = any, TParams = any>(
         params?: any
       }
     ) => Promise<NextResponse>
-  ) {
+  ): RouteHandler {
     return async function validatedHandler(
       request: NextRequest,
-      context?: RouteContext
+      context: RouteContext
     ): Promise<NextResponse> {
       try {
         const validationContext: {
@@ -79,10 +85,10 @@ export function withValidation<TBody = any, TQuery = any, TParams = any>(
         }
 
         // Validate path parameters
-        if (options.params && context?.params) {
-          const resolvedParams = context.params instanceof Promise ? await context.params : context.params
+        if (options.params && context.params) {
+          const resolvedParams = await context.params
           const paramsValidation = validatePathParams(options.params, resolvedParams)
-          
+
           if (!paramsValidation.success) {
             return NextResponse.json(
               {
@@ -92,13 +98,13 @@ export function withValidation<TBody = any, TQuery = any, TParams = any>(
               { status: 400 }
             )
           }
-          
+
           validationContext.validatedParams = paramsValidation.data
         }
 
         // Pass along original params for backward compatibility
-        if (context?.params) {
-          validationContext.params = context.params instanceof Promise ? await context.params : context.params
+        if (context.params) {
+          validationContext.params = await context.params
         }
 
         // Call the original handler with validated data
@@ -116,8 +122,8 @@ export function withValidation<TBody = any, TQuery = any, TParams = any>(
 }
 
 // Auth validation helper
-export function requireAuth(handler: (request: NextRequest, userId: string, context?: any) => Promise<NextResponse>) {
-  return async function authHandler(request: NextRequest, context?: any): Promise<NextResponse> {
+export function requireAuth(handler: (request: NextRequest, userId: string, context?: any) => Promise<NextResponse>): RouteHandler {
+  return async function authHandler(request: NextRequest, context: RouteContext): Promise<NextResponse> {
     try {
       const { cookies } = await import('next/headers')
       const cookieStore = await cookies()
@@ -173,9 +179,9 @@ const requestCounts = new Map<string, { count: number; resetTime: number }>()
 
 export function rateLimit(maxRequests: number, windowMs: number) {
   return function rateLimitMiddleware(
-    handler: (request: NextRequest, context?: any) => Promise<NextResponse>
-  ) {
-    return async function rateLimitedHandler(request: NextRequest, context?: any): Promise<NextResponse> {
+    handler: RouteHandler
+  ): RouteHandler {
+    return async function rateLimitedHandler(request: NextRequest, context: RouteContext): Promise<NextResponse> {
       try {
         const { cookies } = await import('next/headers')
         const cookieStore = await cookies()
@@ -220,9 +226,9 @@ export function rateLimit(maxRequests: number, windowMs: number) {
 
 // Security headers middleware
 export function withSecurityHeaders(
-  handler: (request: NextRequest, context?: any) => Promise<NextResponse>
-) {
-  return async function securityHandler(request: NextRequest, context?: any): Promise<NextResponse> {
+  handler: RouteHandler
+): RouteHandler {
+  return async function securityHandler(request: NextRequest, context: RouteContext): Promise<NextResponse> {
     const response = await handler(request, context)
     
     // Add security headers
