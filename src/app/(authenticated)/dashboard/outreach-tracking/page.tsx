@@ -231,6 +231,58 @@ export default function OutreachTrackingPage() {
         </div>
       </div>
 
+      {/* Follow-ups Section */}
+      {followUpStats.totalScheduled > 0 && (
+        <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg shadow-sm p-6 mb-8 border border-purple-100">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <BellRing className="w-5 h-5 text-purple-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Smart Follow-ups</h3>
+                <p className="text-sm text-gray-600">Automated follow-ups scheduled for your outreach</p>
+              </div>
+            </div>
+            <div className="flex gap-4 text-sm">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-purple-600">{followUpStats.dueToday}</p>
+                <p className="text-gray-500">Today</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-indigo-600">{followUpStats.dueThisWeek}</p>
+                <p className="text-gray-500">This Week</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-gray-600">{followUpStats.totalScheduled}</p>
+                <p className="text-gray-500">Total</p>
+              </div>
+            </div>
+          </div>
+
+          {pendingFollowUps.length > 0 && (
+            <div className="mt-4 space-y-2">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Upcoming Follow-ups</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {pendingFollowUps.slice(0, 6).map((followUp, idx) => (
+                  <div key={idx} className="bg-white rounded-lg p-3 border border-gray-100">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-gray-900 text-sm">{followUp.brandName}</p>
+                        <p className="text-xs text-gray-500">
+                          Follow-up #{followUp.followUpNumber} • {new Date(followUp.scheduledFor).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <RefreshCw className="w-4 h-4 text-purple-400" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Filters */}
       <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
         <div className="flex items-center justify-between">
