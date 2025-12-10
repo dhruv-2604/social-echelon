@@ -52,6 +52,19 @@ export default function OutreachTrackingPage() {
     }
   }, [user, filter, dateRange])
 
+  const fetchFollowUps = async () => {
+    try {
+      const response = await fetch('/api/outreach/follow-ups')
+      if (response.ok) {
+        const data = await response.json()
+        setPendingFollowUps(data.upcoming || [])
+        setFollowUpStats(data.stats || { totalScheduled: 0, dueToday: 0, dueThisWeek: 0 })
+      }
+    } catch (error) {
+      console.error('Error fetching follow-ups:', error)
+    }
+  }
+
   const fetchOutreachData = async () => {
     try {
       let query = supabase
