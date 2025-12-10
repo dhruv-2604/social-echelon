@@ -41,10 +41,15 @@ export default function OutreachTrackingPage() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'sent' | 'pending' | 'responded'>('all')
   const [dateRange, setDateRange] = useState('30') // days
+  const [pendingFollowUps, setPendingFollowUps] = useState<PendingFollowUp[]>([])
+  const [followUpStats, setFollowUpStats] = useState<FollowUpStats>({ totalScheduled: 0, dueToday: 0, dueThisWeek: 0 })
   const supabase = createSupabaseBrowserClient()
 
   useEffect(() => {
-    if (user) fetchOutreachData()
+    if (user) {
+      fetchOutreachData()
+      fetchFollowUps()
+    }
   }, [user, filter, dateRange])
 
   const fetchOutreachData = async () => {
