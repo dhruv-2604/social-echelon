@@ -3,8 +3,21 @@
 import { useState, useEffect } from 'react'
 import { createSupabaseBrowserClient } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
-import { Send, Mail, Clock, CheckCircle, XCircle, TrendingUp, Calendar, Download, Eye } from 'lucide-react'
+import { Send, Mail, Clock, CheckCircle, XCircle, TrendingUp, Calendar, Download, Eye, RefreshCw, BellRing } from 'lucide-react'
 import Link from 'next/link'
+
+interface PendingFollowUp {
+  brandName: string
+  followUpNumber: number
+  scheduledFor: string
+  originalSentAt: string
+}
+
+interface FollowUpStats {
+  totalScheduled: number
+  dueToday: number
+  dueThisWeek: number
+}
 
 interface OutreachRecord {
   id: string
