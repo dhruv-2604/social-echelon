@@ -85,7 +85,7 @@ export class AutoEnrichmentService {
 
     for (const brand of brands) {
       try {
-        const result = await emailService.verifyEmail(brand.pr_email)
+        const result = await emailService.verifyEmail((brand as any).pr_email)
 
         await supabase
           .from('brands')
@@ -94,7 +94,7 @@ export class AutoEnrichmentService {
             email_verified_at: result.verified ? new Date().toISOString() : null,
             email_verification_source: 'hunter'
           })
-          .eq('id', brand.id)
+          .eq('id', (brand as any).id)
 
         if (result.verified) verified++
       } catch (err) {
@@ -159,7 +159,7 @@ export class AutoEnrichmentService {
             hiring_confidence: newConfidence,
             is_actively_hiring: newConfidence >= 50
           })
-          .eq('id', brand.id)
+          .eq('id', (brand as any).id)
 
         updated++
       }
