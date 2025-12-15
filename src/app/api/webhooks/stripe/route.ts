@@ -50,14 +50,15 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   const supabase = getSupabaseAdmin()
-  const userId = subscription.metadata?.userId
+  const sub = subscription as any
+  const userId = sub.metadata?.userId
 
   if (!userId) {
     // Try to find user by customer ID
     const { data: user } = await supabase
       .from('profiles')
       .select('id')
-      .eq('stripe_customer_id', subscription.customer as string)
+      .eq('stripe_customer_id', sub.customer as string)
       .single()
 
     if (!user) {
@@ -65,12 +66,12 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
       return
     }
 
-    const expiresAt = new Date(subscription.current_period_end * 1000).toISOString()
+    const expiresAt = new Date(sub.current_period_end * 1000).toISOString()
 
     await supabase
       .from('profiles')
       .update({
-        subscription_status: subscription.status === 'active' ? 'active' : 'past_due',
+        subscription_status: sub.status === 'active' ? 'active' : 'past_due',
         subscription_expires_at: expiresAt,
         updated_at: new Date().toISOString()
       })
@@ -79,12 +80,12 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     return
   }
 
-  const expiresAt = new Date(subscription.current_period_end * 1000).toISOString()
+  const expiresAt = new Date(sub.current_period_end * 1000).toISOString()
 
   await supabase
     .from('profiles')
     .update({
-      subscription_status: subscription.status === 'active' ? 'active' : 'past_due',
+      subscription_status: sub.status === 'active' ? 'active' : 'past_due',
       subscription_expires_at: expiresAt,
       updated_at: new Date().toISOString()
     })
