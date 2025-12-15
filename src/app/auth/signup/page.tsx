@@ -78,6 +78,7 @@ export default function SignupPage() {
   }
 
   const [errors, setErrors] = useState<{[key: string]: string}>({})
+  const [isProcessing, setIsProcessing] = useState(false)
 
   const validatePassword = (password: string): string | null => {
     if (password.length < 8) {
@@ -172,6 +173,38 @@ export default function SignupPage() {
     const monthlyTotal = plan.monthly * 12
     const annualPrice = plan.annual
     return monthlyTotal - annualPrice
+  }
+
+  const handlePayment = async () => {
+    setIsProcessing(true)
+    setErrors({})
+
+    try {
+      const response = await fetch('/api/payment/create-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          plan: selectedPlan,
+          billingCycle
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setErrors({ payment: data.error || 'Failed to start checkout' })
+        setIsProcessing(false)
+        return
+      }
+
+      // Redirect to Stripe Checkout
+      if (data.url) {
+        window.location.href = data.url
+      }
+    } catch (error) {
+      setErrors({ payment: 'Failed to connect to payment service. Please try again.' })
+      setIsProcessing(false)
+    }
   }
 
   return (
@@ -567,32 +600,49 @@ export default function SignupPage() {
                   </div>
                 </div>
 
-                {/* Payment Form Placeholder */}
+                {/* Payment Button */}
                 <div className="space-y-4">
-                  <div className="border-2 border-dashed border-wellness-neutral-300 rounded-xl p-8 text-center">
-                    <Shield className="w-12 h-12 text-wellness-neutral-400 mx-auto mb-3" />
-                    <p className="text-wellness-neutral-600">Stripe payment form will be integrated here</p>
-                    <p className="text-sm text-wellness-neutral-500 mt-2">Secure payment processing</p>
+                  <div className="bg-gradient-to-br from-wellness-purple-light/30 to-wellness-teal-light/30 rounded-xl p-6 text-center">
+                    <Shield className="w-12 h-12 text-wellness-purple mx-auto mb-3" />
+                    <p className="text-wellness-neutral-700 font-medium">Secure checkout powered by Stripe</p>
+                    <p className="text-sm text-wellness-neutral-500 mt-2">Your payment info is never stored on our servers</p>
                   </div>
 
+                  {errors.payment && (
+                    <div className="bg-wellness-coral/10 border border-wellness-coral/30 rounded-xl p-4 text-center">
+                      <p className="text-wellness-coral text-sm">{errors.payment}</p>
+                    </div>
+                  )}
+
                   <div className="flex gap-4">
-                    <WellnessButton 
-                      variant="ghost" 
+                    <WellnessButton
+                      variant="ghost"
                       onClick={() => setStep('plan')}
                       className="flex-1"
+                      disabled={isProcessing}
                     >
                       Back
                     </WellnessButton>
-                    <WellnessButton 
-                      variant="primary" 
+                    <WellnessButton
+                      variant="primary"
                       className="flex-1"
-                      onClick={() => {
-                        // This would process payment and then redirect to Instagram connect
-                        window.location.href = '/auth/connect'
-                      }}
+                      onClick={handlePayment}
+                      disabled={isProcessing}
                     >
-                      Complete Payment
-                      <ArrowRight className="w-4 h-4 ml-2" />
+                      {isProcessing ? (
+                        <>
+                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          Complete Payment
+                          <ArrowRight className="w-4 h-4 ml-2" />
+                        </>
+                      )}
                     </WellnessButton>
                   </div>
 

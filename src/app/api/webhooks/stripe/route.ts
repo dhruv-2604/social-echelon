@@ -27,7 +27,7 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
   }
 
   // Get subscription details
-  const subscription = await stripe.subscriptions.retrieve(session.subscription as string)
+  const subscription = await stripe.subscriptions.retrieve(session.subscription as string) as any
 
   // Calculate expiration
   const expiresAt = new Date(subscription.current_period_end * 1000).toISOString()
