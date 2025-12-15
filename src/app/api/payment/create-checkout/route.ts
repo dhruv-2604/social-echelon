@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { stripe, getPriceId, PlanType, BillingCycle } from '@/lib/stripe'
+import { getStripe, getPriceId, PlanType, BillingCycle } from '@/lib/stripe'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { withAuthAndValidation, withSecurityHeaders } from '@/lib/validation/middleware'
 import { z } from 'zod'
@@ -41,7 +41,7 @@ export const POST = withSecurityHeaders(
 
       // Create Stripe customer if doesn't exist
       if (!customerId) {
-        const customer = await stripe.customers.create({
+        const customer = await getStripe().customers.create({
           email: (user as any).email,
           metadata: {
             userId
@@ -67,7 +67,7 @@ export const POST = withSecurityHeaders(
       }
 
       // Create checkout session
-      const session = await stripe.checkout.sessions.create({
+      const session = await getStripe().checkout.sessions.create({
         customer: customerId,
         mode: 'subscription',
         payment_method_types: ['card'],

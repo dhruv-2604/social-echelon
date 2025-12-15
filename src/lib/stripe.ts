@@ -6,10 +6,28 @@
 
 import Stripe from 'stripe'
 
-// Initialize Stripe
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-06-30.basil'
-})
+// Lazy-load Stripe to avoid build-time errors when env vars aren't set
+let stripeInstance: Stripe | null = null
+
+export function getStripe(): Stripe {
+  if (!stripeInstance) {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      throw new Error('STRIPE_SECRET_KEY is not configured')
+    }
+    stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2025-06-30.basil'
+    })
+  }
+  return stripeInstance
+}
+
+// For backwards compatibility (but prefer getStripe())
+export const stripe = {
+  get customers() { return getStripe().customers },
+  get checkout() { return getStripe().checkout },
+  get subscriptions() { return getStripe().subscriptions },
+  get webhooks() { return getStripe().webhooks }
+}
 
 // Pricing configuration
 export const PRICING = {
