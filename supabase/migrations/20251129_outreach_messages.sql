@@ -37,24 +37,27 @@ CREATE TABLE IF NOT EXISTS outreach_messages (
 );
 
 -- Indexes
-CREATE INDEX idx_outreach_user ON outreach_messages(user_id);
-CREATE INDEX idx_outreach_brand ON outreach_messages(brand_id);
-CREATE INDEX idx_outreach_status ON outreach_messages(status);
-CREATE INDEX idx_outreach_follow_up ON outreach_messages(next_follow_up_at) WHERE next_follow_up_at IS NOT NULL;
-CREATE INDEX idx_outreach_sent_at ON outreach_messages(sent_at DESC);
+CREATE INDEX IF NOT EXISTS idx_outreach_user ON outreach_messages(user_id);
+CREATE INDEX IF NOT EXISTS idx_outreach_brand ON outreach_messages(brand_id);
+CREATE INDEX IF NOT EXISTS idx_outreach_status ON outreach_messages(status);
+CREATE INDEX IF NOT EXISTS idx_outreach_follow_up ON outreach_messages(next_follow_up_at) WHERE next_follow_up_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_outreach_sent_at ON outreach_messages(sent_at DESC);
 
 -- RLS
 ALTER TABLE outreach_messages ENABLE ROW LEVEL SECURITY;
 
 -- Users can view their own outreach
+DROP POLICY IF EXISTS "Users can view own outreach" ON outreach_messages;
 CREATE POLICY "Users can view own outreach" ON outreach_messages
   FOR SELECT USING (auth.uid() = user_id);
 
 -- Users can create their own outreach
+DROP POLICY IF EXISTS "Users can create own outreach" ON outreach_messages;
 CREATE POLICY "Users can create own outreach" ON outreach_messages
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- System can update any outreach (for webhooks/tracking)
+DROP POLICY IF EXISTS "System can update outreach" ON outreach_messages;
 CREATE POLICY "System can update outreach" ON outreach_messages
   FOR UPDATE USING (auth.role() = 'service_role');
 

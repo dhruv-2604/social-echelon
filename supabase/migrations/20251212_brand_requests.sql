@@ -27,20 +27,37 @@ CREATE TABLE IF NOT EXISTS brand_requests (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Add ALL columns if table already exists (ensures schema consistency)
+ALTER TABLE brand_requests ADD COLUMN IF NOT EXISTS brand_name TEXT;
+ALTER TABLE brand_requests ADD COLUMN IF NOT EXISTS requested_by UUID;
+ALTER TABLE brand_requests ADD COLUMN IF NOT EXISTS source TEXT DEFAULT 'dream_brand';
+ALTER TABLE brand_requests ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'pending';
+ALTER TABLE brand_requests ADD COLUMN IF NOT EXISTS processed_at TIMESTAMPTZ;
+ALTER TABLE brand_requests ADD COLUMN IF NOT EXISTS processed_by UUID;
+ALTER TABLE brand_requests ADD COLUMN IF NOT EXISTS brand_id UUID;
+ALTER TABLE brand_requests ADD COLUMN IF NOT EXISTS rejection_reason TEXT;
+ALTER TABLE brand_requests ADD COLUMN IF NOT EXISTS request_count INTEGER DEFAULT 1;
+ALTER TABLE brand_requests ADD COLUMN IF NOT EXISTS first_requested_at TIMESTAMPTZ DEFAULT NOW();
+ALTER TABLE brand_requests ADD COLUMN IF NOT EXISTS last_requested_at TIMESTAMPTZ DEFAULT NOW();
+ALTER TABLE brand_requests ADD COLUMN IF NOT EXISTS notes TEXT;
+ALTER TABLE brand_requests ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
+
 -- Indexes
-CREATE INDEX idx_brand_requests_status ON brand_requests(status);
-CREATE INDEX idx_brand_requests_name ON brand_requests(LOWER(brand_name));
-CREATE INDEX idx_brand_requests_count ON brand_requests(request_count DESC);
+CREATE INDEX IF NOT EXISTS idx_brand_requests_status ON brand_requests(status);
+CREATE INDEX IF NOT EXISTS idx_brand_requests_name ON brand_requests(LOWER(brand_name));
+CREATE INDEX IF NOT EXISTS idx_brand_requests_count ON brand_requests(request_count DESC);
 
 -- RLS
 ALTER TABLE brand_requests ENABLE ROW LEVEL SECURITY;
 
--- Admins can manage all requests
-CREATE POLICY "Admins can manage brand requests" ON brand_requests
-  FOR ALL TO authenticated
-  USING (auth.uid() IN (SELECT id FROM profiles WHERE role = 'admin'));
+-- Service role can manage all requests (for admin operations)
+DROP POLICY IF EXISTS "Admins can manage brand requests" ON brand_requests;
+DROP POLICY IF EXISTS "Service role can manage brand requests" ON brand_requests;
+CREATE POLICY "Service role can manage brand requests" ON brand_requests
+  FOR ALL USING (auth.role() = 'service_role');
 
 -- Users can view their own requests
+DROP POLICY IF EXISTS "Users can view own requests" ON brand_requests;
 CREATE POLICY "Users can view own requests" ON brand_requests
   FOR SELECT TO authenticated
   USING (requested_by = auth.uid());
