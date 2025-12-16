@@ -1,0 +1,131 @@
+tablename,indexname,indexdef
+alert_preferences,alert_preferences_pkey,CREATE UNIQUE INDEX alert_preferences_pkey ON public.alert_preferences USING btree (user_id)
+alerts,alerts_pkey,CREATE UNIQUE INDEX alerts_pkey ON public.alerts USING btree (id)
+alerts,idx_alerts_created_at,CREATE INDEX idx_alerts_created_at ON public.alerts USING btree (created_at DESC)
+alerts,idx_alerts_read,"CREATE INDEX idx_alerts_read ON public.alerts USING btree (user_id, read) WHERE (read = false)"
+alerts,idx_alerts_user_id,CREATE INDEX idx_alerts_user_id ON public.alerts USING btree (user_id)
+algorithm_changes,algorithm_changes_pkey,CREATE UNIQUE INDEX algorithm_changes_pkey ON public.algorithm_changes USING btree (id)
+audio_trends,audio_trends_pkey,CREATE UNIQUE INDEX audio_trends_pkey ON public.audio_trends USING btree (track_key)
+brand_discovery_queue,brand_discovery_queue_brand_name_instagram_handle_key,"CREATE UNIQUE INDEX brand_discovery_queue_brand_name_instagram_handle_key ON public.brand_discovery_queue USING btree (brand_name, instagram_handle)"
+brand_discovery_queue,brand_discovery_queue_pkey,CREATE UNIQUE INDEX brand_discovery_queue_pkey ON public.brand_discovery_queue USING btree (id)
+brand_discovery_queue,idx_brand_discovery_status,CREATE INDEX idx_brand_discovery_status ON public.brand_discovery_queue USING btree (processing_status)
+brand_matches,brand_matches_pkey,CREATE UNIQUE INDEX brand_matches_pkey ON public.brand_matches USING btree (id)
+brand_matches,brand_matches_profile_id_brand_id_key,"CREATE UNIQUE INDEX brand_matches_profile_id_brand_id_key ON public.brand_matches USING btree (profile_id, brand_id)"
+brand_matches,idx_brand_matches_category,CREATE INDEX idx_brand_matches_category ON public.brand_matches USING btree (match_category)
+brand_matches,idx_brand_matches_profile,CREATE INDEX idx_brand_matches_profile ON public.brand_matches USING btree (profile_id)
+brand_matches,idx_brand_matches_score,CREATE INDEX idx_brand_matches_score ON public.brand_matches USING btree (match_score DESC)
+brand_matches,idx_brand_matches_status,CREATE INDEX idx_brand_matches_status ON public.brand_matches USING btree (status)
+brand_past_campaigns,brand_past_campaigns_pkey,CREATE UNIQUE INDEX brand_past_campaigns_pkey ON public.brand_past_campaigns USING btree (id)
+brand_requests,brand_requests_pkey,CREATE UNIQUE INDEX brand_requests_pkey ON public.brand_requests USING btree (id)
+brand_requests,idx_brand_requests_count,CREATE INDEX idx_brand_requests_count ON public.brand_requests USING btree (request_count DESC)
+brand_requests,idx_brand_requests_name,CREATE INDEX idx_brand_requests_name ON public.brand_requests USING btree (lower(brand_name))
+brand_requests,idx_brand_requests_status,CREATE INDEX idx_brand_requests_status ON public.brand_requests USING btree (status)
+brand_requests,idx_brand_requests_user,CREATE INDEX idx_brand_requests_user ON public.brand_requests USING btree (user_id)
+brand_requirements,brand_requirements_pkey,CREATE UNIQUE INDEX brand_requirements_pkey ON public.brand_requirements USING btree (id)
+brand_similarities,brand_similarities_brand_id_similar_brand_id_key,"CREATE UNIQUE INDEX brand_similarities_brand_id_similar_brand_id_key ON public.brand_similarities USING btree (brand_id, similar_brand_id)"
+brand_similarities,brand_similarities_pkey,CREATE UNIQUE INDEX brand_similarities_pkey ON public.brand_similarities USING btree (id)
+brands,brands_new_name_key,CREATE UNIQUE INDEX brands_new_name_key ON public.brands USING btree (name)
+brands,brands_new_pkey,CREATE UNIQUE INDEX brands_new_pkey ON public.brands USING btree (id)
+brands,idx_brands_actively_hiring,CREATE INDEX idx_brands_actively_hiring ON public.brands USING btree (is_actively_hiring) WHERE (is_actively_hiring = true)
+brands,idx_brands_email_verified,CREATE INDEX idx_brands_email_verified ON public.brands USING btree (email_verified) WHERE (email_verified = true)
+brands,idx_brands_hiring_confidence,CREATE INDEX idx_brands_hiring_confidence ON public.brands USING btree (hiring_confidence DESC)
+brands,idx_brands_industry,CREATE INDEX idx_brands_industry ON public.brands USING btree (industry)
+brands,idx_brands_instagram,CREATE INDEX idx_brands_instagram ON public.brands USING btree (instagram_handle)
+brands,idx_brands_name,CREATE INDEX idx_brands_name ON public.brands USING btree (name)
+brands,idx_brands_ships_to,CREATE INDEX idx_brands_ships_to ON public.brands USING btree (ships_to)
+cache_results,cache_results_cache_key_key,CREATE UNIQUE INDEX cache_results_cache_key_key ON public.cache_results USING btree (cache_key)
+cache_results,cache_results_pkey,CREATE UNIQUE INDEX cache_results_pkey ON public.cache_results USING btree (id)
+cache_results,idx_cache_expires,CREATE INDEX idx_cache_expires ON public.cache_results USING btree (expires_at)
+cache_results,idx_cache_key,CREATE INDEX idx_cache_key ON public.cache_results USING btree (cache_key)
+cache_results,idx_cache_type,CREATE INDEX idx_cache_type ON public.cache_results USING btree (cache_type)
+content_patterns,content_patterns_pkey,CREATE UNIQUE INDEX content_patterns_pkey ON public.content_patterns USING btree (id)
+content_plans,content_plans_pkey,CREATE UNIQUE INDEX content_plans_pkey ON public.content_plans USING btree (id)
+content_plans,idx_content_plans_user_week,"CREATE INDEX idx_content_plans_user_week ON public.content_plans USING btree (user_id, week_starting)"
+content_signals,content_signals_instagram_post_id_key,CREATE UNIQUE INDEX content_signals_instagram_post_id_key ON public.content_signals USING btree (instagram_post_id)
+content_signals,content_signals_pkey,CREATE UNIQUE INDEX content_signals_pkey ON public.content_signals USING btree (id)
+content_signals,idx_signals_niche_performance,"CREATE INDEX idx_signals_niche_performance ON public.content_signals USING btree (user_niche, performance_score DESC)"
+content_signals,idx_signals_performance,CREATE INDEX idx_signals_performance ON public.content_signals USING btree (performance_score DESC)
+content_signals,idx_signals_user_posted,"CREATE INDEX idx_signals_user_posted ON public.content_signals USING btree (user_id, posted_at DESC)"
+content_suggestions,content_suggestions_pkey,CREATE UNIQUE INDEX content_suggestions_pkey ON public.content_suggestions USING btree (id)
+creator_profiles,creator_profiles_pkey,CREATE UNIQUE INDEX creator_profiles_pkey ON public.creator_profiles USING btree (id)
+creator_profiles,creator_profiles_user_id_key,CREATE UNIQUE INDEX creator_profiles_user_id_key ON public.creator_profiles USING btree (user_id)
+creator_profiles,idx_creator_profiles_niches,CREATE INDEX idx_creator_profiles_niches ON public.creator_profiles USING gin (creator_niches)
+creator_profiles,idx_creator_profiles_past_brands,CREATE INDEX idx_creator_profiles_past_brands ON public.creator_profiles USING gin (past_brands)
+creator_profiles,idx_creator_profiles_user_id,CREATE INDEX idx_creator_profiles_user_id ON public.creator_profiles USING btree (user_id)
+dead_letter_queue,dead_letter_queue_pkey,CREATE UNIQUE INDEX dead_letter_queue_pkey ON public.dead_letter_queue USING btree (id)
+dead_letter_queue,idx_dlq_failed_at,CREATE INDEX idx_dlq_failed_at ON public.dead_letter_queue USING btree (failed_at DESC)
+dead_letter_queue,idx_dlq_job_type,CREATE INDEX idx_dlq_job_type ON public.dead_letter_queue USING btree (job_type)
+dead_letter_queue,idx_dlq_status,CREATE INDEX idx_dlq_status ON public.dead_letter_queue USING btree (status)
+dead_letter_queue,idx_dlq_user_id,CREATE INDEX idx_dlq_user_id ON public.dead_letter_queue USING btree (user_id)
+instagram_posts,instagram_posts_pkey,CREATE UNIQUE INDEX instagram_posts_pkey ON public.instagram_posts USING btree (id)
+instagram_posts,instagram_posts_profile_id_instagram_post_id_key,"CREATE UNIQUE INDEX instagram_posts_profile_id_instagram_post_id_key ON public.instagram_posts USING btree (profile_id, instagram_post_id)"
+job_queue,idx_job_queue_created,CREATE INDEX idx_job_queue_created ON public.job_queue USING btree (created_at)
+job_queue,idx_job_queue_priority,CREATE INDEX idx_job_queue_priority ON public.job_queue USING btree (priority DESC)
+job_queue,idx_job_queue_scheduled,CREATE INDEX idx_job_queue_scheduled ON public.job_queue USING btree (scheduled_for)
+job_queue,idx_job_queue_status,CREATE INDEX idx_job_queue_status ON public.job_queue USING btree (status)
+job_queue,idx_job_queue_type,CREATE INDEX idx_job_queue_type ON public.job_queue USING btree (type)
+job_queue,idx_job_queue_user_id,CREATE INDEX idx_job_queue_user_id ON public.job_queue USING btree (user_id)
+job_queue,job_queue_pkey,CREATE UNIQUE INDEX job_queue_pkey ON public.job_queue USING btree (id)
+niche_competitors,niche_competitors_niche_instagram_username_key,"CREATE UNIQUE INDEX niche_competitors_niche_instagram_username_key ON public.niche_competitors USING btree (niche, instagram_username)"
+niche_competitors,niche_competitors_pkey,CREATE UNIQUE INDEX niche_competitors_pkey ON public.niche_competitors USING btree (id)
+niche_intelligence,niche_intelligence_pkey,CREATE UNIQUE INDEX niche_intelligence_pkey ON public.niche_intelligence USING btree (id)
+niche_intelligence,niche_intelligence_week_start_niche_key,"CREATE UNIQUE INDEX niche_intelligence_week_start_niche_key ON public.niche_intelligence USING btree (week_start, niche)"
+niche_performance_trends,niche_performance_trends_pkey,CREATE UNIQUE INDEX niche_performance_trends_pkey ON public.niche_performance_trends USING btree (id)
+niche_performance_trends,niche_performance_trends_week_start_niche_key,"CREATE UNIQUE INDEX niche_performance_trends_week_start_niche_key ON public.niche_performance_trends USING btree (week_start, niche)"
+outreach_campaigns,idx_outreach_campaigns_profile,CREATE INDEX idx_outreach_campaigns_profile ON public.outreach_campaigns USING btree (profile_id)
+outreach_campaigns,idx_outreach_campaigns_status,CREATE INDEX idx_outreach_campaigns_status ON public.outreach_campaigns USING btree (status)
+outreach_campaigns,outreach_campaigns_pkey,CREATE UNIQUE INDEX outreach_campaigns_pkey ON public.outreach_campaigns USING btree (id)
+outreach_messages,idx_outreach_brand,CREATE INDEX idx_outreach_brand ON public.outreach_messages USING btree (brand_id)
+outreach_messages,idx_outreach_follow_up,CREATE INDEX idx_outreach_follow_up ON public.outreach_messages USING btree (next_follow_up_at) WHERE (next_follow_up_at IS NOT NULL)
+outreach_messages,idx_outreach_sent_at,CREATE INDEX idx_outreach_sent_at ON public.outreach_messages USING btree (sent_at DESC)
+outreach_messages,idx_outreach_status,CREATE INDEX idx_outreach_status ON public.outreach_messages USING btree (status)
+outreach_messages,idx_outreach_user,CREATE INDEX idx_outreach_user ON public.outreach_messages USING btree (user_id)
+outreach_messages,outreach_messages_pkey,CREATE UNIQUE INDEX outreach_messages_pkey ON public.outreach_messages USING btree (id)
+password_reset_tokens,idx_password_reset_token,CREATE INDEX idx_password_reset_token ON public.password_reset_tokens USING btree (token)
+password_reset_tokens,idx_password_reset_user,CREATE INDEX idx_password_reset_user ON public.password_reset_tokens USING btree (user_id)
+password_reset_tokens,password_reset_tokens_pkey,CREATE UNIQUE INDEX password_reset_tokens_pkey ON public.password_reset_tokens USING btree (id)
+password_reset_tokens,password_reset_tokens_token_key,CREATE UNIQUE INDEX password_reset_tokens_token_key ON public.password_reset_tokens USING btree (token)
+profiles,idx_profiles_email,CREATE INDEX idx_profiles_email ON public.profiles USING btree (email)
+profiles,idx_profiles_instagram_username,CREATE INDEX idx_profiles_instagram_username ON public.profiles USING btree (instagram_username)
+profiles,idx_profiles_stripe_customer,CREATE INDEX idx_profiles_stripe_customer ON public.profiles USING btree (stripe_customer_id)
+profiles,idx_profiles_subscription_status,CREATE INDEX idx_profiles_subscription_status ON public.profiles USING btree (subscription_status)
+profiles,profiles_email_key,CREATE UNIQUE INDEX profiles_email_key ON public.profiles USING btree (email)
+profiles,profiles_instagram_id_key,CREATE UNIQUE INDEX profiles_instagram_id_key ON public.profiles USING btree (instagram_id)
+profiles,profiles_pkey,CREATE UNIQUE INDEX profiles_pkey ON public.profiles USING btree (id)
+rate_limit_violations,idx_violations_endpoint,"CREATE INDEX idx_violations_endpoint ON public.rate_limit_violations USING btree (endpoint, violated_at DESC)"
+rate_limit_violations,idx_violations_user,"CREATE INDEX idx_violations_user ON public.rate_limit_violations USING btree (user_id, violated_at DESC)"
+rate_limit_violations,idx_violations_violated_at,CREATE INDEX idx_violations_violated_at ON public.rate_limit_violations USING btree (violated_at DESC)
+rate_limit_violations,rate_limit_violations_pkey,CREATE UNIQUE INDEX rate_limit_violations_pkey ON public.rate_limit_violations USING btree (id)
+rate_limits,idx_rate_limits_updated,CREATE INDEX idx_rate_limits_updated ON public.rate_limits USING btree (updated_at)
+rate_limits,idx_rate_limits_user,CREATE INDEX idx_rate_limits_user ON public.rate_limits USING btree (user_id)
+rate_limits,idx_rate_limits_user_endpoint,"CREATE INDEX idx_rate_limits_user_endpoint ON public.rate_limits USING btree (user_id, endpoint)"
+rate_limits,rate_limits_pkey,CREATE UNIQUE INDEX rate_limits_pkey ON public.rate_limits USING btree (id)
+rate_limits,rate_limits_user_id_endpoint_key,"CREATE UNIQUE INDEX rate_limits_user_id_endpoint_key ON public.rate_limits USING btree (user_id, endpoint)"
+trend_analysis,idx_trend_collected_date,"CREATE INDEX idx_trend_collected_date ON public.trend_analysis USING btree (user_id, collected_at DESC)"
+trend_analysis,idx_trend_name,CREATE INDEX idx_trend_name ON public.trend_analysis USING btree (trend_name)
+trend_analysis,idx_trend_niche,CREATE INDEX idx_trend_niche ON public.trend_analysis USING btree (niche) WHERE (niche IS NOT NULL)
+trend_analysis,idx_trend_platform_niche,"CREATE INDEX idx_trend_platform_niche ON public.trend_analysis USING btree (platform, niche, confidence_score DESC) WHERE ((platform)::text = ANY ((ARRAY['instagram'::character varying, 'twitter'::character varying])::text[]))"
+trend_analysis,idx_trend_user_platform,"CREATE INDEX idx_trend_user_platform ON public.trend_analysis USING btree (user_id, platform, collected_at DESC)"
+trend_analysis,trend_analysis_pkey,CREATE UNIQUE INDEX trend_analysis_pkey ON public.trend_analysis USING btree (id)
+trend_analysis,trend_analysis_user_id_platform_trend_type_trend_name_colle_key,"CREATE UNIQUE INDEX trend_analysis_user_id_platform_trend_type_trend_name_colle_key ON public.trend_analysis USING btree (user_id, platform, trend_type, trend_name, collected_at)"
+trend_history,idx_history_trend,"CREATE INDEX idx_history_trend ON public.trend_history USING btree (trend_analysis_id, recorded_at DESC)"
+trend_history,idx_trend_history_recorded,CREATE INDEX idx_trend_history_recorded ON public.trend_history USING btree (recorded_at DESC)
+trend_history,trend_history_pkey,CREATE UNIQUE INDEX trend_history_pkey ON public.trend_history USING btree (id)
+trends,idx_trends_confidence,CREATE INDEX idx_trends_confidence ON public.trends USING btree (confidence_score DESC)
+trends,idx_trends_niche,CREATE INDEX idx_trends_niche ON public.trends USING btree (niche)
+trends,idx_trends_phase,CREATE INDEX idx_trends_phase ON public.trends USING btree (trend_phase)
+trends,trends_niche_trend_type_trend_name_key,"CREATE UNIQUE INDEX trends_niche_trend_type_trend_name_key ON public.trends USING btree (niche, trend_type, trend_name)"
+trends,trends_pkey,CREATE UNIQUE INDEX trends_pkey ON public.trends USING btree (id)
+user_algorithm_alerts,user_algorithm_alerts_pkey,CREATE UNIQUE INDEX user_algorithm_alerts_pkey ON public.user_algorithm_alerts USING btree (id)
+user_algorithm_alerts,user_algorithm_alerts_user_id_algorithm_change_id_key,"CREATE UNIQUE INDEX user_algorithm_alerts_user_id_algorithm_change_id_key ON public.user_algorithm_alerts USING btree (user_id, algorithm_change_id)"
+user_brand_matches,idx_user_brand_matches_user,CREATE INDEX idx_user_brand_matches_user ON public.user_brand_matches USING btree (user_id)
+user_brand_matches,user_brand_matches_pkey,CREATE UNIQUE INDEX user_brand_matches_pkey ON public.user_brand_matches USING btree (id)
+user_brand_matches,user_brand_matches_user_id_brand_id_key,"CREATE UNIQUE INDEX user_brand_matches_user_id_brand_id_key ON public.user_brand_matches USING btree (user_id, brand_id)"
+user_content_insights,user_content_insights_pkey,CREATE UNIQUE INDEX user_content_insights_pkey ON public.user_content_insights USING btree (id)
+user_content_insights,user_content_insights_user_id_key,CREATE UNIQUE INDEX user_content_insights_user_id_key ON public.user_content_insights USING btree (user_id)
+user_performance_summary,idx_performance_date,CREATE INDEX idx_performance_date ON public.user_performance_summary USING btree (date DESC)
+user_performance_summary,idx_performance_user_date,"CREATE INDEX idx_performance_user_date ON public.user_performance_summary USING btree (user_id, date DESC)"
+user_performance_summary,user_performance_summary_pkey,CREATE UNIQUE INDEX user_performance_summary_pkey ON public.user_performance_summary USING btree (id)
+user_performance_summary,user_performance_summary_user_id_date_key,"CREATE UNIQUE INDEX user_performance_summary_user_id_date_key ON public.user_performance_summary USING btree (user_id, date)"
+user_tokens,user_tokens_pkey,CREATE UNIQUE INDEX user_tokens_pkey ON public.user_tokens USING btree (id)
+user_tokens,user_tokens_user_id_key,CREATE UNIQUE INDEX user_tokens_user_id_key ON public.user_tokens USING btree (user_id)

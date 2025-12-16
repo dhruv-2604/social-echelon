@@ -1,0 +1,503 @@
+table_name,column_name,data_type,is_nullable,column_default
+alert_preferences,user_id,uuid,NO,null
+alert_preferences,email_alerts,boolean,YES,true
+alert_preferences,sms_alerts,boolean,YES,false
+alert_preferences,in_app_alerts,boolean,YES,true
+alert_preferences,alert_threshold,text,YES,'high'::text
+alert_preferences,email,text,YES,null
+alert_preferences,phone,text,YES,null
+alert_preferences,created_at,timestamp with time zone,YES,now()
+alert_preferences,updated_at,timestamp with time zone,YES,now()
+alerts,id,uuid,NO,gen_random_uuid()
+alerts,user_id,uuid,NO,null
+alerts,type,text,NO,null
+alerts,severity,text,NO,null
+alerts,title,text,NO,null
+alerts,message,text,NO,null
+alerts,data,jsonb,YES,null
+alerts,read,boolean,YES,false
+alerts,created_at,timestamp with time zone,YES,now()
+algorithm_changes,id,uuid,NO,uuid_generate_v4()
+algorithm_changes,detected_at,timestamp with time zone,YES,CURRENT_TIMESTAMP
+algorithm_changes,confirmed_at,timestamp with time zone,YES,null
+algorithm_changes,change_type,text,NO,null
+algorithm_changes,metric_name,text,NO,null
+algorithm_changes,before_value,numeric,NO,null
+algorithm_changes,after_value,numeric,NO,null
+algorithm_changes,percent_change,numeric,NO,null
+algorithm_changes,affected_users_count,integer,NO,null
+algorithm_changes,sample_size,integer,NO,null
+algorithm_changes,confidence_score,integer,NO,null
+algorithm_changes,niches_affected,ARRAY,YES,'{}'::text[]
+algorithm_changes,status,text,NO,'detected'::text
+algorithm_changes,recommendations,ARRAY,YES,'{}'::text[]
+algorithm_changes,created_at,timestamp with time zone,YES,CURRENT_TIMESTAMP
+algorithm_changes,updated_at,timestamp with time zone,YES,CURRENT_TIMESTAMP
+audio_trends,track_key,character varying,NO,null
+audio_trends,artist,character varying,YES,null
+audio_trends,track,character varying,YES,null
+audio_trends,usage_count,integer,YES,null
+audio_trends,niches,ARRAY,YES,null
+audio_trends,avg_engagement,numeric,YES,null
+audio_trends,growth_rate,numeric,YES,null
+audio_trends,top_posts,jsonb,YES,null
+audio_trends,last_updated,timestamp without time zone,YES,null
+brand_discovery_queue,id,uuid,NO,uuid_generate_v4()
+brand_discovery_queue,brand_name,text,NO,null
+brand_discovery_queue,website,text,YES,null
+brand_discovery_queue,instagram_handle,text,YES,null
+brand_discovery_queue,discovery_source,text,YES,null
+brand_discovery_queue,discovery_data,jsonb,YES,null
+brand_discovery_queue,processing_status,text,YES,'pending'::text
+brand_discovery_queue,processing_notes,text,YES,null
+brand_discovery_queue,processed_at,timestamp with time zone,YES,null
+brand_discovery_queue,created_at,timestamp with time zone,YES,now()
+brand_matches,id,uuid,NO,uuid_generate_v4()
+brand_matches,profile_id,uuid,YES,null
+brand_matches,brand_id,uuid,YES,null
+brand_matches,match_score,numeric,NO,null
+brand_matches,reasons,ARRAY,YES,null
+brand_matches,status,text,YES,null
+brand_matches,created_at,timestamp with time zone,YES,now()
+brand_matches,match_category,text,YES,null
+brand_matches,values_alignment_score,numeric,YES,null
+brand_matches,audience_resonance_score,numeric,YES,null
+brand_matches,content_style_match_score,numeric,YES,null
+brand_matches,success_probability_score,numeric,YES,null
+brand_matches,match_breakdown,jsonb,YES,null
+brand_matches,insights,jsonb,YES,null
+brand_matches,suggested_rate,integer,YES,null
+brand_matches,market_rate,integer,YES,null
+brand_matches,estimated_response_rate,integer,YES,null
+brand_matches,outreach_strategy,jsonb,YES,null
+brand_matches,last_status_update,timestamp with time zone,YES,now()
+brand_matches,next_action,text,YES,null
+brand_past_campaigns,id,uuid,NO,uuid_generate_v4()
+brand_past_campaigns,brand_id,uuid,YES,null
+brand_past_campaigns,influencer_handle,text,YES,null
+brand_past_campaigns,followers_at_time,integer,YES,null
+brand_past_campaigns,campaign_type,text,YES,null
+brand_past_campaigns,content_url,text,YES,null
+brand_past_campaigns,engagement_rate,numeric,YES,null
+brand_past_campaigns,roi_multiplier,numeric,YES,null
+brand_past_campaigns,campaign_date,date,YES,null
+brand_past_campaigns,created_at,timestamp with time zone,YES,now()
+brand_requests,id,uuid,NO,gen_random_uuid()
+brand_requests,user_id,uuid,YES,null
+brand_requests,brand_name,text,NO,null
+brand_requests,brand_instagram,text,YES,null
+brand_requests,brand_website,text,YES,null
+brand_requests,reason_for_interest,text,YES,null
+brand_requests,contact_found,boolean,YES,false
+brand_requests,contact_email,text,YES,null
+brand_requests,status,text,YES,'pending'::text
+brand_requests,admin_notes,text,YES,null
+brand_requests,created_at,timestamp with time zone,YES,now()
+brand_requests,updated_at,timestamp with time zone,YES,now()
+brand_requests,requested_by,uuid,YES,null
+brand_requests,source,text,YES,'dream_brand'::text
+brand_requests,processed_at,timestamp with time zone,YES,null
+brand_requests,processed_by,uuid,YES,null
+brand_requests,brand_id,uuid,YES,null
+brand_requests,rejection_reason,text,YES,null
+brand_requests,request_count,integer,YES,1
+brand_requests,first_requested_at,timestamp with time zone,YES,now()
+brand_requests,last_requested_at,timestamp with time zone,YES,now()
+brand_requests,notes,text,YES,null
+brand_requirements,id,uuid,NO,uuid_generate_v4()
+brand_requirements,brand_id,uuid,YES,null
+brand_requirements,requirement_type,text,YES,null
+brand_requirements,requirement,text,NO,null
+brand_requirements,created_at,timestamp with time zone,YES,now()
+brand_similarities,id,uuid,NO,gen_random_uuid()
+brand_similarities,brand_id,uuid,YES,null
+brand_similarities,similar_brand_id,uuid,YES,null
+brand_similarities,similarity_score,numeric,YES,null
+brand_similarities,similarity_reason,text,YES,null
+brand_similarities,created_at,timestamp with time zone,YES,now()
+brands,id,uuid,NO,uuid_generate_v4()
+brands,name,text,NO,null
+brands,instagram_handle,text,YES,null
+brands,location,text,YES,null
+brands,followers,text,YES,null
+brands,industry,text,YES,null
+brands,industry_niche,text,YES,null
+brands,influencer_types,text,YES,null
+brands,ships_to,text,YES,null
+brands,recent_campaigns,text,YES,null
+brands,strategy,text,YES,null
+brands,created_at,timestamp with time zone,YES,now()
+brands,last_updated,timestamp with time zone,YES,now()
+brands,pr_email,text,YES,null
+brands,email_verified,boolean,YES,false
+brands,email_verified_at,timestamp with time zone,YES,null
+brands,email_verification_source,text,YES,null
+brands,contact_name,text,YES,null
+brands,contact_role,text,YES,null
+brands,last_campaign_date,date,YES,null
+brands,hiring_confidence,integer,YES,50
+brands,is_actively_hiring,boolean,YES,true
+brands,total_outreach_sent,integer,YES,0
+brands,total_responses,integer,YES,0
+brands,positive_responses,integer,YES,0
+brands,last_researched_at,timestamp with time zone,YES,null
+brands,data_confidence,integer,YES,50
+cache_results,id,uuid,NO,gen_random_uuid()
+cache_results,cache_key,character varying,NO,null
+cache_results,cache_type,character varying,NO,null
+cache_results,data,jsonb,NO,null
+cache_results,metadata,jsonb,YES,null
+cache_results,expires_at,timestamp with time zone,NO,null
+cache_results,created_at,timestamp with time zone,YES,now()
+cache_results,accessed_at,timestamp with time zone,YES,now()
+cache_results,access_count,integer,YES,1
+content_patterns,id,uuid,NO,uuid_generate_v4()
+content_patterns,pattern_type,text,NO,null
+content_patterns,pattern_description,text,NO,null
+content_patterns,pattern_value,jsonb,NO,null
+content_patterns,avg_performance_score,numeric,NO,null
+content_patterns,success_rate,numeric,NO,null
+content_patterns,sample_size,integer,NO,null
+content_patterns,confidence_score,integer,NO,null
+content_patterns,applicable_niches,ARRAY,YES,'{}'::text[]
+content_patterns,applicable_follower_range,int4range,YES,null
+content_patterns,first_detected,timestamp with time zone,YES,CURRENT_TIMESTAMP
+content_patterns,last_validated,timestamp with time zone,YES,CURRENT_TIMESTAMP
+content_patterns,times_validated,integer,YES,1
+content_patterns,is_active,boolean,YES,true
+content_patterns,created_at,timestamp with time zone,YES,CURRENT_TIMESTAMP
+content_patterns,updated_at,timestamp with time zone,YES,CURRENT_TIMESTAMP
+content_plans,id,uuid,NO,uuid_generate_v4()
+content_plans,user_id,uuid,YES,null
+content_plans,week_starting,date,NO,null
+content_plans,suggestions,jsonb,NO,null
+content_plans,overall_strategy,text,YES,null
+content_plans,user_preferences,jsonb,YES,null
+content_plans,performance_data,jsonb,YES,null
+content_plans,generated_at,timestamp with time zone,YES,now()
+content_plans,created_at,timestamp with time zone,YES,now()
+content_signals,id,uuid,NO,uuid_generate_v4()
+content_signals,user_id,uuid,YES,null
+content_signals,instagram_post_id,text,NO,null
+content_signals,caption_length,integer,NO,null
+content_signals,word_count,integer,NO,null
+content_signals,hashtag_count,integer,NO,null
+content_signals,mention_count,integer,NO,null
+content_signals,emoji_count,integer,NO,null
+content_signals,line_break_count,integer,NO,null
+content_signals,has_question,boolean,YES,false
+content_signals,has_call_to_action,boolean,YES,false
+content_signals,has_carousel,boolean,YES,false
+content_signals,has_reel,boolean,YES,false
+content_signals,video_duration,integer,YES,null
+content_signals,carousel_slides,integer,YES,null
+content_signals,posted_at,timestamp with time zone,NO,null
+content_signals,day_of_week,integer,NO,null
+content_signals,hour_of_day,integer,NO,null
+content_signals,reach_count,integer,NO,null
+content_signals,like_count,integer,NO,null
+content_signals,comment_count,integer,NO,null
+content_signals,save_count,integer,NO,null
+content_signals,share_count,integer,YES,0
+content_signals,engagement_rate,numeric,NO,null
+content_signals,save_rate,numeric,YES,null
+content_signals,comment_rate,numeric,YES,null
+content_signals,performance_score,integer,NO,null
+content_signals,follower_count_at_time,integer,NO,null
+content_signals,user_niche,text,NO,null
+content_signals,created_at,timestamp with time zone,YES,CURRENT_TIMESTAMP
+content_suggestions,id,uuid,NO,uuid_generate_v4()
+content_suggestions,profile_id,uuid,YES,null
+content_suggestions,title,text,NO,null
+content_suggestions,description,text,NO,null
+content_suggestions,content_type,text,YES,null
+content_suggestions,priority,text,YES,null
+content_suggestions,suggested_time,timestamp with time zone,YES,null
+content_suggestions,hashtags,ARRAY,YES,null
+content_suggestions,status,text,YES,'pending'::text
+content_suggestions,created_at,timestamp with time zone,YES,now()
+creator_brand_collaborations,user_id,uuid,YES,null
+creator_brand_collaborations,creator_niches,ARRAY,YES,null
+creator_brand_collaborations,brand_name,text,YES,null
+creator_brand_collaborations,instagram_username,text,YES,null
+creator_brand_collaborations,follower_count,integer,YES,null
+creator_profiles,id,uuid,NO,uuid_generate_v4()
+creator_profiles,user_id,uuid,YES,null
+creator_profiles,profile_data,jsonb,NO,null
+creator_profiles,onboarding_completed,boolean,YES,false
+creator_profiles,created_at,timestamp with time zone,YES,now()
+creator_profiles,updated_at,timestamp with time zone,YES,now()
+creator_profiles,past_brands,ARRAY,YES,'{}'::text[]
+creator_profiles,creator_niches,ARRAY,YES,'{}'::text[]
+cross_platform_trends,trend_name,character varying,YES,null
+cross_platform_trends,niche,character varying,YES,null
+cross_platform_trends,trend_type,character varying,YES,null
+cross_platform_trends,instagram_confidence,numeric,YES,null
+cross_platform_trends,twitter_confidence,numeric,YES,null
+cross_platform_trends,instagram_growth,numeric,YES,null
+cross_platform_trends,twitter_growth,numeric,YES,null
+cross_platform_trends,instagram_engagement,numeric,YES,null
+cross_platform_trends,twitter_engagement,numeric,YES,null
+cross_platform_trends,instagram_collected,timestamp with time zone,YES,null
+cross_platform_trends,twitter_collected,timestamp with time zone,YES,null
+cross_platform_trends,combined_score,numeric,YES,null
+cross_platform_trends,trending_both_platforms,boolean,YES,null
+dead_letter_queue,id,uuid,NO,gen_random_uuid()
+dead_letter_queue,original_job_id,uuid,NO,null
+dead_letter_queue,job_type,character varying,NO,null
+dead_letter_queue,user_id,uuid,YES,null
+dead_letter_queue,payload,jsonb,YES,null
+dead_letter_queue,error_history,jsonb,NO,'[]'::jsonb
+dead_letter_queue,final_error,text,NO,null
+dead_letter_queue,retry_count,integer,NO,null
+dead_letter_queue,max_retries,integer,NO,null
+dead_letter_queue,original_created_at,timestamp with time zone,NO,null
+dead_letter_queue,failed_at,timestamp with time zone,YES,now()
+dead_letter_queue,status,character varying,YES,'dead'::character varying
+dead_letter_queue,resolution_notes,text,YES,null
+dead_letter_queue,resolved_at,timestamp with time zone,YES,null
+dead_letter_queue,resolved_by,uuid,YES,null
+instagram_posts,id,uuid,NO,uuid_generate_v4()
+instagram_posts,profile_id,uuid,YES,null
+instagram_posts,instagram_post_id,text,NO,null
+instagram_posts,caption,text,YES,null
+instagram_posts,media_type,text,YES,null
+instagram_posts,media_url,text,NO,null
+instagram_posts,permalink,text,NO,null
+instagram_posts,timestamp,timestamp with time zone,NO,null
+instagram_posts,like_count,integer,YES,null
+instagram_posts,comments_count,integer,YES,null
+instagram_posts,created_at,timestamp with time zone,YES,now()
+job_queue,id,uuid,NO,gen_random_uuid()
+job_queue,type,character varying,NO,null
+job_queue,status,character varying,NO,'pending'::character varying
+job_queue,priority,integer,NO,5
+job_queue,user_id,uuid,YES,null
+job_queue,payload,jsonb,YES,null
+job_queue,result,jsonb,YES,null
+job_queue,error,text,YES,null
+job_queue,retry_count,integer,YES,0
+job_queue,max_retries,integer,YES,3
+job_queue,created_at,timestamp with time zone,YES,now()
+job_queue,started_at,timestamp with time zone,YES,null
+job_queue,completed_at,timestamp with time zone,YES,null
+job_queue,scheduled_for,timestamp with time zone,YES,now()
+niche_competitors,id,uuid,NO,uuid_generate_v4()
+niche_competitors,niche,text,NO,null
+niche_competitors,instagram_username,text,NO,null
+niche_competitors,instagram_id,text,YES,null
+niche_competitors,follower_count,integer,YES,null
+niche_competitors,engagement_rate,numeric,YES,null
+niche_competitors,content_style,text,YES,null
+niche_competitors,is_verified,boolean,YES,false
+niche_competitors,created_at,timestamp with time zone,YES,now()
+niche_intelligence,id,uuid,NO,uuid_generate_v4()
+niche_intelligence,week_start,date,NO,null
+niche_intelligence,niche,text,NO,null
+niche_intelligence,top_caption_length,int4range,YES,null
+niche_intelligence,optimal_hashtag_count,integer,YES,null
+niche_intelligence,best_posting_hours,ARRAY,YES,null
+niche_intelligence,best_posting_days,ARRAY,YES,null
+niche_intelligence,best_content_format,text,YES,null
+niche_intelligence,avg_emoji_count,numeric,YES,null
+niche_intelligence,question_posts_performance,numeric,YES,null
+niche_intelligence,cta_effectiveness,numeric,YES,null
+niche_intelligence,emerging_patterns,jsonb,YES,'[]'::jsonb
+niche_intelligence,declining_patterns,jsonb,YES,'[]'::jsonb
+niche_intelligence,total_posts_analyzed,integer,NO,null
+niche_intelligence,total_users_contributing,integer,NO,null
+niche_intelligence,created_at,timestamp with time zone,YES,CURRENT_TIMESTAMP
+niche_performance_trends,id,uuid,NO,uuid_generate_v4()
+niche_performance_trends,week_start,date,NO,null
+niche_performance_trends,niche,text,NO,null
+niche_performance_trends,avg_reach_per_post,integer,NO,null
+niche_performance_trends,avg_engagement_rate,numeric,NO,null
+niche_performance_trends,total_users_tracked,integer,NO,null
+niche_performance_trends,best_content_type,text,YES,null
+niche_performance_trends,best_content_reach,integer,YES,null
+niche_performance_trends,reach_change_percent,numeric,YES,null
+niche_performance_trends,engagement_change_percent,numeric,YES,null
+niche_performance_trends,created_at,timestamp with time zone,YES,CURRENT_TIMESTAMP
+outreach_campaigns,id,uuid,NO,uuid_generate_v4()
+outreach_campaigns,profile_id,uuid,YES,null
+outreach_campaigns,brand_match_id,uuid,YES,null
+outreach_campaigns,subject_line,text,NO,null
+outreach_campaigns,email_content,text,NO,null
+outreach_campaigns,personalization_points,ARRAY,YES,null
+outreach_campaigns,sent_at,timestamp with time zone,YES,null
+outreach_campaigns,opened_at,timestamp with time zone,YES,null
+outreach_campaigns,replied_at,timestamp with time zone,YES,null
+outreach_campaigns,status,text,YES,'draft'::text
+outreach_campaigns,follow_up_count,integer,YES,0
+outreach_campaigns,last_follow_up,timestamp with time zone,YES,null
+outreach_campaigns,created_at,timestamp with time zone,YES,now()
+outreach_messages,id,uuid,NO,gen_random_uuid()
+outreach_messages,user_id,uuid,NO,null
+outreach_messages,brand_id,uuid,NO,null
+outreach_messages,match_id,uuid,YES,null
+outreach_messages,to_email,text,NO,null
+outreach_messages,subject,text,NO,null
+outreach_messages,body,text,NO,null
+outreach_messages,status,text,NO,'queued'::text
+outreach_messages,message_id,text,YES,null
+outreach_messages,error_message,text,YES,null
+outreach_messages,created_at,timestamp with time zone,YES,now()
+outreach_messages,sent_at,timestamp with time zone,YES,null
+outreach_messages,opened_at,timestamp with time zone,YES,null
+outreach_messages,clicked_at,timestamp with time zone,YES,null
+outreach_messages,replied_at,timestamp with time zone,YES,null
+outreach_messages,follow_up_count,integer,YES,0
+outreach_messages,next_follow_up_at,timestamp with time zone,YES,null
+outreach_messages,parent_message_id,uuid,YES,null
+outreach_messages,response_sentiment,text,YES,null
+outreach_messages,response_notes,text,YES,null
+password_reset_tokens,id,uuid,NO,gen_random_uuid()
+password_reset_tokens,user_id,uuid,NO,null
+password_reset_tokens,token,character varying,NO,null
+password_reset_tokens,expires_at,timestamp with time zone,NO,null
+password_reset_tokens,used,boolean,YES,false
+password_reset_tokens,created_at,timestamp with time zone,YES,now()
+password_reset_tokens,used_at,timestamp with time zone,YES,null
+profiles,id,uuid,NO,uuid_generate_v4()
+profiles,created_at,timestamp with time zone,YES,now()
+profiles,updated_at,timestamp with time zone,YES,now()
+profiles,email,text,NO,null
+profiles,full_name,text,YES,null
+profiles,avatar_url,text,YES,null
+profiles,instagram_username,text,YES,null
+profiles,instagram_id,text,YES,null
+profiles,follower_count,integer,YES,null
+profiles,following_count,integer,YES,null
+profiles,posts_count,integer,YES,null
+profiles,engagement_rate,numeric,YES,null
+profiles,niche,text,YES,null
+profiles,subscription_tier,text,YES,null
+profiles,subscription_status,text,YES,null
+profiles,stripe_customer_id,text,YES,null
+profiles,primary_goal,text,YES,null
+profiles,content_style,text,YES,null
+profiles,target_audience,text,YES,null
+profiles,voice_tone,text,YES,null
+profiles,posting_frequency,smallint,YES,'3'::smallint
+profiles,preferences_set,boolean,YES,false
+profiles,brand_matching_enabled,boolean,YES,false
+profiles,password_hash,text,YES,null
+profiles,phone,character varying,YES,null
+profiles,subscription_plan,character varying,YES,'balance'::character varying
+profiles,billing_cycle,character varying,YES,'monthly'::character varying
+profiles,stripe_subscription_id,text,YES,null
+profiles,subscription_expires_at,timestamp with time zone,YES,null
+rate_limit_violations,id,uuid,NO,gen_random_uuid()
+rate_limit_violations,user_id,uuid,NO,null
+rate_limit_violations,endpoint,character varying,NO,null
+rate_limit_violations,tokens_requested,numeric,NO,null
+rate_limit_violations,tokens_available,numeric,NO,null
+rate_limit_violations,ip_address,inet,YES,null
+rate_limit_violations,user_agent,text,YES,null
+rate_limit_violations,violated_at,timestamp with time zone,YES,now()
+rate_limits,id,uuid,NO,gen_random_uuid()
+rate_limits,user_id,uuid,NO,null
+rate_limits,endpoint,character varying,NO,null
+rate_limits,tokens_remaining,numeric,NO,0
+rate_limits,last_refill_at,timestamp with time zone,NO,now()
+rate_limits,created_at,timestamp with time zone,YES,now()
+rate_limits,updated_at,timestamp with time zone,YES,now()
+trend_analysis,id,uuid,NO,gen_random_uuid()
+trend_analysis,user_id,uuid,NO,null
+trend_analysis,platform,character varying,NO,null
+trend_analysis,trend_type,character varying,NO,null
+trend_analysis,trend_name,character varying,NO,null
+trend_analysis,metrics,jsonb,NO,null
+trend_analysis,top_posts,jsonb,YES,null
+trend_analysis,collected_at,timestamp with time zone,YES,now()
+trend_analysis,created_at,timestamp with time zone,YES,now()
+trend_analysis,niche,character varying,YES,null
+trend_analysis,growth_velocity,numeric,YES,0
+trend_analysis,current_volume,integer,YES,0
+trend_analysis,engagement_rate,numeric,YES,0
+trend_analysis,saturation_level,numeric,YES,0
+trend_analysis,confidence_score,numeric,YES,50
+trend_analysis,trend_phase,character varying,YES,'emerging'::character varying
+trend_analysis,updated_at,timestamp with time zone,YES,now()
+trend_history,id,uuid,NO,uuid_generate_v4()
+trend_history,growth_velocity,integer,YES,null
+trend_history,current_volume,integer,YES,null
+trend_history,engagement_rate,numeric,YES,null
+trend_history,saturation_level,integer,YES,null
+trend_history,confidence_score,integer,YES,null
+trend_history,recorded_at,timestamp with time zone,YES,now()
+trend_history,trend_analysis_id,uuid,YES,null
+trends,id,uuid,NO,uuid_generate_v4()
+trends,niche,text,NO,null
+trends,trend_type,text,NO,null
+trends,trend_name,text,NO,null
+trends,growth_velocity,integer,YES,null
+trends,current_volume,integer,YES,null
+trends,engagement_rate,numeric,YES,null
+trends,saturation_level,integer,YES,null
+trends,confidence_score,integer,YES,null
+trends,first_detected,timestamp with time zone,YES,now()
+trends,peak_time,timestamp with time zone,YES,null
+trends,trend_phase,text,YES,null
+trends,related_hashtags,ARRAY,YES,null
+trends,example_posts,jsonb,YES,null
+trends,optimal_posting_times,ARRAY,YES,null
+trends,created_at,timestamp with time zone,YES,now()
+trends,updated_at,timestamp with time zone,YES,now()
+user_algorithm_alerts,id,uuid,NO,uuid_generate_v4()
+user_algorithm_alerts,user_id,uuid,YES,null
+user_algorithm_alerts,algorithm_change_id,uuid,YES,null
+user_algorithm_alerts,sent_at,timestamp with time zone,YES,CURRENT_TIMESTAMP
+user_algorithm_alerts,opened_at,timestamp with time zone,YES,null
+user_algorithm_alerts,action_taken,boolean,YES,false
+user_brand_matches,id,uuid,NO,gen_random_uuid()
+user_brand_matches,user_id,uuid,YES,null
+user_brand_matches,brand_id,uuid,YES,null
+user_brand_matches,match_score,integer,YES,null
+user_brand_matches,match_category,text,YES,null
+user_brand_matches,outreach_sent,boolean,YES,false
+user_brand_matches,outreach_sent_at,timestamp with time zone,YES,null
+user_brand_matches,response_received,boolean,YES,false
+user_brand_matches,response_type,text,YES,null
+user_brand_matches,created_at,timestamp with time zone,YES,now()
+user_brand_matches,updated_at,timestamp with time zone,YES,now()
+user_content_insights,id,uuid,NO,uuid_generate_v4()
+user_content_insights,user_id,uuid,YES,null
+user_content_insights,best_caption_length,int4range,YES,null
+user_content_insights,best_hashtag_count,integer,YES,null
+user_content_insights,best_posting_hour,integer,YES,null
+user_content_insights,best_day_of_week,integer,YES,null
+user_content_insights,best_content_format,text,YES,null
+user_content_insights,avg_reach,integer,YES,null
+user_content_insights,avg_engagement_rate,numeric,YES,null
+user_content_insights,top_10_percent_reach,integer,YES,null
+user_content_insights,recommended_patterns,jsonb,YES,'[]'::jsonb
+user_content_insights,patterns_to_avoid,jsonb,YES,'[]'::jsonb
+user_content_insights,last_analyzed,timestamp with time zone,YES,CURRENT_TIMESTAMP
+user_content_insights,posts_analyzed,integer,YES,0
+user_content_insights,created_at,timestamp with time zone,YES,CURRENT_TIMESTAMP
+user_content_insights,updated_at,timestamp with time zone,YES,CURRENT_TIMESTAMP
+user_performance_summary,id,uuid,NO,uuid_generate_v4()
+user_performance_summary,user_id,uuid,YES,null
+user_performance_summary,date,date,NO,null
+user_performance_summary,avg_reach,integer,NO,0
+user_performance_summary,avg_impressions,integer,NO,0
+user_performance_summary,avg_likes,integer,NO,0
+user_performance_summary,avg_comments,integer,NO,0
+user_performance_summary,avg_saves,integer,NO,0
+user_performance_summary,total_posts,integer,NO,0
+user_performance_summary,avg_engagement_rate,numeric,NO,0
+user_performance_summary,follower_count,integer,NO,null
+user_performance_summary,reel_avg_reach,integer,YES,null
+user_performance_summary,carousel_avg_reach,integer,YES,null
+user_performance_summary,post_avg_reach,integer,YES,null
+user_performance_summary,created_at,timestamp with time zone,YES,CURRENT_TIMESTAMP
+user_performance_summary,profile_views,integer,YES,0
+user_performance_summary,website_clicks,integer,YES,0
+user_performance_summary,accounts_engaged,integer,YES,0
+user_performance_summary,total_interactions,integer,YES,0
+user_tokens,id,uuid,NO,uuid_generate_v4()
+user_tokens,user_id,uuid,YES,null
+user_tokens,instagram_access_token,text,NO,null
+user_tokens,created_at,timestamp with time zone,YES,now()
+user_tokens,updated_at,timestamp with time zone,YES,now()
