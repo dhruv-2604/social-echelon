@@ -18,9 +18,17 @@ UPDATE brand_requests
 SET notes = COALESCE(notes, '') || CASE WHEN admin_notes IS NOT NULL THEN E'\n[Admin]: ' || admin_notes ELSE '' END
 WHERE admin_notes IS NOT NULL AND admin_notes != '';
 
+-- Drop RLS policies that depend on requested_by
+DROP POLICY IF EXISTS "Users can view own requests" ON brand_requests;
+
 -- Now safe to drop the redundant columns
 ALTER TABLE brand_requests DROP COLUMN IF EXISTS requested_by;
 ALTER TABLE brand_requests DROP COLUMN IF EXISTS admin_notes;
+
+-- Recreate the policy using user_id instead
+CREATE POLICY "Users can view own requests" ON brand_requests
+  FOR SELECT TO authenticated
+  USING (user_id = auth.uid());
 
 -- =============================================================================
 -- PART 2: Clean up profiles table
