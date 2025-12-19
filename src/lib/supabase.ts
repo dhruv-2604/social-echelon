@@ -67,7 +67,7 @@ export type Database = {
       instagram_posts: {
         Row: {
           id: string
-          profile_id: string
+          user_id: string
           instagram_post_id: string
           caption: string | null
           media_type: 'IMAGE' | 'VIDEO' | 'CAROUSEL_ALBUM'
@@ -79,7 +79,7 @@ export type Database = {
           created_at: string
         }
         Insert: {
-          profile_id: string
+          user_id: string
           instagram_post_id: string
           caption?: string | null
           media_type: 'IMAGE' | 'VIDEO' | 'CAROUSEL_ALBUM'

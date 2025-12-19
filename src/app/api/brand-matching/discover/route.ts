@@ -24,20 +24,20 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseAdmin()
 
     // Get creator's profile data with dream brands and past brands
-    const { data: creatorProfile, error: profileError } = await supabase
-      .from('creator_profiles')
-      .select('profile_data')
-      .eq('user_id', userId)
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('creator_data')
+      .eq('id', userId)
       .single()
 
-    if (profileError || !creatorProfile) {
+    if (profileError || !profile) {
       return NextResponse.json(
         { error: 'Creator profile not found' },
         { status: 404 }
       )
     }
 
-    const profileData = creatorProfile.profile_data as any
+    const profileData = (profile as any).creator_data || {}
     const dreamBrands = profileData?.identity?.dreamBrands || []
     const pastBrands = profileData?.identity?.pastBrands || []
 

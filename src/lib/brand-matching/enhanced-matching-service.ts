@@ -36,15 +36,22 @@ export class EnhancedBrandMatchingService {
     try {
       const supabase = getSupabaseAdmin()
       
-      // Get creator profile
-      const { data: creatorProfile, error: profileError } = await supabase
-        .from('creator_profiles')
-        .select('*')
-        .eq('user_id', creatorId)
+      // Get creator profile from profiles table
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('creator_data, creator_niches, past_brands')
+        .eq('id', creatorId)
         .single() as { data: any; error: any }
 
-      if (profileError || !creatorProfile) {
+      if (profileError || !profile) {
         throw new Error('Creator profile not found')
+      }
+
+      // Build creatorProfile object for matching algorithm compatibility
+      const creatorProfile = {
+        profile_data: profile.creator_data,
+        creator_niches: profile.creator_niches,
+        past_brands: profile.past_brands
       }
 
       // Get brands from database with smart filtering
@@ -55,7 +62,7 @@ export class EnhancedBrandMatchingService {
         // All brands in the table are assumed to be active and work with influencers
 
       // Filter by creator's location - brands must ship to at least one of creator's audience locations
-      const creatorLocations = (creatorProfile.profile_data as any)?.audienceDemographics?.topLocations || []
+      const creatorLocations = profile.creator_data?.audienceDemographics?.topLocations || []
       const creatorCountries = creatorLocations.map((loc: any) => loc.country)
       
       // Since ships_to is a pipe-separated string, we'll filter in JavaScript after fetching
@@ -199,12 +206,12 @@ export class EnhancedBrandMatchingService {
   async getSimilarBrandMatches(creatorId: string) {
     try {
       const supabase = getSupabaseAdmin()
-      
-      // Get creator's past brands
+
+      // Get creator's past brands from profiles table
       const { data: profile } = await supabase
-        .from('creator_profiles')
+        .from('profiles')
         .select('past_brands')
-        .eq('user_id', creatorId)
+        .eq('id', creatorId)
         .single() as { data: { past_brands: string[] } | null; error: any }
 
       if (!profile?.past_brands || profile.past_brands.length === 0) {

@@ -56,7 +56,7 @@ export const GET = withSecurityHeaders(
     const { data: posts, error: postsError } = await supabaseAdmin
       .from('instagram_posts')
       .select('*')
-      .eq('profile_id', userId)
+      .eq('user_id', userId)
       .order('timestamp', { ascending: false })
       .limit(10) as { data: any[] | null; error: any }
 
@@ -165,7 +165,7 @@ export const GET = withSecurityHeaders(
     const { count: postsInTimeRange } = await supabaseAdmin
       .from('instagram_posts')
       .select('*', { count: 'exact', head: true })
-      .eq('profile_id', userId)
+      .eq('user_id', userId)
       .gte('timestamp', cutoffDate.toISOString())
 
     let metrics = null

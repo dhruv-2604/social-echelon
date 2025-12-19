@@ -94,7 +94,7 @@ export const POST = withSecurityHeaders(
     const { data: posts, error: postsError } = await supabaseAdmin
       .from('instagram_posts')
       .select('*')
-      .eq('profile_id', userId)
+      .eq('user_id', userId)
       .order('timestamp', { ascending: false })
       .limit(20) as { data: any[] | null; error: any }
 

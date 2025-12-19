@@ -47,7 +47,7 @@ export const GET = withSecurityHeaders(
             posts_count,
             bio,
             niche,
-            content_style,
+            creator_data,
             id
           `)
           .eq('instagram_username', username)
@@ -59,21 +59,17 @@ export const GET = withSecurityHeaders(
           }, { status: 404 })
         }
 
-        // Get sanitized brand matching profile data (public fields only)
-        const { data: creatorProfile } = await supabaseAdmin
-          .from('creator_profiles')
-          .select('profile_data')
-          .eq('user_id', (profile as any).id)
-          .single()
+        // Get creator_data from profiles table (no need for separate query)
+        const creatorData = (profile as any).creator_data
 
         // Extract only public-facing data from brand profile
-        const publicProfileData = creatorProfile?.profile_data ? {
-          contentPillars: (creatorProfile.profile_data as any).identity?.contentPillars?.slice(0, 5) || [],
-          brandValues: (creatorProfile.profile_data as any).identity?.brandValues?.slice(0, 8) || [],
-          skills: (creatorProfile.profile_data as any).professional?.skills?.slice(0, 10) || [],
-          languages: (creatorProfile.profile_data as any).professional?.languages || [],
-          audienceLocations: (creatorProfile.profile_data as any).analytics?.topLocations?.slice(0, 3) || [],
-          ageRanges: (creatorProfile.profile_data as any).analytics?.ageRanges?.slice(0, 3) || []
+        const publicProfileData = creatorData ? {
+          contentPillars: creatorData.identity?.contentPillars?.slice(0, 5) || [],
+          brandValues: creatorData.identity?.brandValues?.slice(0, 8) || [],
+          skills: creatorData.professional?.skills?.slice(0, 10) || [],
+          languages: creatorData.professional?.languages || [],
+          audienceLocations: creatorData.analytics?.topLocations?.slice(0, 3) || [],
+          ageRanges: creatorData.analytics?.ageRanges?.slice(0, 3) || []
         } : null
 
         // Get recent posts for portfolio (public posts only)
@@ -89,7 +85,7 @@ export const GET = withSecurityHeaders(
             comment_count,
             media_type
           `)
-          .eq('profile_id', (profile as any).id)
+          .eq('user_id', (profile as any).id)
           .order('timestamp', { ascending: false })
           .limit(9)
 
@@ -115,7 +111,6 @@ export const GET = withSecurityHeaders(
           posts_count: Math.max(0, (profile as any).posts_count || 0),
           bio: (profile as any).bio?.substring(0, 200), // Limit bio length
           niche: (profile as any).niche,
-          content_style: (profile as any).content_style,
           brand_profile: publicProfileData,
           recent_posts: sanitizedPosts,
           // Add media kit specific fields

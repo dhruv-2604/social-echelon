@@ -269,7 +269,7 @@ async function processInstagramSync(payload: any, userId?: string) {
   if (mediaData.data && mediaData.data.length > 0) {
     const posts = mediaData.data.map((post: any) => ({
       id: post.id,
-      profile_id: userId,
+      user_id: userId,
       caption: post.caption,
       media_type: post.media_type,
       media_url: post.media_url,

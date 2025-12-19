@@ -228,7 +228,7 @@ export class ContentAnalyzer {
     const { data: posts } = await supabaseAdmin
       .from('instagram_posts')
       .select('*')
-      .eq('profile_id', userId)
+      .eq('user_id', userId)
       .gte('timestamp', thirtyDaysAgo.toISOString())
       .order('timestamp', { ascending: false }) as { data: any[] | null; error: any }
     

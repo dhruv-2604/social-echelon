@@ -64,20 +64,17 @@ export const GET = withSecurityHeaders(
             full_name,
             instagram_username,
             follower_count,
-            engagement_rate
+            engagement_rate,
+            creator_data
           `)
           .eq('id', userId)
-          .single()
-
-        const { data: creatorProfile } = await supabaseAdmin
-          .from('creator_profiles')
-          .select('profile_data')
-          .eq('user_id', userId)
           .single()
 
         if (!profile) {
           return NextResponse.json({ error: 'Creator profile not found' }, { status: 404 })
         }
+
+        const creatorData = (profile as any).creator_data
 
         // Validate that OpenAI API key is configured
         if (!process.env.OPENAI_API_KEY) {
@@ -98,8 +95,8 @@ export const GET = withSecurityHeaders(
           - Instagram: @${sanitizeInput(profile.instagram_username as string || 'unknown')}
           - Followers: ${Math.max(0, profile.follower_count as number || 0)}
           - Engagement Rate: ${Math.max(0, Math.min(100, profile.engagement_rate as number || 0))}%
-          - Content Focus: ${sanitizeInput((creatorProfile?.profile_data as any)?.identity?.contentPillars?.slice(0, 3)?.join(', ') || 'Not specified')}
-          - Audience: ${sanitizeInput((creatorProfile?.profile_data as any)?.analytics?.audienceDemographics?.topLocations?.[0]?.country as string || 'Global')} based
+          - Content Focus: ${sanitizeInput(creatorData?.identity?.contentPillars?.slice(0, 3)?.join(', ') || 'Not specified')}
+          - Audience: ${sanitizeInput(creatorData?.analytics?.audienceDemographics?.topLocations?.[0]?.country as string || 'Global')} based
           
           Brand Info:
           - Name: ${sanitizeInput((match.brand as any)?.display_name as string || 'Brand')}
@@ -174,7 +171,7 @@ export const GET = withSecurityHeaders(
         const dmPrompt = `
           Generate a SHORT, NATURAL Instagram DM for brand outreach.
           
-          Creator: @${sanitizeInput(profile.instagram_username as string)} (${sanitizeInput((creatorProfile?.profile_data as any)?.identity?.contentPillars?.[0] as string || 'lifestyle')} creator)
+          Creator: @${sanitizeInput(profile.instagram_username as string)} (${sanitizeInput(creatorData?.identity?.contentPillars?.[0] as string || 'lifestyle')} creator)
           Brand: ${sanitizeInput((match.brand as any)?.display_name as string)} (@${sanitizeInput((match.brand as any)?.instagram_handle as string || 'unknown')})
           
           CRITICAL RULES:

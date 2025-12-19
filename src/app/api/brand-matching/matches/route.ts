@@ -31,12 +31,12 @@ export const GET = withSecurityHeaders(
 
       // Check if user has completed brand matching onboarding
       const { data: profile } = await supabaseAdmin
-        .from('creator_profiles')
-        .select('profile_data')
-        .eq('user_id', userId)
+        .from('profiles')
+        .select('creator_data')
+        .eq('id', userId)
         .single()
 
-      if (!(profile as any)?.profile_data?.identity) {
+      if (!(profile as any)?.creator_data?.identity) {
         return NextResponse.json({ 
           error: 'Brand matching profile not completed',
           requiresOnboarding: true 

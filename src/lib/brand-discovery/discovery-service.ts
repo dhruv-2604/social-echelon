@@ -5,21 +5,21 @@ export class BrandDiscoveryService {
   // Find brands that other creators in the same niche have worked with
   async discoverFromNichePeers(creatorId: string) {
     try {
-      // Get the creator's niches using the indexed column
+      // Get the creator's niches from profiles table
       const supabase = getSupabaseAdmin()
-      const { data: creatorProfile } = await supabase
-        .from('creator_profiles')
+      const { data: profile } = await supabase
+        .from('profiles')
         .select('creator_niches, past_brands')
-        .eq('user_id', creatorId)
+        .eq('id', creatorId)
         .single() as { data: { creator_niches: string[]; past_brands: string[] } | null; error: any }
 
-      if (!creatorProfile || !creatorProfile.creator_niches || creatorProfile.creator_niches.length === 0) {
+      if (!profile || !profile.creator_niches || profile.creator_niches.length === 0) {
         console.log('Creator profile or niches not found')
         return []
       }
 
-      const creatorNiches = creatorProfile.creator_niches
-      const creatorPastBrands = creatorProfile.past_brands || []
+      const creatorNiches = profile.creator_niches
+      const creatorPastBrands = profile.past_brands || []
 
       // Use the view to efficiently find brands from peers in the same niche
       const { data: peerBrands } = await supabase
@@ -109,9 +109,9 @@ export class BrandDiscoveryService {
     try {
       const supabase = getSupabaseAdmin()
       const { data: profile } = await supabase
-        .from('creator_profiles')
+        .from('profiles')
         .select('past_brands')
-        .eq('user_id', creatorId)
+        .eq('id', creatorId)
         .single() as { data: { past_brands: string[] | null } | null; error: any }
 
       if (!profile?.past_brands) {

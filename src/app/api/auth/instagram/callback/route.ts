@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
     if (media.length > 0) {
       console.log('Storing', media.length, 'Instagram posts')
       const postsToInsert = media.map(post => ({
-        profile_id: userId,
+        user_id: userId,
         instagram_post_id: post.id,
         caption: post.caption || '',
         media_type: post.media_type,
@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
 
       const { error: postsError } = await supabaseAdmin
         .from('instagram_posts')
-        .upsert(postsToInsert, { onConflict: 'profile_id,instagram_post_id' })
+        .upsert(postsToInsert, { onConflict: 'user_id,instagram_post_id' })
 
       if (postsError) {
         console.error('Error storing posts:', postsError)

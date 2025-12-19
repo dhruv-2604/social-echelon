@@ -12,27 +12,27 @@ export const GET = withSecurityHeaders(
         const supabaseAdmin = getSupabaseAdmin()
 
         // Check if user has completed brand matching profile
-        const { data: creatorProfile, error } = await supabaseAdmin
-          .from('creator_profiles')
+        const { data: profile, error } = await supabaseAdmin
+          .from('profiles')
           .select(`
-            user_id,
+            id,
             onboarding_completed,
-            profile_data,
+            creator_data,
             created_at,
             updated_at
           `)
-          .eq('user_id', userId)
+          .eq('id', userId)
           .single()
 
-        if (error || !creatorProfile) {
-          return NextResponse.json({ 
+        if (error || !profile) {
+          return NextResponse.json({
             hasProfile: false,
             message: 'Brand matching profile not found'
           })
         }
 
         // Extract and sanitize profile data - only return what's needed for UI
-        const profileData = creatorProfile.profile_data as any || {}
+        const profileData = (profile as any).creator_data || {}
         const sanitizedProfile = {
           identity: {
             contentPillars: profileData.identity?.contentPillars?.slice(0, 10) || [],
@@ -58,10 +58,10 @@ export const GET = withSecurityHeaders(
           // Don't expose sensitive data like past brands, dream brands, stress triggers, etc.
         }
 
-        return NextResponse.json({ 
+        return NextResponse.json({
           hasProfile: true,
           profile: sanitizedProfile,
-          onboardingCompleted: creatorProfile.onboarding_completed || false,
+          onboardingCompleted: (profile as any).onboarding_completed || false,
           profileCompleteness: calculateProfileCompleteness(sanitizedProfile)
         })
 
