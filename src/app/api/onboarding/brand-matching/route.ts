@@ -32,7 +32,7 @@ export const POST = withSecurityHeaders(
     const { data: recentPosts } = await supabaseAdmin
       .from('instagram_posts')
       .select('likes_count, comments_count')
-      .eq('profile_id', userId)
+      .eq('user_id', userId)
       .order('timestamp', { ascending: false })
       .limit(20) as { data: Array<{likes_count: number; comments_count: number}> | null; error: any }
 
@@ -138,30 +138,23 @@ export const POST = withSecurityHeaders(
 
     // Instagram handle already set from profile query above
 
-    // Store the creator profile
-    const { error: insertError } = await supabaseAdmin
-      .from('creator_profiles')
-      .upsert({
-        user_id: userId,
-        profile_data: creatorProfile,
-        onboarding_completed: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-
-    if (insertError) {
-      console.error('Error saving creator profile:', insertError)
-      return NextResponse.json({ error: 'Failed to save profile' }, { status: 500 })
-    }
-
-    // Update user profile to indicate brand matching is enabled
-    await supabaseAdmin
+    // Store the creator profile data directly in profiles table
+    const { error: updateError } = await supabaseAdmin
       .from('profiles')
       .update({
+        creator_data: creatorProfile,
+        creator_niches: validatedBody.identity.contentPillars || [],
+        past_brands: validatedBody.identity.pastBrands || [],
+        onboarding_completed: true,
         brand_matching_enabled: true,
         updated_at: new Date().toISOString()
       })
       .eq('id', userId)
+
+    if (updateError) {
+      console.error('Error saving creator profile:', updateError)
+      return NextResponse.json({ error: 'Failed to save profile' }, { status: 500 })
+    }
 
     // Trigger initial brand matching process (async)
     // This would normally trigger a background job
