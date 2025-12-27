@@ -43,20 +43,34 @@ export const POST = withSecurityHeaders(
               created_at: new Date().toISOString()
             })
 
-          // In production, you would send an email here
-          // For now, we'll just log it
-          console.log(`
-            ========================================
-            PASSWORD RESET REQUESTED
-            ========================================
-            Email: ${user.email}
-            Reset Link: ${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password?token=${resetToken}
-            Expires: ${resetTokenExpiry}
-            ========================================
-          `)
+          // Send password reset email via Resend
+          if (process.env.RESEND_API_KEY) {
+            const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password?token=${resetToken}`
 
-          // TODO: Integrate with email service (SendGrid, Resend, etc.)
-          // await sendPasswordResetEmail(user.email, resetToken)
+            await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                from: `Social Echelon <${process.env.OUTREACH_FROM_EMAIL || 'noreply@socialechelon.co'}>`,
+                to: user.email,
+                subject: 'Reset your Social Echelon password',
+                html: `
+                  <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                    <h2 style="color: #333;">Reset Your Password</h2>
+                    <p>Hi${user.full_name ? ` ${user.full_name}` : ''},</p>
+                    <p>We received a request to reset your password. Click the button below to create a new password:</p>
+                    <a href="${resetUrl}" style="display: inline-block; background: #8B5CF6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0;">Reset Password</a>
+                    <p style="color: #666; font-size: 14px;">This link will expire in 1 hour. If you didn't request this, you can safely ignore this email.</p>
+                    <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
+                    <p style="color: #999; font-size: 12px;">Social Echelon - Wellness-first creator growth</p>
+                  </div>
+                `
+              })
+            })
+          }
         }
 
         // Always return success to prevent email enumeration
