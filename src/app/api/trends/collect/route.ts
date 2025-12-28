@@ -159,7 +159,6 @@ export const GET = withSecurityHeaders(
         // Check daily budget
         const { withinBudget, postsCollectedToday } = await checkDailyBudget()
         if (!withinBudget) {
-          console.log(`Daily budget limit reached: ${postsCollectedToday} posts already collected`)
           return NextResponse.json({
             success: false,
             message: 'Daily budget limit reached',
@@ -195,7 +194,6 @@ export const GET = withSecurityHeaders(
         // Reduce posts per hashtag for cron to stay within 10sec timeout
         const postsPerHashtagOverride = isVercelCron ? 50 : 500
 
-        console.log(`Starting Instagram trend collection for ${nichesToCollect.length} niches`)
         
         const allTrends = []
         const remainingBudget = MAX_POSTS_PER_DAY - postsCollectedToday
@@ -204,11 +202,9 @@ export const GET = withSecurityHeaders(
         for (const niche of nichesToCollect) {
           // Check remaining budget
           if (totalPostsCollected >= remainingBudget) {
-            console.log(`Budget exhausted after ${totalPostsCollected} posts`)
             break
           }
           
-          console.log(`Collecting trends for ${niche}`)
           
           try {
             // Collect from both Instagram and Twitter
@@ -227,7 +223,6 @@ export const GET = withSecurityHeaders(
             const postsPerHashtag = postsPerHashtagOverride
             
             if (postsPerHashtag < 50) {
-              console.log(`Skipping ${niche} - insufficient budget (${postsPerHashtag} posts/hashtag)`)
               continue
             }
             
@@ -242,7 +237,6 @@ export const GET = withSecurityHeaders(
                 break // Success
               } catch (error) {
                 if (attempt === 3) throw error
-                console.warn(`Attempt ${attempt} failed for ${niche}, retrying...`)
                 await new Promise(resolve => setTimeout(resolve, 2000 * attempt))
               }
             }
