@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { X } from 'lucide-react'
 import { WellnessButton } from './wellness/WellnessButton'
 import { cn } from '@/lib/utils'
@@ -41,16 +41,34 @@ export default function UserPreferencesModal({
     onClose()
   }
 
+  // Handle Escape key to close modal
+  const handleEscapeKey = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape') onClose()
+  }, [onClose])
+
+  useEffect(() => {
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscapeKey)
+      return () => document.removeEventListener('keydown', handleEscapeKey)
+    }
+  }, [isOpen, handleEscapeKey])
+
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-wellness-neutral-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+    <div
+      className="fixed inset-0 bg-wellness-neutral-900/20 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="preferences-modal-title"
+    >
       <div className="bg-white/95 backdrop-blur-xl rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-wellness-xl border border-white/50">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-wellness-neutral-100 sticky top-0 bg-white/90 backdrop-blur-md z-10">
-          <h2 className="text-2xl font-display font-bold text-wellness-neutral-900">Content Preferences</h2>
+          <h2 id="preferences-modal-title" className="text-2xl font-display font-bold text-wellness-neutral-900">Content Preferences</h2>
           <button
             onClick={onClose}
+            aria-label="Close dialog"
             className="p-2 hover:bg-wellness-neutral-100 rounded-full transition-colors text-wellness-neutral-500 hover:text-wellness-neutral-900"
           >
             <X className="w-5 h-5" />
