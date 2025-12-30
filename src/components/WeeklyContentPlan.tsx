@@ -73,24 +73,33 @@ export default function WeeklyContentPlan() {
 
   useEffect(() => {
     fetchContentPlan()
-    
+
     // Set up weekly refresh (every Sunday at 8 PM)
+    let timeoutId: NodeJS.Timeout | null = null
+    let intervalId: NodeJS.Timeout | null = null
+
     const setupWeeklyRefresh = () => {
       const now = new Date()
       const nextSunday = new Date(now)
       nextSunday.setDate(now.getDate() + (7 - now.getDay()) % 7)
       nextSunday.setHours(20, 0, 0, 0) // 8 PM
-      
+
       const timeUntilRefresh = nextSunday.getTime() - now.getTime()
-      
-      setTimeout(() => {
+
+      timeoutId = setTimeout(() => {
         fetchContentPlan()
         // Set up recurring weekly refresh
-        setInterval(fetchContentPlan, 7 * 24 * 60 * 60 * 1000) // Every week
+        intervalId = setInterval(fetchContentPlan, 7 * 24 * 60 * 60 * 1000) // Every week
       }, timeUntilRefresh)
     }
 
     setupWeeklyRefresh()
+
+    // Cleanup on unmount
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId)
+      if (intervalId) clearInterval(intervalId)
+    }
   }, [])
 
   const fetchContentPlan = async (preferences?: any) => {

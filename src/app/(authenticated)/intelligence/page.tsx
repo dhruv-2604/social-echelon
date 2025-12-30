@@ -123,10 +123,24 @@ export default function IntelligencePage() {
     )
   }
 
+  // Map API content types to CreativeSpace types
+  const mapContentType = (type?: string): 'reel' | 'carousel' | 'image' | 'story' => {
+    const typeMap: Record<string, 'reel' | 'carousel' | 'image' | 'story'> = {
+      'reels': 'reel',
+      'reel': 'reel',
+      'carousel_album': 'carousel',
+      'carousel': 'carousel',
+      'image': 'image',
+      'video': 'reel',
+      'story': 'story'
+    }
+    return typeMap[type?.toLowerCase() || ''] || 'reel'
+  }
+
   // Transform API data to CreativeSpace format if needed
-  const suggestions = weeklyPlan?.content_suggestions?.map((item: any, index: number) => ({
+  const suggestions = weeklyPlan?.content_suggestions?.map((item: ContentSuggestion, index: number) => ({
     id: `${index}`,
-    type: item.content_type?.toLowerCase() || 'reel',
+    type: mapContentType(item.content_type),
     title: item.hook || 'Content Suggestion',
     content: item.content_idea,
     caption: item.caption_starter || '',
