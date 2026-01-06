@@ -4,13 +4,14 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { WellnessButton } from '@/components/wellness/WellnessButton'
 import { WellnessCard } from '@/components/wellness/WellnessCard'
-import { 
-  Mail, 
-  Lock, 
+import {
+  Mail,
+  Lock,
   ArrowRight,
   Sun,
   Moon,
-  Coffee
+  Coffee,
+  AlertCircle
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -104,13 +105,25 @@ export default function LoginPage() {
           </motion.p>
 
           {/* Login Form */}
-          <motion.form 
-            onSubmit={handleSubmit} 
+          <motion.form
+            onSubmit={handleSubmit}
             className="space-y-5"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
           >
+            {/* Error Display */}
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700"
+              >
+                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                <span className="text-sm">{error}</span>
+              </motion.div>
+            )}
+
             <div>
               <label className="block text-sm font-medium text-wellness-neutral-700 mb-2">
                 Email Address

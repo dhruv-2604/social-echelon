@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createSupabaseBrowserClient } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
-import { Send, Plus, Search, X } from 'lucide-react'
+import { Send, Plus, Search, X, CheckCircle, AlertCircle } from 'lucide-react'
 import { WellnessButton } from './wellness/WellnessButton'
 import { cn } from '@/lib/utils'
 
@@ -15,6 +15,7 @@ export default function BrandRequest({ onRequestSubmitted }: BrandRequestProps) 
   const { user } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const supabase = createSupabaseBrowserClient()
   const [formData, setFormData] = useState({
     brand_name: '',
@@ -34,6 +35,14 @@ export default function BrandRequest({ onRequestSubmitted }: BrandRequestProps) 
     'Over $10,000',
     'Not sure'
   ]
+
+  // Auto-dismiss notification after 5 seconds
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => setNotification(null), 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [notification])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -63,12 +72,18 @@ export default function BrandRequest({ onRequestSubmitted }: BrandRequestProps) 
       
       setIsOpen(false)
       if (onRequestSubmitted) onRequestSubmitted()
-      
+
       // Show success message
-      alert('Brand request submitted! We\'ll research this brand and add it to our database.')
+      setNotification({
+        type: 'success',
+        message: 'Brand request submitted! We\'ll research this brand and add it to our database.'
+      })
     } catch (error) {
       console.error('Error submitting brand request:', error)
-      alert('Failed to submit request. Please try again.')
+      setNotification({
+        type: 'error',
+        message: 'Failed to submit request. Please try again.'
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -76,6 +91,31 @@ export default function BrandRequest({ onRequestSubmitted }: BrandRequestProps) 
 
   return (
     <>
+      {/* Notification Toast */}
+      {notification && (
+        <div className="fixed top-6 right-6 z-50 animate-in slide-in-from-top-2 fade-in duration-300">
+          <div className={cn(
+            'flex items-center gap-3 px-4 py-3 rounded-xl shadow-wellness-lg border backdrop-blur-sm',
+            notification.type === 'success'
+              ? 'bg-green-50/95 border-green-200 text-green-800'
+              : 'bg-red-50/95 border-red-200 text-red-800'
+          )}>
+            {notification.type === 'success' ? (
+              <CheckCircle className="w-5 h-5 text-green-600" />
+            ) : (
+              <AlertCircle className="w-5 h-5 text-red-600" />
+            )}
+            <span className="text-sm font-medium">{notification.message}</span>
+            <button
+              onClick={() => setNotification(null)}
+              className="ml-2 p-1 hover:bg-black/5 rounded-full transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Floating Action Button */}
       <button
         onClick={() => setIsOpen(true)}
