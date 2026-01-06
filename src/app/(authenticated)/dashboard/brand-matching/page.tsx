@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { createSupabaseBrowserClient } from '@/lib/supabase'
-import { Sparkles, Mail, Copy, Filter, Search, Building2, MapPin, Target, TrendingUp, Plus } from 'lucide-react'
+import { Sparkles, Mail, Copy, Filter, Search, Building2, MapPin, Target, TrendingUp, Plus, CheckCircle, AlertCircle, X } from 'lucide-react'
 import BrandRequest from '@/components/BrandRequest'
 import Link from 'next/link'
 
@@ -51,7 +51,27 @@ export default function BrandMatchingPage() {
   const [selectedMatch, setSelectedMatch] = useState<BrandMatch | null>(null)
   const [generatingOutreach, setGeneratingOutreach] = useState(false)
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(true)
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
   const supabase = createSupabaseBrowserClient()
+
+  // Auto-dismiss notification after 5 seconds
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => setNotification(null), 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [notification])
+
+  // Handle Escape key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && selectedMatch) {
+        setSelectedMatch(null)
+      }
+    }
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [selectedMatch])
 
   useEffect(() => {
     if (user) {
@@ -100,7 +120,7 @@ export default function BrandMatchingPage() {
       if (data.emailDraft) {
         const emailText = `Subject: ${data.emailDraft.subject}\n\n${data.emailDraft.body}`
         navigator.clipboard.writeText(emailText)
-        alert('Email draft copied to clipboard!')
+        setNotification({ type: 'success', message: 'Email draft copied to clipboard!' })
       }
     } catch (error) {
       console.error('Error generating outreach:', error)
@@ -139,6 +159,30 @@ export default function BrandMatchingPage() {
 
   return (
     <div className="p-8">
+      {/* Notification Toast */}
+      {notification && (
+        <div className="fixed top-6 right-6 z-50 animate-in slide-in-from-top-2 fade-in duration-300">
+          <div className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border backdrop-blur-sm ${
+            notification.type === 'success'
+              ? 'bg-green-50/95 border-green-200 text-green-800'
+              : 'bg-red-50/95 border-red-200 text-red-800'
+          }`}>
+            {notification.type === 'success' ? (
+              <CheckCircle className="w-5 h-5 text-green-600" />
+            ) : (
+              <AlertCircle className="w-5 h-5 text-red-600" />
+            )}
+            <span className="text-sm font-medium">{notification.message}</span>
+            <button
+              onClick={() => setNotification(null)}
+              className="ml-2 p-1 hover:bg-black/5 rounded-full transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Brand Matches</h1>
@@ -340,12 +384,18 @@ export default function BrandMatchingPage() {
 
       {/* Match Details Modal */}
       {selectedMatch && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="match-details-title"
+          onClick={(e) => e.target === e.currentTarget && setSelectedMatch(null)}
+        >
           <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-start mb-6">
                 <div>
-                  <h2 className="text-2xl font-bold">{selectedMatch.brand.name}</h2>
+                  <h2 id="match-details-title" className="text-2xl font-bold">{selectedMatch.brand.name}</h2>
                   <p className="text-gray-600">Detailed Match Analysis</p>
                 </div>
                 <button
@@ -363,10 +413,17 @@ export default function BrandMatchingPage() {
                   <div className="space-y-3">
                     <div>
                       <div className="flex justify-between mb-1">
-                        <span className="text-sm">Values Alignment</span>
+                        <span className="text-sm" id="values-label">Values Alignment</span>
                         <span className="text-sm font-medium">{selectedMatch.scores.valuesAlignment.score}%</span>
                       </div>
-                      <div className="bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-gray-200 rounded-full h-2"
+                        role="progressbar"
+                        aria-valuenow={selectedMatch.scores.valuesAlignment.score}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-labelledby="values-label"
+                      >
                         <div
                           className="bg-purple-600 h-2 rounded-full"
                           style={{ width: `${selectedMatch.scores.valuesAlignment.score}%` }}
@@ -375,10 +432,17 @@ export default function BrandMatchingPage() {
                     </div>
                     <div>
                       <div className="flex justify-between mb-1">
-                        <span className="text-sm">Audience Match</span>
+                        <span className="text-sm" id="audience-label">Audience Match</span>
                         <span className="text-sm font-medium">{selectedMatch.scores.audienceResonance.score}%</span>
                       </div>
-                      <div className="bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-gray-200 rounded-full h-2"
+                        role="progressbar"
+                        aria-valuenow={selectedMatch.scores.audienceResonance.score}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-labelledby="audience-label"
+                      >
                         <div
                           className="bg-blue-600 h-2 rounded-full"
                           style={{ width: `${selectedMatch.scores.audienceResonance.score}%` }}
@@ -387,10 +451,17 @@ export default function BrandMatchingPage() {
                     </div>
                     <div>
                       <div className="flex justify-between mb-1">
-                        <span className="text-sm">Content Style</span>
+                        <span className="text-sm" id="content-label">Content Style</span>
                         <span className="text-sm font-medium">{selectedMatch.scores.contentStyleMatch.score}%</span>
                       </div>
-                      <div className="bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-gray-200 rounded-full h-2"
+                        role="progressbar"
+                        aria-valuenow={selectedMatch.scores.contentStyleMatch.score}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-labelledby="content-label"
+                      >
                         <div
                           className="bg-green-600 h-2 rounded-full"
                           style={{ width: `${selectedMatch.scores.contentStyleMatch.score}%` }}

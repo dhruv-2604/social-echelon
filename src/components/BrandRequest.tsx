@@ -44,6 +44,17 @@ export default function BrandRequest({ onRequestSubmitted }: BrandRequestProps) 
     }
   }, [notification])
 
+  // Handle Escape key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [isOpen])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user) return
@@ -129,11 +140,17 @@ export default function BrandRequest({ onRequestSubmitted }: BrandRequestProps) 
 
       {/* Modal */}
       {isOpen && (
-        <div className="fixed inset-0 bg-wellness-neutral-900/20 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+        <div
+          className="fixed inset-0 bg-wellness-neutral-900/20 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="brand-request-title"
+          onClick={(e) => e.target === e.currentTarget && setIsOpen(false)}
+        >
           <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-wellness-2xl max-w-md w-full max-h-[90vh] overflow-y-auto border border-white/50">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-display font-bold text-wellness-neutral-900">Request a Brand</h2>
+                <h2 id="brand-request-title" className="text-2xl font-display font-bold text-wellness-neutral-900">Request a Brand</h2>
                 <button
                   onClick={() => setIsOpen(false)}
                   className="p-2 hover:bg-wellness-neutral-100 rounded-full transition-colors text-wellness-neutral-500 hover:text-wellness-neutral-900"

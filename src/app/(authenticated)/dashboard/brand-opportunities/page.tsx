@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
+import {
   Search, Filter, DollarSign, TrendingUp, Users, Target,
   ChevronRight, Mail, Instagram, ExternalLink, Sparkles,
-  Heart, AlertCircle, Clock, CheckCircle, Flower2, TreePine, 
+  Heart, AlertCircle, Clock, CheckCircle, Flower2, TreePine,
   Leaf, MapPin, Send
 } from 'lucide-react'
+import { BreathingLoader } from '@/components/wellness/BreathingLoader'
 
 interface BrandMatch {
   id: string
@@ -89,6 +90,17 @@ export default function BrandOpportunities() {
     fetchBrandMatches()
   }, [])
 
+  // Handle Escape key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && selectedMatch) {
+        setSelectedMatch(null)
+      }
+    }
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [selectedMatch])
+
   async function fetchBrandMatches() {
     try {
       // Check if user has completed onboarding
@@ -128,10 +140,7 @@ export default function BrandOpportunities() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-purple-300 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Cultivating your partnership garden...</p>
-        </div>
+        <BreathingLoader text="Cultivating your partnership garden..." size="lg" />
       </div>
     )
   }
@@ -391,14 +400,17 @@ export default function BrandOpportunities() {
       {/* Match Details Modal - KEEP ALL FUNCTIONALITY */}
       <AnimatePresence>
         {selectedMatch && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
             onClick={() => setSelectedMatch(null)}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="brand-match-title"
           >
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
@@ -422,7 +434,7 @@ export default function BrandOpportunities() {
                       </div>
                     )}
                     <div>
-                      <h2 className="text-2xl font-light text-gray-900 flex items-center gap-2">
+                      <h2 id="brand-match-title" className="text-2xl font-light text-gray-900 flex items-center gap-2">
                         {selectedMatch.brand.name}
                         {selectedMatch.brand.verified && (
                           <CheckCircle className="w-5 h-5 text-blue-500" />
