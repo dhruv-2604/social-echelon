@@ -96,6 +96,17 @@ export default function TrendGardenPage() {
     fetchAllTrends()
   }, [niche, platform])
 
+  // Handle Escape key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && selectedTrend) {
+        setSelectedTrend(null)
+      }
+    }
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [selectedTrend])
+
   const fetchAllTrends = async () => {
     try {
       setLoading(true)
@@ -771,11 +782,14 @@ export default function TrendGardenPage() {
               exit={{ scale: 0.9, opacity: 0 }}
               className="bg-white rounded-2xl p-8 max-w-3xl w-full max-h-[85vh] overflow-y-auto shadow-2xl border border-gray-100"
               onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="trend-detail-title"
             >
               {/* Header */}
               <div className="flex items-start justify-between mb-8">
                 <div>
-                  <h2 className="text-3xl font-medium text-gray-800 mb-2">
+                  <h2 id="trend-detail-title" className="text-3xl font-medium text-gray-800 mb-2">
                     #{selectedTrend.metrics.hashtag || selectedTrend.trend_name}
                   </h2>
                   <div className="flex items-center gap-2">
@@ -787,8 +801,9 @@ export default function TrendGardenPage() {
                 <button
                   onClick={() => setSelectedTrend(null)}
                   className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  aria-label="Close trend details"
                 >
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>

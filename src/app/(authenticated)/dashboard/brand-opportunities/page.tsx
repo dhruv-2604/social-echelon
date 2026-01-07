@@ -459,11 +459,18 @@ export default function BrandOpportunities() {
                   <div className="space-y-3">
                     <div>
                       <div className="flex justify-between text-sm mb-1">
-                        <span>Values Alignment</span>
+                        <span id="values-align-label">Values Alignment</span>
                         <span className="font-medium">{selectedMatch.scores.valuesAlignment}%</span>
                       </div>
-                      <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                        <motion.div 
+                      <div
+                        className="h-3 bg-gray-100 rounded-full overflow-hidden"
+                        role="progressbar"
+                        aria-valuenow={selectedMatch.scores.valuesAlignment}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-labelledby="values-align-label"
+                      >
+                        <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${selectedMatch.scores.valuesAlignment}%` }}
                           transition={{ duration: 0.5 }}
@@ -473,11 +480,18 @@ export default function BrandOpportunities() {
                     </div>
                     <div>
                       <div className="flex justify-between text-sm mb-1">
-                        <span>Audience Resonance</span>
+                        <span id="audience-res-label">Audience Resonance</span>
                         <span className="font-medium">{selectedMatch.scores.audienceResonance}%</span>
                       </div>
-                      <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                        <motion.div 
+                      <div
+                        className="h-3 bg-gray-100 rounded-full overflow-hidden"
+                        role="progressbar"
+                        aria-valuenow={selectedMatch.scores.audienceResonance}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-labelledby="audience-res-label"
+                      >
+                        <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${selectedMatch.scores.audienceResonance}%` }}
                           transition={{ duration: 0.5, delay: 0.1 }}
@@ -487,11 +501,18 @@ export default function BrandOpportunities() {
                     </div>
                     <div>
                       <div className="flex justify-between text-sm mb-1">
-                        <span>Content Style Match</span>
+                        <span id="content-style-label">Content Style Match</span>
                         <span className="font-medium">{selectedMatch.scores.contentStyleMatch}%</span>
                       </div>
-                      <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                        <motion.div 
+                      <div
+                        className="h-3 bg-gray-100 rounded-full overflow-hidden"
+                        role="progressbar"
+                        aria-valuenow={selectedMatch.scores.contentStyleMatch}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-labelledby="content-style-label"
+                      >
+                        <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${selectedMatch.scores.contentStyleMatch}%` }}
                           transition={{ duration: 0.5, delay: 0.2 }}
@@ -501,11 +522,18 @@ export default function BrandOpportunities() {
                     </div>
                     <div>
                       <div className="flex justify-between text-sm mb-1">
-                        <span>Success Probability</span>
+                        <span id="success-prob-label">Success Probability</span>
                         <span className="font-medium">{selectedMatch.scores.successProbability}%</span>
                       </div>
-                      <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                        <motion.div 
+                      <div
+                        className="h-3 bg-gray-100 rounded-full overflow-hidden"
+                        role="progressbar"
+                        aria-valuenow={selectedMatch.scores.successProbability}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-labelledby="success-prob-label"
+                      >
+                        <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${selectedMatch.scores.successProbability}%` }}
                           transition={{ duration: 0.5, delay: 0.3 }}

@@ -2,10 +2,10 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  ChevronRight, ChevronLeft, Instagram, Target, DollarSign, 
+import {
+  ChevronRight, ChevronLeft, Instagram, Target, DollarSign,
   Heart, Check, Info, Flower2, Sparkles, TreePine, Leaf,
-  Sun, Moon, Coffee, Smile
+  Sun, Moon, Coffee, Smile, AlertCircle, Loader2
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
@@ -72,6 +72,8 @@ const WELLNESS_TRIGGERS = [
 export default function BrandMatchingOnboarding() {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [validationError, setValidationError] = useState<string | null>(null)
   const [formData, setFormData] = useState<OnboardingData>({
     analytics: {
       engagementRate: '',
@@ -110,7 +112,33 @@ export default function BrandMatchingOnboarding() {
     }
   })
 
+  const validateStep = (step: number): string | null => {
+    switch (step) {
+      case 2:
+        // Step 2: At least 1 content pillar or value should be selected
+        if (formData.identity.contentPillars.length === 0 && formData.identity.brandValues.length === 0) {
+          return 'Please add at least one content theme or select a value that matters to you'
+        }
+        break
+      case 4:
+        // Final validation before submit
+        if (formData.identity.contentPillars.length === 0 && formData.identity.brandValues.length === 0) {
+          return 'Please go back to Step 2 and add content themes or values'
+        }
+        break
+    }
+    return null
+  }
+
   const handleNext = () => {
+    setValidationError(null)
+
+    const error = validateStep(currentStep)
+    if (error) {
+      setValidationError(error)
+      return
+    }
+
     if (currentStep < 4) {
       setCurrentStep(currentStep + 1)
     } else {
@@ -119,24 +147,39 @@ export default function BrandMatchingOnboarding() {
   }
 
   const handleBack = () => {
+    setValidationError(null)
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1)
     }
   }
 
   const handleSubmit = async () => {
+    const error = validateStep(4)
+    if (error) {
+      setValidationError(error)
+      return
+    }
+
+    setIsSubmitting(true)
+    setValidationError(null)
+
     try {
       const response = await fetch('/api/onboarding/brand-matching', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       })
-      
+
       if (response.ok) {
         router.push('/dashboard/brand-opportunities')
+      } else {
+        setValidationError('Something went wrong. Please try again.')
+        setIsSubmitting(false)
       }
     } catch (error) {
       console.error('Error submitting onboarding:', error)
+      setValidationError('Unable to save your preferences. Please check your connection and try again.')
+      setIsSubmitting(false)
     }
   }
 
@@ -653,6 +696,11 @@ export default function BrandMatchingOnboarding() {
                       professional: { ...formData.professional, travelRadius: e.target.value }
                     })}
                     className="w-full"
+                    aria-label="Travel radius for shoots"
+                    aria-valuemin={0}
+                    aria-valuemax={500}
+                    aria-valuenow={parseInt(formData.professional.travelRadius)}
+                    aria-valuetext={`${formData.professional.travelRadius} miles`}
                   />
                   <div className="flex justify-between text-sm text-gray-600 mt-1">
                     <span>Home studio</span>
@@ -800,31 +848,60 @@ export default function BrandMatchingOnboarding() {
             )}
           </AnimatePresence>
 
+          {/* Validation Error Display */}
+          <AnimatePresence>
+            {validationError && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 mt-6"
+              >
+                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                <span className="text-sm">{validationError}</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Navigation */}
           <div className="flex justify-between mt-8">
             <motion.button
-              whileHover={{ scale: currentStep > 1 ? 1.05 : 1 }}
-              whileTap={{ scale: currentStep > 1 ? 0.95 : 1 }}
+              whileHover={{ scale: currentStep > 1 && !isSubmitting ? 1.05 : 1 }}
+              whileTap={{ scale: currentStep > 1 && !isSubmitting ? 0.95 : 1 }}
               onClick={handleBack}
               className={`flex items-center space-x-2 px-6 py-3 rounded-lg transition-all ${
-                currentStep === 1 
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                currentStep === 1 || isSubmitting
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
-              disabled={currentStep === 1}
+              disabled={currentStep === 1 || isSubmitting}
             >
               <ChevronLeft className="w-5 h-5" />
               <span>Back</span>
             </motion.button>
 
             <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: !isSubmitting ? 1.05 : 1 }}
+              whileTap={{ scale: !isSubmitting ? 0.95 : 1 }}
               onClick={handleNext}
-              className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-purple-400 to-pink-400 text-white rounded-lg hover:from-purple-500 hover:to-pink-500 transition-all shadow-lg"
+              disabled={isSubmitting}
+              className={`flex items-center space-x-2 px-6 py-3 rounded-lg transition-all shadow-lg ${
+                isSubmitting
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-purple-400 to-pink-400 text-white hover:from-purple-500 hover:to-pink-500'
+              }`}
             >
-              <span>{currentStep === 4 ? 'Start Growing 🌱' : 'Continue'}</span>
-              <ChevronRight className="w-5 h-5" />
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>Planting your garden...</span>
+                </>
+              ) : (
+                <>
+                  <span>{currentStep === 4 ? 'Start Growing 🌱' : 'Continue'}</span>
+                  <ChevronRight className="w-5 h-5" />
+                </>
+              )}
             </motion.button>
           </div>
         </motion.div>

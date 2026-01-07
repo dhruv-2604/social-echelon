@@ -254,6 +254,26 @@ export const SignupSchema = z.object({
   billingCycle: z.enum(['monthly', 'yearly']).default('monthly')
 })
 
+// Brand signup schema (separate from creator signup)
+export const BrandSignupSchema = z.object({
+  email: validateEmail,
+  password: z.string()
+    .min(8, "Password must be at least 8 characters")
+    .max(128, "Password too long")
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, "Password must contain at least one lowercase letter, one uppercase letter, and one number"),
+  companyName: validateAndSanitizeString,
+  contactName: validateAndSanitizeString,
+  website: z.string()
+    .url("Invalid website URL")
+    .max(500, "URL too long")
+    .optional()
+    .or(z.literal('')),
+  industry: z.string()
+    .max(100, "Industry name too long")
+    .optional()
+    .transform(val => val ? sanitizeString(val) : val)
+})
+
 // General API response schemas for consistent error handling
 export const ApiErrorSchema = z.object({
   error: z.string(),

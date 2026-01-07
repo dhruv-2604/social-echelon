@@ -135,7 +135,12 @@ export default function SignupPage() {
     setStep('plan')
   }
 
+  const [isCreatingAccount, setIsCreatingAccount] = useState(false)
+
   const handlePlanSelection = async () => {
+    setIsCreatingAccount(true)
+    setErrors({})
+
     // Save user data to database before payment
     try {
       const response = await fetch('/api/auth/signup', {
@@ -152,14 +157,17 @@ export default function SignupPage() {
 
       if (!response.ok) {
         setErrors({ submit: data.error || 'Failed to create account' })
+        setIsCreatingAccount(false)
         return
       }
 
       // Store user ID for payment processing
       localStorage.setItem('pending_user_id', data.userId)
+      setIsCreatingAccount(false)
       setStep('payment')
     } catch (error) {
       setErrors({ submit: 'Failed to create account. Please try again.' })
+      setIsCreatingAccount(false)
     }
   }
 
@@ -541,21 +549,38 @@ export default function SignupPage() {
                 </motion.div>
               </div>
 
+              {errors.submit && (
+                <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm text-center">
+                  {errors.submit}
+                </div>
+              )}
+
               <div className="mt-8 flex gap-4">
-                <WellnessButton 
-                  variant="ghost" 
+                <WellnessButton
+                  variant="ghost"
                   onClick={() => setStep('info')}
                   className="flex-1"
+                  disabled={isCreatingAccount}
                 >
                   Back
                 </WellnessButton>
-                <WellnessButton 
-                  variant="primary" 
+                <WellnessButton
+                  variant="primary"
                   onClick={handlePlanSelection}
                   className="flex-1"
+                  disabled={isCreatingAccount}
                 >
-                  Continue to Payment
-                  <ArrowRight className="w-4 h-4 ml-2" />
+                  {isCreatingAccount ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                      Creating Account...
+                    </>
+                  ) : (
+                    <>
+                      Continue to Payment
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </>
+                  )}
                 </WellnessButton>
               </div>
             </motion.div>
