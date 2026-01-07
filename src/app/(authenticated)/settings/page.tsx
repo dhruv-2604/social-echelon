@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  User, 
-  Palette, 
-  Bell, 
-  Shield, 
-  HelpCircle, 
-  LogOut, 
+import {
+  User,
+  Palette,
+  Bell,
+  Shield,
+  HelpCircle,
+  LogOut,
   Check,
   Loader2,
   Moon,
@@ -23,7 +23,10 @@ import {
   VolumeX,
   Pause,
   Play,
-  Coffee
+  Coffee,
+  Handshake,
+  DollarSign,
+  Users
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { WellnessCard } from '@/components/wellness/WellnessCard'
@@ -53,6 +56,23 @@ interface UserPreferences {
   posting_frequency: number
 }
 
+interface PartnershipAvailability {
+  actively_seeking: boolean
+  partnership_capacity: number
+  current_partnerships: number
+  min_budget: number
+  preferred_campaign_types: string[]
+}
+
+const CAMPAIGN_TYPES = [
+  { id: 'sponsored_post', label: 'Sponsored Posts', icon: '📸' },
+  { id: 'story', label: 'Stories', icon: '📱' },
+  { id: 'reel', label: 'Reels', icon: '🎬' },
+  { id: 'ugc', label: 'UGC', icon: '✨' },
+  { id: 'ambassador', label: 'Ambassador', icon: '🤝' },
+  { id: 'event', label: 'Events', icon: '🎉' }
+]
+
 export default function BoundariesPage() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState('energy')
@@ -74,6 +94,13 @@ export default function BoundariesPage() {
   const [vacationMode, setVacationMode] = useState(false)
   const [quietHours, setQuietHours] = useState({ enabled: true, start: '21:00', end: '09:00' })
   const [weekendMode, setWeekendMode] = useState(true)
+  const [availability, setAvailability] = useState<PartnershipAvailability>({
+    actively_seeking: true,
+    partnership_capacity: 3,
+    current_partnerships: 0,
+    min_budget: 100,
+    preferred_campaign_types: []
+  })
 
   useEffect(() => {
     fetchUserData()
@@ -112,6 +139,17 @@ export default function BoundariesPage() {
             posting_frequency: prefsData.preferences.posting_frequency || 3
           })
         }
+      }
+
+      // Fetch availability settings from profile
+      if (data.profile) {
+        setAvailability({
+          actively_seeking: data.profile.actively_seeking ?? true,
+          partnership_capacity: data.profile.partnership_capacity ?? 3,
+          current_partnerships: data.profile.current_partnerships ?? 0,
+          min_budget: data.profile.min_budget ?? 100,
+          preferred_campaign_types: data.profile.preferred_campaign_types ?? []
+        })
       }
     } catch (err) {
       console.error('Error fetching user data:', err)
@@ -173,12 +211,42 @@ export default function BoundariesPage() {
           ...preferences
         })
       })
-      
+
     } catch (err) {
       console.error('Failed to save preferences:', err)
     } finally {
       setSaving(false)
     }
+  }
+
+  async function handleSaveAvailability() {
+    setSaving(true)
+    try {
+      const response = await fetch('/api/creator/availability', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(availability)
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to save availability')
+      }
+    } catch (err) {
+      console.error('Failed to save availability:', err)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function toggleCampaignType(typeId: string) {
+    setAvailability(prev => ({
+      ...prev,
+      preferred_campaign_types: prev.preferred_campaign_types.includes(typeId)
+        ? prev.preferred_campaign_types.filter(t => t !== typeId)
+        : [...prev.preferred_campaign_types, typeId]
+    }))
   }
 
   async function handleLogout() {
@@ -236,6 +304,7 @@ export default function BoundariesPage() {
           <div className="inline-flex gap-2 p-1 bg-white/80 backdrop-blur rounded-full border border-gray-200/50">
             {[
               { id: 'energy', label: 'Energy', icon: Zap },
+              { id: 'partnerships', label: 'Partnerships', icon: Handshake },
               { id: 'focus', label: 'Focus', icon: Target },
               { id: 'peace', label: 'Peace', icon: Heart },
               { id: 'identity', label: 'Identity', icon: User },
@@ -377,6 +446,159 @@ export default function BoundariesPage() {
                   </button>
                 </div>
               </WellnessCard>
+            </motion.div>
+          )}
+
+          {activeTab === 'partnerships' && (
+            <motion.div
+              key="partnerships"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-6"
+            >
+              {/* Availability Toggle */}
+              <WellnessCard glow={availability.actively_seeking}>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h3 className="text-xl font-medium text-gray-800 mb-2">
+                      Open for Partnerships
+                    </h3>
+                    <p className="text-gray-600 mb-4">
+                      Let brands know you're actively looking for collaborations
+                    </p>
+                    {availability.actively_seeking && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        className="p-4 bg-green-50 rounded-lg"
+                      >
+                        <p className="text-green-700 text-sm">
+                          You're visible to brands looking for creators like you
+                        </p>
+                      </motion.div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setAvailability({ ...availability, actively_seeking: !availability.actively_seeking })}
+                    className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
+                      availability.actively_seeking ? 'bg-green-500' : 'bg-gray-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                        availability.actively_seeking ? 'translate-x-7' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </WellnessCard>
+
+              {/* Capacity */}
+              <WellnessCard>
+                <h3 className="text-xl font-medium text-gray-800 mb-4">
+                  Partnership Capacity
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  How many brand partnerships can you comfortably handle per month?
+                </p>
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Current: {availability.current_partnerships} active</span>
+                    <span className="text-lg font-medium text-purple-600">{availability.partnership_capacity} max/month</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1"
+                    max="10"
+                    value={availability.partnership_capacity}
+                    onChange={(e) => setAvailability({ ...availability, partnership_capacity: parseInt(e.target.value) })}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                  />
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span>Deep Focus (1)</span>
+                    <span>Balanced (3-5)</span>
+                    <span>Very Active (10)</span>
+                  </div>
+                </div>
+              </WellnessCard>
+
+              {/* Minimum Budget */}
+              <WellnessCard>
+                <h3 className="text-xl font-medium text-gray-800 mb-4">
+                  Minimum Budget
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  Only show you opportunities at or above this rate
+                </p>
+
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="w-5 h-5 text-green-600" />
+                    <input
+                      type="number"
+                      min="0"
+                      step="50"
+                      value={availability.min_budget}
+                      onChange={(e) => setAvailability({ ...availability, min_budget: parseInt(e.target.value) || 0 })}
+                      className="w-32 p-3 bg-white border border-gray-200 rounded-lg text-gray-700 focus:border-purple-400 focus:outline-none"
+                    />
+                    <span className="text-gray-600">per campaign</span>
+                  </div>
+                  <div className="flex gap-2">
+                    {[100, 250, 500, 1000].map((amount) => (
+                      <button
+                        key={amount}
+                        onClick={() => setAvailability({ ...availability, min_budget: amount })}
+                        className={`px-3 py-1 rounded-full text-sm transition-all ${
+                          availability.min_budget === amount
+                            ? 'bg-purple-500 text-white'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        ${amount}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </WellnessCard>
+
+              {/* Preferred Campaign Types */}
+              <WellnessCard>
+                <h3 className="text-xl font-medium text-gray-800 mb-4">
+                  Preferred Campaign Types
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  What kind of content do you enjoy creating?
+                </p>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {CAMPAIGN_TYPES.map((type) => (
+                    <button
+                      key={type.id}
+                      onClick={() => toggleCampaignType(type.id)}
+                      className={`p-4 rounded-xl border-2 transition-all text-left ${
+                        availability.preferred_campaign_types.includes(type.id)
+                          ? 'border-purple-400 bg-purple-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="text-2xl mb-1">{type.icon}</div>
+                      <div className="text-sm font-medium text-gray-800">{type.label}</div>
+                    </button>
+                  ))}
+                </div>
+              </WellnessCard>
+
+              <WellnessButton
+                onClick={handleSaveAvailability}
+                disabled={saving}
+                variant="calm"
+                className="w-full"
+              >
+                {saving ? 'Saving...' : 'Save Availability Settings'}
+              </WellnessButton>
             </motion.div>
           )}
 
