@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { requireUserType, withSecurityHeaders } from '@/lib/validation/middleware'
 import { z } from 'zod'
+import { processBriefMatching, notifyMatchedCreators, matchBriefToCreators } from '@/lib/partnership-matching'
 
 // Campaign brief validation schema
 const CreateBriefSchema = z.object({
@@ -169,13 +170,45 @@ export const POST = withSecurityHeaders(
           )
         }
 
-        // TODO: Trigger AI matching engine here (Phase 3)
-        // await matchBriefToCreators(brief.id)
+        // Trigger AI matching engine
+        const briefId = (brief as { id: string }).id
+        let matchCount = 0
+        try {
+          const matchingResult = await processBriefMatching(supabaseAdmin, briefId)
+          matchCount = matchingResult.matchCount
+
+          // Get brand name for notifications
+          if (matchCount > 0) {
+            const { data: brandProfile } = await supabaseAdmin
+              .from('brand_profiles')
+              .select('company_name')
+              .eq('user_id', userId)
+              .single()
+
+            const companyName = (brandProfile as { company_name: string } | null)?.company_name
+            if (companyName) {
+              // Fetch the matches to notify
+              const matches = await matchBriefToCreators(supabaseAdmin, brief as any)
+              await notifyMatchedCreators(
+                supabaseAdmin,
+                briefId,
+                companyName,
+                matches
+              )
+            }
+          }
+
+          console.log(`Brief ${briefId} matched with ${matchCount} creators`)
+        } catch (matchError) {
+          // Don't fail the request if matching fails
+          console.error('Error during matching (non-fatal):', matchError)
+        }
 
         return NextResponse.json({
           success: true,
           brief,
-          message: 'Campaign brief created successfully'
+          matchCount,
+          message: `Campaign brief created successfully${matchCount > 0 ? `. Matched with ${matchCount} creators!` : ''}`
         }, { status: 201 })
 
       } catch (error) {
