@@ -7,10 +7,63 @@ import {
   Search, Filter, DollarSign, TrendingUp, Users, Target,
   ChevronRight, Mail, Instagram, ExternalLink, Sparkles,
   Heart, AlertCircle, Clock, CheckCircle, Flower2, TreePine,
-  Leaf, MapPin, Send
+  Leaf, MapPin, Send, Inbox, ArrowUpRight, X, CalendarDays,
+  Building2, Tag, Eye, ThumbsUp, ThumbsDown, HelpCircle
 } from 'lucide-react'
 import { BreathingLoader } from '@/components/wellness/BreathingLoader'
 
+// Tab type
+type TabType = 'incoming' | 'outreach' | 'active'
+
+// Incoming brief opportunity from API
+interface IncomingOpportunity {
+  id: string
+  briefId: string
+  matchScore: number
+  matchReasons: {
+    nicheMatch: boolean
+    followerMatch: boolean
+    engagementMatch: boolean
+    budgetMatch: boolean
+    campaignTypeMatch: boolean
+  }
+  creatorResponse: string
+  responseAt: string | null
+  partnershipStatus: string
+  createdAt: string
+  brief: {
+    id: string
+    title: string
+    description: string
+    campaignType: string[]
+    productName: string | null
+    productDescription: string | null
+    targetNiches: string[]
+    minFollowers: number | null
+    maxFollowers: number | null
+    minEngagementRate: number | null
+    budgetMin: number | null
+    budgetMax: number | null
+    deadline: string | null
+    contentDeadline: string | null
+    status: string
+  } | null
+  brand: {
+    companyName: string
+    logoUrl: string | null
+    website: string | null
+    industry: string | null
+  } | null
+}
+
+interface OpportunityCounts {
+  pending: number
+  yes: number
+  no: number
+  total: number
+}
+
+// Existing brand match interface (for outreach)
 interface BrandMatch {
   id: string
   brand: {
@@ -77,98 +130,156 @@ const getCategoryLabel = (category: string) => {
   }
 }
 
+const getMatchScoreColor = (score: number) => {
+  if (score >= 80) return 'bg-green-100 text-green-700'
+  if (score >= 60) return 'bg-blue-100 text-blue-700'
+  if (score >= 40) return 'bg-yellow-100 text-yellow-700'
+  return 'bg-gray-100 text-gray-700'
+}
+
+const formatBudget = (min: number | null, max: number | null) => {
+  if (min && max) return `$${min.toLocaleString()} - $${max.toLocaleString()}`
+  if (min) return `From $${min.toLocaleString()}`
+  if (max) return `Up to $${max.toLocaleString()}`
+  return 'Budget TBD'
+}
+
+const formatDate = (dateString: string | null) => {
+  if (!dateString) return null
+  const date = new Date(dateString)
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+const campaignTypeLabels: Record<string, string> = {
+  post: 'Feed Post',
+  story: 'Story',
+  reel: 'Reel',
+  ugc: 'UGC',
+  review: 'Review',
+  unboxing: 'Unboxing'
+}
+
 export default function BrandOpportunities() {
   const router = useRouter()
+  const [activeTab, setActiveTab] = useState<TabType>('incoming')
+
+  // Incoming briefs state
+  const [incomingOpportunities, setIncomingOpportunities] = useState<IncomingOpportunity[]>([])
+  const [opportunityCounts, setOpportunityCounts] = useState<OpportunityCounts>({ pending: 0, yes: 0, no: 0, total: 0 })
+  const [incomingLoading, setIncomingLoading] = useState(true)
+  const [respondingTo, setRespondingTo] = useState<string | null>(null)
+  const [selectedIncoming, setSelectedIncoming] = useState<IncomingOpportunity | null>(null)
+
+  // Outreach state (existing)
   const [matches, setMatches] = useState<BrandMatch[]>([])
-  const [loading, setLoading] = useState(true)
+  const [outreachLoading, setOutreachLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'excellent' | 'good' | 'fair'>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedMatch, setSelectedMatch] = useState<BrandMatch | null>(null)
   const [hasProfile, setHasProfile] = useState(false)
 
   useEffect(() => {
+    fetchIncomingOpportunities()
     fetchBrandMatches()
   }, [])
 
-  // Handle Escape key to close modal
+  // Handle Escape key to close modals
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && selectedMatch) {
-        setSelectedMatch(null)
+      if (e.key === 'Escape') {
+        if (selectedMatch) setSelectedMatch(null)
+        if (selectedIncoming) setSelectedIncoming(null)
       }
     }
     document.addEventListener('keydown', handleEscape)
     return () => document.removeEventListener('keydown', handleEscape)
-  }, [selectedMatch])
+  }, [selectedMatch, selectedIncoming])
+
+  async function fetchIncomingOpportunities() {
+    try {
+      const res = await fetch('/api/creator/opportunities')
+      if (res.ok) {
+        const data = await res.json()
+        setIncomingOpportunities(data.opportunities || [])
+        setOpportunityCounts(data.counts || { pending: 0, yes: 0, no: 0, total: 0 })
+      }
+    } catch (error) {
+      console.error('Error fetching incoming opportunities:', error)
+    } finally {
+      setIncomingLoading(false)
+    }
+  }
 
   async function fetchBrandMatches() {
     try {
       // Check if user has completed onboarding
       const profileRes = await fetch('/api/brand-matching/profile')
       const profileData = await profileRes.json()
-      
+
       if (!profileData.hasProfile) {
         setHasProfile(false)
-        setLoading(false)
+        setOutreachLoading(false)
         return
       }
-      
+
       setHasProfile(true)
-      
+
       // Fetch matches
       const matchesRes = await fetch('/api/brand-matching/matches')
       const matchesData = await matchesRes.json()
-      
+
       if (matchesData.matches) {
         setMatches(matchesData.matches)
       }
     } catch (error) {
       console.error('Error fetching brand matches:', error)
     } finally {
-      setLoading(false)
+      setOutreachLoading(false)
+    }
+  }
+
+  async function handleRespond(matchId: string, response: 'yes' | 'no' | 'maybe') {
+    setRespondingTo(matchId)
+    try {
+      const res = await fetch(`/api/creator/opportunities/${matchId}/respond`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ response })
+      })
+
+      if (res.ok) {
+        // Refresh opportunities
+        await fetchIncomingOpportunities()
+        setSelectedIncoming(null)
+      } else {
+        const error = await res.json()
+        alert(error.error || 'Failed to submit response')
+      }
+    } catch (error) {
+      console.error('Error responding to opportunity:', error)
+      alert('Failed to submit response')
+    } finally {
+      setRespondingTo(null)
     }
   }
 
   const filteredMatches = matches.filter(match => {
     const matchesFilter = filter === 'all' || match.matchCategory === filter
-    const matchesSearch = searchQuery === '' || 
+    const matchesSearch = searchQuery === '' ||
       match.brand.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       match.brand.industry.toLowerCase().includes(searchQuery.toLowerCase())
     return matchesFilter && matchesSearch
   })
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <BreathingLoader text="Cultivating your partnership garden..." size="lg" />
-      </div>
-    )
-  }
+  const pendingOpportunities = incomingOpportunities.filter(o => o.creatorResponse === 'pending')
+  const acceptedOpportunities = incomingOpportunities.filter(o => o.creatorResponse === 'yes')
 
-  if (!hasProfile) {
+  const isLoading = activeTab === 'incoming' ? incomingLoading : outreachLoading
+
+  if (isLoading && activeTab === 'incoming') {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="max-w-md text-center"
-        >
-          <div className="w-24 h-24 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Flower2 className="w-12 h-12 text-purple-600" />
-          </div>
-          <h2 className="text-2xl font-light text-gray-900 mb-4">
-            Grow Your Partnership Garden
-          </h2>
-          <p className="text-gray-600 mb-8">
-            Let's find brands that align with your values and content style. Our AI will nurture perfect partnerships while you focus on creating.
-          </p>
-          <button
-            onClick={() => router.push('/onboarding/brand-matching')}
-            className="px-6 py-3 bg-gradient-to-r from-purple-400 to-pink-400 text-white rounded-lg hover:from-purple-500 hover:to-pink-500 transition-all"
-          >
-            Plant Your First Seeds 🌱
-          </button>
-        </motion.div>
+        <BreathingLoader text="Loading your opportunities..." size="lg" />
       </div>
     )
   }
@@ -178,226 +289,721 @@ export default function BrandOpportunities() {
       {/* Header */}
       <div className="bg-white/80 backdrop-blur-sm border-b border-gray-100/50 sticky top-16 z-10">
         <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-2xl font-light text-gray-900">Your Partnership Garden</h1>
               <p className="text-gray-600 mt-1">
-                {matches.length} partnerships ready to bloom
+                Nurture meaningful brand relationships
               </p>
             </div>
+          </div>
+
+          {/* Tab Navigation */}
+          <div className="flex gap-1 bg-gray-100/80 p-1 rounded-lg w-fit">
+            <button
+              onClick={() => setActiveTab('incoming')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
+                activeTab === 'incoming'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Inbox className="w-4 h-4" />
+              Incoming Briefs
+              {opportunityCounts.pending > 0 && (
+                <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">
+                  {opportunityCounts.pending}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('outreach')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
+                activeTab === 'outreach'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Send className="w-4 h-4" />
+              Your Outreach
+            </button>
+            <button
+              onClick={() => setActiveTab('active')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
+                activeTab === 'active'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Heart className="w-4 h-4" />
+              Active
+              {opportunityCounts.yes > 0 && (
+                <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                  {opportunityCounts.yes}
+                </span>
+              )}
+            </button>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Filters and Search */}
-        <motion.div 
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-100/50 p-6 mb-6"
-        >
-          <div className="flex flex-col md:flex-row gap-4">
-            {/* Search */}
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Search partnerships..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-300 focus:border-transparent"
-              />
-            </div>
-
-            {/* Filter */}
-            <div className="flex gap-2">
-              {(['all', 'excellent', 'good', 'fair'] as const).map((filterOption) => (
+        {/* Incoming Briefs Tab */}
+        {activeTab === 'incoming' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            {pendingOpportunities.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="w-24 h-24 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Inbox className="w-12 h-12 text-purple-400" />
+                </div>
+                <h3 className="text-xl font-light text-gray-900 mb-2">No incoming briefs yet</h3>
+                <p className="text-gray-600 max-w-md mx-auto">
+                  When brands create campaigns that match your profile, they'll appear here.
+                  Make sure your availability settings are up to date!
+                </p>
                 <button
-                  key={filterOption}
-                  onClick={() => setFilter(filterOption)}
-                  className={`px-4 py-2 rounded-lg transition-all ${
-                    filter === filterOption
-                      ? 'bg-purple-100 text-purple-700'
-                      : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
-                  }`}
+                  onClick={() => router.push('/settings?tab=partnerships')}
+                  className="mt-6 px-6 py-2 text-purple-600 hover:text-purple-700 font-medium"
                 >
-                  {filterOption === 'all' ? 'All' : getCategoryLabel(filterOption)}
+                  Update Availability Settings →
                 </button>
-              ))}
-            </div>
-          </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Stats Bar */}
+                <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-100/50 p-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-light text-purple-600">{opportunityCounts.pending}</div>
+                      <div className="text-sm text-gray-600">Pending Review</div>
+                    </div>
+                    <div className="text-center border-x border-gray-100">
+                      <div className="text-2xl font-light text-green-600">{opportunityCounts.yes}</div>
+                      <div className="text-sm text-gray-600">Accepted</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-light text-gray-500">{opportunityCounts.total}</div>
+                      <div className="text-sm text-gray-600">Total Received</div>
+                    </div>
+                  </div>
+                </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-            <div className="text-center p-3 bg-gradient-to-br from-pink-50 to-purple-50 rounded-lg">
-              <div className="text-2xl font-light text-purple-600">
-                {matches.filter(m => m.matchCategory === 'excellent').length}
-              </div>
-              <div className="text-sm text-gray-600 flex items-center justify-center gap-1">
-                <Flower2 className="w-4 h-4" />
-                Full Bloom
-              </div>
-            </div>
-            <div className="text-center p-3 bg-gradient-to-br from-green-50 to-blue-50 rounded-lg">
-              <div className="text-2xl font-light text-green-600">
-                {Math.round(matches.reduce((acc, m) => acc + m.insights.estimatedResponseRate, 0) / matches.length)}%
-              </div>
-              <div className="text-sm text-gray-600">Connection Rate</div>
-            </div>
-            <div className="text-center p-3 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg">
-              <div className="text-2xl font-light text-blue-600">
-                ${Math.round(matches.reduce((acc, m) => acc + m.financials.suggestedRate, 0) / matches.length)}
-              </div>
-              <div className="text-sm text-gray-600">Avg Value</div>
-            </div>
-            <div className="text-center p-3 bg-gradient-to-br from-yellow-50 to-green-50 rounded-lg">
-              <div className="text-2xl font-light text-orange-600">
-                {matches.filter(m => m.status === 'contacted').length}
-              </div>
-              <div className="text-sm text-gray-600">Nurturing</div>
-            </div>
-          </div>
-        </motion.div>
+                {/* Opportunity Cards */}
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {pendingOpportunities.map((opportunity, index) => (
+                    <motion.div
+                      key={opportunity.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm hover:shadow-lg transition-all cursor-pointer border border-gray-100/50 overflow-hidden"
+                      onClick={() => setSelectedIncoming(opportunity)}
+                    >
+                      {/* Match Score Header */}
+                      <div className={`h-2 ${
+                        opportunity.matchScore >= 80 ? 'bg-gradient-to-r from-green-400 to-emerald-400' :
+                        opportunity.matchScore >= 60 ? 'bg-gradient-to-r from-blue-400 to-purple-400' :
+                        'bg-gradient-to-r from-yellow-400 to-orange-400'
+                      }`} />
 
-        {/* Brand Matches Grid */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filteredMatches.map((match, index) => (
-            <motion.div
-              key={match.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-              className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm hover:shadow-lg transition-all cursor-pointer border border-gray-100/50"
-              onClick={() => setSelectedMatch(match)}
-            >
-              {/* Match Score Header */}
-              <div className={`h-2 rounded-t-xl bg-gradient-to-r ${getCategoryColor(match.matchCategory)}`} />
-              
-              <div className="p-6">
-                {/* Brand Info */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center space-x-3">
-                    {match.brand.logo_url ? (
-                      <img 
-                        src={match.brand.logo_url} 
-                        alt={match.brand.name}
-                        className="w-12 h-12 rounded-lg object-cover"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg flex items-center justify-center">
-                        <span className="text-xl font-light text-purple-600">
-                          {match.brand.name[0]}
-                        </span>
+                      <div className="p-5">
+                        {/* Brand Info */}
+                        <div className="flex items-start gap-3 mb-4">
+                          {opportunity.brand?.logoUrl ? (
+                            <img
+                              src={opportunity.brand.logoUrl}
+                              alt={opportunity.brand.companyName}
+                              className="w-12 h-12 rounded-lg object-cover"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg flex items-center justify-center">
+                              <Building2 className="w-6 h-6 text-purple-600" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-gray-900 truncate">
+                              {opportunity.brand?.companyName || 'Brand'}
+                            </h3>
+                            <p className="text-sm text-gray-500">
+                              {opportunity.brand?.industry || 'Industry'}
+                            </p>
+                          </div>
+                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getMatchScoreColor(opportunity.matchScore)}`}>
+                            {opportunity.matchScore}% Match
+                          </span>
+                        </div>
+
+                        {/* Brief Title */}
+                        <h4 className="font-medium text-gray-900 mb-2 line-clamp-2">
+                          {opportunity.brief?.title || 'Campaign Brief'}
+                        </h4>
+
+                        {/* Campaign Types */}
+                        <div className="flex flex-wrap gap-1.5 mb-3">
+                          {(opportunity.brief?.campaignType || []).slice(0, 3).map((type) => (
+                            <span
+                              key={type}
+                              className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded text-xs"
+                            >
+                              {campaignTypeLabels[type] || type}
+                            </span>
+                          ))}
+                        </div>
+
+                        {/* Budget & Deadline */}
+                        <div className="flex items-center justify-between text-sm text-gray-600 pt-3 border-t border-gray-100">
+                          <div className="flex items-center gap-1">
+                            <DollarSign className="w-4 h-4 text-green-600" />
+                            <span>{formatBudget(opportunity.brief?.budgetMin || null, opportunity.brief?.budgetMax || null)}</span>
+                          </div>
+                          {opportunity.brief?.deadline && (
+                            <div className="flex items-center gap-1">
+                              <CalendarDays className="w-4 h-4 text-gray-400" />
+                              <span>{formatDate(opportunity.brief.deadline)}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Quick Actions */}
+                        <div className="flex gap-2 mt-4">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleRespond(opportunity.id, 'yes')
+                            }}
+                            disabled={respondingTo === opportunity.id}
+                            className="flex-1 px-3 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-all text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-1"
+                          >
+                            <ThumbsUp className="w-4 h-4" />
+                            Interested
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setSelectedIncoming(opportunity)
+                            }}
+                            className="px-3 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-all text-sm"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
-                    )}
-                    <div>
-                      <h3 className="font-medium text-gray-900 flex items-center gap-1">
-                        {match.brand.name}
-                        {match.brand.verified && (
-                          <CheckCircle className="w-4 h-4 text-blue-500" />
-                        )}
-                      </h3>
-                      <p className="text-sm text-gray-600">{match.brand.industry}</p>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* Outreach Tab (Existing Content) */}
+        {activeTab === 'outreach' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            {outreachLoading ? (
+              <div className="flex items-center justify-center py-16">
+                <BreathingLoader text="Cultivating your partnership garden..." size="lg" />
+              </div>
+            ) : !hasProfile ? (
+              <div className="text-center py-16">
+                <div className="w-24 h-24 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Flower2 className="w-12 h-12 text-purple-600" />
+                </div>
+                <h2 className="text-2xl font-light text-gray-900 mb-4">
+                  Grow Your Partnership Garden
+                </h2>
+                <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                  Let's find brands that align with your values and content style. Our AI will nurture perfect partnerships while you focus on creating.
+                </p>
+                <button
+                  onClick={() => router.push('/onboarding/brand-matching')}
+                  className="px-6 py-3 bg-gradient-to-r from-purple-400 to-pink-400 text-white rounded-lg hover:from-purple-500 hover:to-pink-500 transition-all"
+                >
+                  Plant Your First Seeds 🌱
+                </button>
+              </div>
+            ) : (
+              <>
+                {/* Filters and Search */}
+                <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-100/50 p-6 mb-6">
+                  <div className="flex flex-col md:flex-row gap-4">
+                    {/* Search */}
+                    <div className="flex-1 relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                      <input
+                        type="text"
+                        placeholder="Search partnerships..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-300 focus:border-transparent"
+                      />
+                    </div>
+
+                    {/* Filter */}
+                    <div className="flex gap-2">
+                      {(['all', 'excellent', 'good', 'fair'] as const).map((filterOption) => (
+                        <button
+                          key={filterOption}
+                          onClick={() => setFilter(filterOption)}
+                          className={`px-4 py-2 rounded-lg transition-all ${
+                            filter === filterOption
+                              ? 'bg-purple-100 text-purple-700'
+                              : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                          }`}
+                        >
+                          {filterOption === 'all' ? 'All' : getCategoryLabel(filterOption)}
+                        </button>
+                      ))}
                     </div>
                   </div>
-                  <div className="text-right">
-                    {getCategoryIcon(match.matchCategory)}
-                    <div className="text-xs text-gray-600 mt-1">
-                      {match.overallScore}%
+
+                  {/* Stats */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                    <div className="text-center p-3 bg-gradient-to-br from-pink-50 to-purple-50 rounded-lg">
+                      <div className="text-2xl font-light text-purple-600">
+                        {matches.filter(m => m.matchCategory === 'excellent').length}
+                      </div>
+                      <div className="text-sm text-gray-600 flex items-center justify-center gap-1">
+                        <Flower2 className="w-4 h-4" />
+                        Full Bloom
+                      </div>
+                    </div>
+                    <div className="text-center p-3 bg-gradient-to-br from-green-50 to-blue-50 rounded-lg">
+                      <div className="text-2xl font-light text-green-600">
+                        {matches.length > 0 ? Math.round(matches.reduce((acc, m) => acc + m.insights.estimatedResponseRate, 0) / matches.length) : 0}%
+                      </div>
+                      <div className="text-sm text-gray-600">Connection Rate</div>
+                    </div>
+                    <div className="text-center p-3 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg">
+                      <div className="text-2xl font-light text-blue-600">
+                        ${matches.length > 0 ? Math.round(matches.reduce((acc, m) => acc + m.financials.suggestedRate, 0) / matches.length) : 0}
+                      </div>
+                      <div className="text-sm text-gray-600">Avg Value</div>
+                    </div>
+                    <div className="text-center p-3 bg-gradient-to-br from-yellow-50 to-green-50 rounded-lg">
+                      <div className="text-2xl font-light text-orange-600">
+                        {matches.filter(m => m.status === 'contacted').length}
+                      </div>
+                      <div className="text-sm text-gray-600">Nurturing</div>
                     </div>
                   </div>
                 </div>
 
-                {/* Match Scores as Progress Bars */}
-                <div className="space-y-2 mb-4">
-                  <div>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-gray-600">Value Alignment</span>
-                      <span className="text-gray-800">{match.scores.valuesAlignment}%</span>
-                    </div>
-                    <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${match.scores.valuesAlignment}%` }}
-                        transition={{ delay: index * 0.05 + 0.3, duration: 0.5 }}
-                        className="h-full bg-gradient-to-r from-purple-400 to-pink-400 rounded-full"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-gray-600">Audience Match</span>
-                      <span className="text-gray-800">{match.scores.audienceResonance}%</span>
-                    </div>
-                    <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${match.scores.audienceResonance}%` }}
-                        transition={{ delay: index * 0.05 + 0.4, duration: 0.5 }}
-                        className="h-full bg-gradient-to-r from-blue-400 to-green-400 rounded-full"
-                      />
-                    </div>
-                  </div>
-                </div>
+                {/* Brand Matches Grid */}
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {filteredMatches.map((match, index) => (
+                    <motion.div
+                      key={match.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm hover:shadow-lg transition-all cursor-pointer border border-gray-100/50"
+                      onClick={() => setSelectedMatch(match)}
+                    >
+                      {/* Match Score Header */}
+                      <div className={`h-2 rounded-t-xl bg-gradient-to-r ${getCategoryColor(match.matchCategory)}`} />
 
-                {/* Key Insights */}
-                <div className="space-y-2 mb-4">
-                  {match.insights.strengths.slice(0, 2).map((strength, idx) => (
-                    <div key={idx} className="flex items-start space-x-2 text-sm">
-                      <Sparkles className="w-4 h-4 text-yellow-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-700">{strength}</span>
-                    </div>
+                      <div className="p-6">
+                        {/* Brand Info */}
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex items-center space-x-3">
+                            {match.brand.logo_url ? (
+                              <img
+                                src={match.brand.logo_url}
+                                alt={match.brand.name}
+                                className="w-12 h-12 rounded-lg object-cover"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg flex items-center justify-center">
+                                <span className="text-xl font-light text-purple-600">
+                                  {match.brand.name[0]}
+                                </span>
+                              </div>
+                            )}
+                            <div>
+                              <h3 className="font-medium text-gray-900 flex items-center gap-1">
+                                {match.brand.name}
+                                {match.brand.verified && (
+                                  <CheckCircle className="w-4 h-4 text-blue-500" />
+                                )}
+                              </h3>
+                              <p className="text-sm text-gray-600">{match.brand.industry}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            {getCategoryIcon(match.matchCategory)}
+                            <div className="text-xs text-gray-600 mt-1">
+                              {match.overallScore}%
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Match Scores as Progress Bars */}
+                        <div className="space-y-2 mb-4">
+                          <div>
+                            <div className="flex justify-between text-xs mb-1">
+                              <span className="text-gray-600">Value Alignment</span>
+                              <span className="text-gray-800">{match.scores.valuesAlignment}%</span>
+                            </div>
+                            <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${match.scores.valuesAlignment}%` }}
+                                transition={{ delay: index * 0.05 + 0.3, duration: 0.5 }}
+                                className="h-full bg-gradient-to-r from-purple-400 to-pink-400 rounded-full"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <div className="flex justify-between text-xs mb-1">
+                              <span className="text-gray-600">Audience Match</span>
+                              <span className="text-gray-800">{match.scores.audienceResonance}%</span>
+                            </div>
+                            <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${match.scores.audienceResonance}%` }}
+                                transition={{ delay: index * 0.05 + 0.4, duration: 0.5 }}
+                                className="h-full bg-gradient-to-r from-blue-400 to-green-400 rounded-full"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Key Insights */}
+                        <div className="space-y-2 mb-4">
+                          {match.insights.strengths.slice(0, 2).map((strength, idx) => (
+                            <div key={idx} className="flex items-start space-x-2 text-sm">
+                              <Sparkles className="w-4 h-4 text-yellow-500 flex-shrink-0 mt-0.5" />
+                              <span className="text-gray-700">{strength}</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Financial Info */}
+                        <div className="flex items-center justify-between py-3 border-t border-gray-100">
+                          <div className="flex items-center space-x-2">
+                            <DollarSign className="w-4 h-4 text-green-600" />
+                            <span className="font-medium text-gray-900">
+                              ${match.financials.suggestedRate}
+                            </span>
+                            <span className="text-sm text-gray-600">per post</span>
+                          </div>
+                          <div className="flex items-center space-x-1 text-sm text-gray-600">
+                            <Heart className="w-4 h-4 text-pink-500" />
+                            <span>{match.insights.estimatedResponseRate}%</span>
+                          </div>
+                        </div>
+
+                        {/* Action Button */}
+                        <button
+                          className="w-full mt-4 px-4 py-2 bg-gradient-to-r from-purple-400 to-pink-400 text-white rounded-lg hover:from-purple-500 hover:to-pink-500 transition-all flex items-center justify-center space-x-2"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            router.push(`/dashboard/brand-opportunities/${match.id}/outreach`)
+                          }}
+                        >
+                          <Send className="w-4 h-4" />
+                          <span>Express Interest</span>
+                        </button>
+                      </div>
+                    </motion.div>
                   ))}
                 </div>
 
-                {/* Financial Info */}
-                <div className="flex items-center justify-between py-3 border-t border-gray-100">
-                  <div className="flex items-center space-x-2">
-                    <DollarSign className="w-4 h-4 text-green-600" />
-                    <span className="font-medium text-gray-900">
-                      ${match.financials.suggestedRate}
-                    </span>
-                    <span className="text-sm text-gray-600">per post</span>
+                {/* Empty State */}
+                {filteredMatches.length === 0 && (
+                  <div className="text-center py-12">
+                    <div className="w-24 h-24 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Search className="w-12 h-12 text-purple-400" />
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No partnerships found</h3>
+                    <p className="text-gray-600">Try adjusting your search or filters</p>
                   </div>
-                  <div className="flex items-center space-x-1 text-sm text-gray-600">
-                    <Heart className="w-4 h-4 text-pink-500" />
-                    <span>{match.insights.estimatedResponseRate}%</span>
-                  </div>
-                </div>
+                )}
+              </>
+            )}
+          </motion.div>
+        )}
 
-                {/* Action Button */}
-                <button
-                  className="w-full mt-4 px-4 py-2 bg-gradient-to-r from-purple-400 to-pink-400 text-white rounded-lg hover:from-purple-500 hover:to-pink-500 transition-all flex items-center justify-center space-x-2"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    router.push(`/dashboard/brand-opportunities/${match.id}/outreach`)
-                  }}
-                >
-                  <Send className="w-4 h-4" />
-                  <span>Express Interest</span>
-                </button>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Empty State */}
-        {filteredMatches.length === 0 && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center py-12"
+        {/* Active Tab */}
+        {activeTab === 'active' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
           >
-            <div className="w-24 h-24 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Search className="w-12 h-12 text-purple-400" />
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No partnerships found</h3>
-            <p className="text-gray-600">Try adjusting your search or filters</p>
+            {acceptedOpportunities.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="w-24 h-24 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Heart className="w-12 h-12 text-green-500" />
+                </div>
+                <h3 className="text-xl font-light text-gray-900 mb-2">No active partnerships yet</h3>
+                <p className="text-gray-600 max-w-md mx-auto">
+                  When you accept incoming briefs or brands respond to your outreach, they'll appear here.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {acceptedOpportunities.map((opportunity, index) => (
+                    <motion.div
+                      key={opportunity.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-green-100 overflow-hidden"
+                    >
+                      <div className="h-2 bg-gradient-to-r from-green-400 to-emerald-400" />
+                      <div className="p-5">
+                        <div className="flex items-start gap-3 mb-4">
+                          {opportunity.brand?.logoUrl ? (
+                            <img
+                              src={opportunity.brand.logoUrl}
+                              alt={opportunity.brand.companyName}
+                              className="w-12 h-12 rounded-lg object-cover"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-emerald-100 rounded-lg flex items-center justify-center">
+                              <Building2 className="w-6 h-6 text-green-600" />
+                            </div>
+                          )}
+                          <div className="flex-1">
+                            <h3 className="font-medium text-gray-900">
+                              {opportunity.brand?.companyName || 'Brand'}
+                            </h3>
+                            <p className="text-sm text-gray-500">
+                              {opportunity.brief?.title || 'Campaign'}
+                            </p>
+                          </div>
+                          <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                            Active
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between text-sm text-gray-600 pt-3 border-t border-gray-100">
+                          <span>Accepted {formatDate(opportunity.responseAt)}</span>
+                          <span className="font-medium text-green-600">
+                            {formatBudget(opportunity.brief?.budgetMin || null, opportunity.brief?.budgetMax || null)}
+                          </span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
       </div>
 
-      {/* Match Details Modal - KEEP ALL FUNCTIONALITY */}
+      {/* Incoming Brief Detail Modal */}
+      <AnimatePresence>
+        {selectedIncoming && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+            onClick={() => setSelectedIncoming(null)}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="incoming-brief-title"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="p-6 border-b border-gray-100">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-4">
+                    {selectedIncoming.brand?.logoUrl ? (
+                      <img
+                        src={selectedIncoming.brand.logoUrl}
+                        alt={selectedIncoming.brand.companyName}
+                        className="w-16 h-16 rounded-xl object-cover"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-pink-100 rounded-xl flex items-center justify-center">
+                        <Building2 className="w-8 h-8 text-purple-600" />
+                      </div>
+                    )}
+                    <div>
+                      <h2 id="incoming-brief-title" className="text-xl font-medium text-gray-900">
+                        {selectedIncoming.brand?.companyName || 'Brand'}
+                      </h2>
+                      <p className="text-gray-600">{selectedIncoming.brand?.industry || ''}</p>
+                      {selectedIncoming.brand?.website && (
+                        <a
+                          href={selectedIncoming.brand.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1 mt-1"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          Visit Website
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setSelectedIncoming(null)}
+                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    aria-label="Close modal"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="p-6 space-y-6">
+                {/* Match Score */}
+                <div className="flex items-center gap-3 p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl">
+                  <div className={`px-3 py-1.5 rounded-full text-sm font-semibold ${getMatchScoreColor(selectedIncoming.matchScore)}`}>
+                    {selectedIncoming.matchScore}% Match
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    Based on your profile, niche, and preferences
+                  </div>
+                </div>
+
+                {/* Brief Details */}
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    {selectedIncoming.brief?.title}
+                  </h3>
+                  <p className="text-gray-600 whitespace-pre-wrap">
+                    {selectedIncoming.brief?.description}
+                  </p>
+                </div>
+
+                {/* Product Info */}
+                {(selectedIncoming.brief?.productName || selectedIncoming.brief?.productDescription) && (
+                  <div className="p-4 bg-gray-50 rounded-xl">
+                    <h4 className="font-medium text-gray-900 mb-2">Product Details</h4>
+                    {selectedIncoming.brief?.productName && (
+                      <p className="text-gray-700 font-medium">{selectedIncoming.brief.productName}</p>
+                    )}
+                    {selectedIncoming.brief?.productDescription && (
+                      <p className="text-gray-600 text-sm mt-1">{selectedIncoming.brief.productDescription}</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Campaign Types */}
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-2">Content Types Needed</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {(selectedIncoming.brief?.campaignType || []).map((type) => (
+                      <span
+                        key={type}
+                        className="px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg text-sm font-medium"
+                      >
+                        {campaignTypeLabels[type] || type}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Budget & Timeline */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="p-4 bg-green-50 rounded-xl">
+                    <div className="flex items-center gap-2 text-green-700 mb-1">
+                      <DollarSign className="w-5 h-5" />
+                      <span className="font-medium">Budget</span>
+                    </div>
+                    <p className="text-lg font-semibold text-gray-900">
+                      {formatBudget(selectedIncoming.brief?.budgetMin || null, selectedIncoming.brief?.budgetMax || null)}
+                    </p>
+                  </div>
+                  {selectedIncoming.brief?.deadline && (
+                    <div className="p-4 bg-blue-50 rounded-xl">
+                      <div className="flex items-center gap-2 text-blue-700 mb-1">
+                        <CalendarDays className="w-5 h-5" />
+                        <span className="font-medium">Campaign Deadline</span>
+                      </div>
+                      <p className="text-lg font-semibold text-gray-900">
+                        {formatDate(selectedIncoming.brief.deadline)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Match Reasons */}
+                <div className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl">
+                  <h4 className="font-medium text-gray-900 mb-3">Why You Matched</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {selectedIncoming.matchReasons.nicheMatch && (
+                      <div className="flex items-center gap-2 text-sm text-gray-700">
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        Niche Alignment
+                      </div>
+                    )}
+                    {selectedIncoming.matchReasons.followerMatch && (
+                      <div className="flex items-center gap-2 text-sm text-gray-700">
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        Follower Count
+                      </div>
+                    )}
+                    {selectedIncoming.matchReasons.engagementMatch && (
+                      <div className="flex items-center gap-2 text-sm text-gray-700">
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        Engagement Rate
+                      </div>
+                    )}
+                    {selectedIncoming.matchReasons.budgetMatch && (
+                      <div className="flex items-center gap-2 text-sm text-gray-700">
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        Budget Match
+                      </div>
+                    )}
+                    {selectedIncoming.matchReasons.campaignTypeMatch && (
+                      <div className="flex items-center gap-2 text-sm text-gray-700">
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        Campaign Type
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3 pt-4 border-t border-gray-100">
+                  <button
+                    onClick={() => handleRespond(selectedIncoming.id, 'yes')}
+                    disabled={respondingTo === selectedIncoming.id}
+                    className="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all font-medium disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    <ThumbsUp className="w-5 h-5" />
+                    I'm Interested
+                  </button>
+                  <button
+                    onClick={() => handleRespond(selectedIncoming.id, 'no')}
+                    disabled={respondingTo === selectedIncoming.id}
+                    className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all font-medium disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    <ThumbsDown className="w-5 h-5" />
+                    Decline
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Match Details Modal for Outreach - KEEP ALL FUNCTIONALITY */}
       <AnimatePresence>
         {selectedMatch && (
           <motion.div
@@ -421,8 +1027,8 @@ export default function BrandOpportunities() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     {selectedMatch.brand.logo_url ? (
-                      <img 
-                        src={selectedMatch.brand.logo_url} 
+                      <img
+                        src={selectedMatch.brand.logo_url}
                         alt={selectedMatch.brand.name}
                         className="w-16 h-16 rounded-xl object-cover"
                       />
@@ -547,7 +1153,7 @@ export default function BrandOpportunities() {
                 {/* Insights */}
                 <div>
                   <h3 className="font-medium text-gray-900 mb-3">Partnership Insights</h3>
-                  
+
                   {selectedMatch.insights.strengths.length > 0 && (
                     <div className="mb-4">
                       <h4 className="text-sm font-medium text-gray-700 mb-2">Strengths</h4>

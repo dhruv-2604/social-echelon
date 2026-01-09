@@ -80,6 +80,7 @@ export const GET = withSecurityHeaders(
             response_at,
             decline_reason,
             partnership_status,
+            relay_email,
             created_at,
             profiles:creator_user_id (
               id,

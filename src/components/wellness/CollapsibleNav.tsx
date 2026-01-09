@@ -1,14 +1,14 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { 
-  Home, 
-  TrendingUp, 
-  Users, 
-  Settings, 
+import {
+  Home,
+  TrendingUp,
+  Users,
+  Settings,
   LogOut,
   Sparkles
 } from 'lucide-react'
@@ -16,21 +16,43 @@ import { cn } from '@/lib/utils'
 
 export function CollapsibleNav() {
   const [isExpanded, setIsExpanded] = useState(false)
+  const [pendingCount, setPendingCount] = useState(0)
   const pathname = usePathname()
-  
+
+  // Fetch pending opportunities count
+  useEffect(() => {
+    async function fetchPendingCount() {
+      try {
+        const res = await fetch('/api/creator/opportunities?status=pending')
+        if (res.ok) {
+          const data = await res.json()
+          setPendingCount(data.counts?.pending || 0)
+        }
+      } catch (error) {
+        // Silently fail - badge just won't show
+        console.error('Failed to fetch pending count:', error)
+      }
+    }
+    fetchPendingCount()
+
+    // Refresh every 60 seconds
+    const interval = setInterval(fetchPendingCount, 60000)
+    return () => clearInterval(interval)
+  }, [])
+
   const navItems = [
-    { href: '/dashboard', label: 'Wellness Hub', icon: <Home className="w-4 h-4" /> },
-    { href: '/intelligence', label: 'Creative Space', icon: <Sparkles className="w-4 h-4" /> },
-    { href: '/trends', label: 'Trend Garden', icon: <TrendingUp className="w-4 h-4" /> },
-    { href: '/dashboard/brand-opportunities', label: 'Partnerships', icon: <Users className="w-4 h-4" /> },
-    { href: '/settings', label: 'Boundaries', icon: <Settings className="w-4 h-4" /> },
+    { href: '/dashboard', label: 'Wellness Hub', icon: <Home className="w-4 h-4" />, badge: 0 },
+    { href: '/intelligence', label: 'Creative Space', icon: <Sparkles className="w-4 h-4" />, badge: 0 },
+    { href: '/trends', label: 'Trend Garden', icon: <TrendingUp className="w-4 h-4" />, badge: 0 },
+    { href: '/dashboard/brand-opportunities', label: 'Partnerships', icon: <Users className="w-4 h-4" />, badge: pendingCount },
+    { href: '/settings', label: 'Boundaries', icon: <Settings className="w-4 h-4" />, badge: 0 },
   ]
-  
+
   return (
-    <motion.div 
+    <motion.div
       className="fixed top-6 w-full z-50 flex justify-center pointer-events-none"
       initial={{ y: 0, opacity: 0 }}
-      animate={{ 
+      animate={{
         y: 0,
         opacity: 1,
         transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }
@@ -43,8 +65,8 @@ export function CollapsibleNav() {
         initial={false}
         animate={{
           width: isExpanded ? 'auto' : '180px',
-          transition: { 
-            duration: 0.4, 
+          transition: {
+            duration: 0.4,
             ease: [0.4, 0, 0.2, 1] // Original smooth easing
           }
         }}
@@ -70,6 +92,10 @@ export function CollapsibleNav() {
               <span className="font-display font-medium text-wellness-neutral-800 whitespace-nowrap text-lg tracking-tight">
                 Social Echelon
               </span>
+              {/* Show small badge indicator when collapsed */}
+              {pendingCount > 0 && (
+                <span className="absolute top-2 right-2 w-2 h-2 bg-purple-500 rounded-full animate-pulse" />
+              )}
             </motion.div>
           ) : (
             /* Show menu items when expanded */
@@ -86,7 +112,7 @@ export function CollapsibleNav() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-200",
+                    "relative flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-200",
                     pathname === item.href
                       ? "bg-purple-50 text-purple-700"
                       : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
@@ -94,11 +120,16 @@ export function CollapsibleNav() {
                 >
                   {item.icon}
                   <span className="text-sm font-medium whitespace-nowrap">{item.label}</span>
+                  {item.badge > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center px-1 bg-purple-500 text-white text-[10px] font-bold rounded-full">
+                      {item.badge > 99 ? '99+' : item.badge}
+                    </span>
+                  )}
                 </Link>
               ))}
-              
+
               <div className="w-px h-5 bg-gray-200 mx-2" />
-              
+
               {/* Logout button */}
               <button
                 onClick={() => {

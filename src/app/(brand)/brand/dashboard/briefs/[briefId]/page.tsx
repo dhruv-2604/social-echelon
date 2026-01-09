@@ -19,7 +19,10 @@ import {
   Loader2,
   ExternalLink,
   Target,
-  Package
+  Package,
+  Mail,
+  Copy,
+  Check
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -56,6 +59,7 @@ interface Match {
   response_at: string | null
   decline_reason: string | null
   partnership_status: string
+  relay_email: string | null
   created_at: string
   profiles: {
     id: string
@@ -91,6 +95,8 @@ const RESPONSE_CONFIG: Record<string, { label: string; color: string; icon: Reac
   }
 }
 
+type ResponseFilter = 'all' | 'yes' | 'pending' | 'no'
+
 export default function BriefDetailPage({ params }: { params: Promise<{ briefId: string }> }) {
   const { briefId } = use(params)
   const router = useRouter()
@@ -98,6 +104,14 @@ export default function BriefDetailPage({ params }: { params: Promise<{ briefId:
   const [brief, setBrief] = useState<Brief | null>(null)
   const [matches, setMatches] = useState<Match[]>([])
   const [isUpdating, setIsUpdating] = useState(false)
+  const [responseFilter, setResponseFilter] = useState<ResponseFilter>('all')
+  const [copiedEmail, setCopiedEmail] = useState<string | null>(null)
+
+  const copyRelayEmail = async (email: string) => {
+    await navigator.clipboard.writeText(email)
+    setCopiedEmail(email)
+    setTimeout(() => setCopiedEmail(null), 2000)
+  }
 
   useEffect(() => {
     fetchBriefDetails()
@@ -220,6 +234,11 @@ export default function BriefDetailPage({ params }: { params: Promise<{ briefId:
 
   const interestedCount = matches.filter(m => m.creator_response === 'yes').length
   const pendingCount = matches.filter(m => m.creator_response === 'pending').length
+  const declinedCount = matches.filter(m => m.creator_response === 'no').length
+
+  const filteredMatches = responseFilter === 'all'
+    ? matches
+    : matches.filter(m => m.creator_response === responseFilter)
 
   return (
     <div className="min-h-screen">
@@ -417,6 +436,59 @@ export default function BriefDetailPage({ params }: { params: Promise<{ briefId:
               <span className="text-sm text-gray-500">{matches.length} total matches</span>
             </div>
 
+            {/* Response Filter Tabs */}
+            {matches.length > 0 && (
+              <div className="flex gap-2 mb-6 border-b border-gray-100 pb-4">
+                <button
+                  onClick={() => setResponseFilter('all')}
+                  className={cn(
+                    "px-4 py-2 rounded-lg text-sm font-medium transition-all",
+                    responseFilter === 'all'
+                      ? "bg-purple-100 text-purple-700"
+                      : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+                  )}
+                >
+                  All ({matches.length})
+                </button>
+                <button
+                  onClick={() => setResponseFilter('yes')}
+                  className={cn(
+                    "px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5",
+                    responseFilter === 'yes'
+                      ? "bg-green-100 text-green-700"
+                      : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+                  )}
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Interested ({interestedCount})
+                </button>
+                <button
+                  onClick={() => setResponseFilter('pending')}
+                  className={cn(
+                    "px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5",
+                    responseFilter === 'pending'
+                      ? "bg-yellow-100 text-yellow-700"
+                      : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+                  )}
+                >
+                  <Clock className="w-3.5 h-3.5" />
+                  Pending ({pendingCount})
+                </button>
+                <button
+                  onClick={() => setResponseFilter('no')}
+                  className={cn(
+                    "px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5",
+                    responseFilter === 'no'
+                      ? "bg-red-100 text-red-700"
+                      : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+                  )}
+                >
+                  <XCircle className="w-3.5 h-3.5" />
+                  Declined ({declinedCount})
+                </button>
+              </div>
+            )}
+
             {matches.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-gray-600 mb-2">No creator matches yet</p>
@@ -424,9 +496,16 @@ export default function BriefDetailPage({ params }: { params: Promise<{ briefId:
                   Creators will appear here once they&apos;re matched to your brief
                 </p>
               </div>
+            ) : filteredMatches.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-600 mb-2">No {responseFilter === 'yes' ? 'interested' : responseFilter === 'pending' ? 'pending' : 'declined'} responses yet</p>
+                <p className="text-sm text-gray-500">
+                  Creators matching this filter will appear here
+                </p>
+              </div>
             ) : (
               <div className="space-y-3">
-                {matches.map((match) => {
+                {filteredMatches.map((match) => {
                   const responseConfig = RESPONSE_CONFIG[match.creator_response] || RESPONSE_CONFIG.pending
                   return (
                     <div
@@ -471,11 +550,26 @@ export default function BriefDetailPage({ params }: { params: Promise<{ briefId:
                           {responseConfig.icon}
                           {responseConfig.label}
                         </span>
-                        {match.creator_response === 'yes' && (
-                          <WellnessButton variant="secondary" size="sm">
-                            <MessageSquare className="w-4 h-4 mr-1" />
-                            Message
-                          </WellnessButton>
+                        {match.creator_response === 'yes' && match.relay_email && (
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-50 rounded-lg border border-purple-100">
+                              <Mail className="w-4 h-4 text-purple-500" />
+                              <span className="text-sm text-purple-700 font-mono">
+                                {match.relay_email}
+                              </span>
+                              <button
+                                onClick={() => copyRelayEmail(match.relay_email!)}
+                                className="p-1 hover:bg-purple-100 rounded transition-colors"
+                                title="Copy relay email"
+                              >
+                                {copiedEmail === match.relay_email ? (
+                                  <Check className="w-4 h-4 text-green-600" />
+                                ) : (
+                                  <Copy className="w-4 h-4 text-purple-500" />
+                                )}
+                              </button>
+                            </div>
+                          </div>
                         )}
                       </div>
                     </div>
