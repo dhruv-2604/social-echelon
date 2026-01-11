@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { requireUserType, withSecurityHeaders } from '@/lib/validation/middleware'
 import { notifyBrandOfResponse, updateCreatorPartnershipCount } from '@/lib/partnership-matching'
 import { createRelayForMatch } from '@/lib/messaging'
+import { createPartnership } from '@/lib/partnerships'
 import { z } from 'zod'
 
 const ResponseSchema = z.object({
@@ -136,10 +137,30 @@ export const POST = withSecurityHeaders(
           )
         }
 
-        // If creator said yes, increment their partnership count and create relay
+        // If creator said yes, create partnership, increment count, and create relay
         let relayEmail: string | undefined
+        let partnershipId: string | undefined
         if (response === 'yes') {
-          await updateCreatorPartnershipCount(supabaseAdmin, userId, true)
+          // Create the partnership record
+          const partnershipResult = await createPartnership({
+            briefMatchId: matchId,
+            brandUserId: brief.brand_user_id,
+            creatorUserId: userId
+          })
+
+          if (partnershipResult.success && partnershipResult.partnership) {
+            partnershipId = partnershipResult.partnership.id
+
+            // Update the brief_match with the partnership status
+            await supabaseAdmin
+              .from('brief_matches')
+              .update({ partnership_status: 'active' })
+              .eq('id', matchId)
+          } else {
+            console.error('Failed to create partnership:', partnershipResult.error)
+          }
+
+          // Note: createPartnership already calls updateCreatorPartnershipCount
 
           // Create message relay for brand-creator communication
           const relayResult = await createRelayForMatch({
@@ -185,6 +206,7 @@ export const POST = withSecurityHeaders(
               ? 'Response recorded. We\'ll find better opportunities for you.'
               : 'The brand will provide more information soon.',
           response,
+          partnershipId, // ID of the created partnership
           relayEmail // Included so brand can contact creator via relay
         })
 

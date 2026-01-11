@@ -93,6 +93,7 @@ interface ActivePartnership {
   wellnessNotes: string | null
   createdAt: string
   updatedAt: string
+  relayEmail?: string
   brand?: {
     companyName: string
     logoUrl?: string
@@ -1673,6 +1674,41 @@ export default function BrandOpportunities() {
                     </div>
                   </div>
                 </div>
+
+                {/* Contact Brand via Email Relay */}
+                {selectedPartnership.relayEmail && (
+                  <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-100">
+                    <h3 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
+                      <Mail className="w-5 h-5 text-purple-500" />
+                      Contact Brand
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Email this address to communicate with the brand. Your email address stays private.
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <code className="flex-1 bg-white px-3 py-2 rounded-lg text-sm font-mono text-purple-700 border border-purple-200 truncate">
+                        {selectedPartnership.relayEmail}
+                      </code>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(selectedPartnership.relayEmail!)
+                          // Could add a toast notification here
+                        }}
+                        className="px-3 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors text-sm font-medium"
+                        title="Copy email address"
+                      >
+                        Copy
+                      </button>
+                      <a
+                        href={`mailto:${selectedPartnership.relayEmail}`}
+                        className="px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium flex items-center gap-1"
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                        Email
+                      </a>
+                    </div>
+                  </div>
+                )}
 
                 {/* Deliverables */}
                 {selectedPartnership.deliverables.length > 0 && (

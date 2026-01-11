@@ -5,6 +5,7 @@ import {
   getUserPartnershipStats,
   type PartnershipStatus
 } from '@/lib/partnerships'
+import { getRelayByMatchId } from '@/lib/messaging'
 
 /**
  * GET /api/creator/partnerships
@@ -45,28 +46,42 @@ export const GET = withSecurityHeaders(
           stats = await getUserPartnershipStats(userId, 'creator')
         }
 
-        // Transform for frontend
-        const formattedPartnerships = partnerships.map(p => ({
-          id: p.id,
-          briefMatchId: p.briefMatchId,
-          status: p.status,
-          agreedRate: p.agreedRate,
-          deliverables: p.deliverables,
-          contentSubmittedAt: p.contentSubmittedAt,
-          contentApprovedAt: p.contentApprovedAt,
-          paymentSentAt: p.paymentSentAt,
-          completedAt: p.completedAt,
-          brandRating: p.brandRating,
-          createdAt: p.createdAt,
-          updatedAt: p.updatedAt,
-          brand: p.brand ? {
-            id: p.brand.id,
-            name: p.brand.companyName || p.brand.fullName,
-            logoUrl: p.brand.logoUrl,
-            email: p.brand.email
-          } : null,
-          briefTitle: p.briefTitle
-        }))
+        // Transform for frontend and fetch relay emails
+        const formattedPartnerships = await Promise.all(
+          partnerships.map(async (p) => {
+            // Fetch relay email if partnership has a brief match
+            let relayEmail: string | undefined
+            if (p.briefMatchId) {
+              const relay = await getRelayByMatchId(p.briefMatchId)
+              if (relay) {
+                relayEmail = relay.relayEmail
+              }
+            }
+
+            return {
+              id: p.id,
+              briefMatchId: p.briefMatchId,
+              status: p.status,
+              agreedRate: p.agreedRate,
+              deliverables: p.deliverables,
+              contentSubmittedAt: p.contentSubmittedAt,
+              contentApprovedAt: p.contentApprovedAt,
+              paymentSentAt: p.paymentSentAt,
+              completedAt: p.completedAt,
+              brandRating: p.brandRating,
+              createdAt: p.createdAt,
+              updatedAt: p.updatedAt,
+              brand: p.brand ? {
+                id: p.brand.id,
+                name: p.brand.companyName || p.brand.fullName,
+                logoUrl: p.brand.logoUrl,
+                email: p.brand.email
+              } : null,
+              briefTitle: p.briefTitle,
+              relayEmail
+            }
+          })
+        )
 
         return NextResponse.json({
           partnerships: formattedPartnerships,
