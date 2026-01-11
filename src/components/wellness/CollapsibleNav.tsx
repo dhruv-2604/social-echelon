@@ -121,8 +121,8 @@ export function CollapsibleNav() {
           }}
         >
           <span
-            className="font-medium text-gray-800 whitespace-nowrap text-lg tracking-tight"
-            style={{ fontFamily: "'Inter', sans-serif" }}
+            className="font-medium text-gray-800 whitespace-nowrap text-lg tracking-tight font-sans"
+            style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}
           >
             Social Echelon
           </span>

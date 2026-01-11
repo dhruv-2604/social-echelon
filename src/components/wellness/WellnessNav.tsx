@@ -164,8 +164,8 @@ export function WellnessNav() {
                 <Heart className="w-6 h-6 text-white" />
               </div>
               <span
-                className="text-xl font-light text-gray-800"
-                style={{ fontFamily: "'Inter', sans-serif" }}
+                className="text-xl font-light text-gray-800 font-sans"
+                style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}
               >
                 Social Echelon
               </span>

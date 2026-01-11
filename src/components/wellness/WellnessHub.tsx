@@ -3,13 +3,11 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { WellnessCard } from './WellnessCard'
-import { WellnessButton } from './WellnessButton'
-import { 
-  Sparkles, 
-  Moon, 
-  Sun, 
+import {
+  Sparkles,
+  Moon,
+  Sun,
   Heart,
-  TrendingUp,
   Coffee,
   Zap,
   ChevronDown,
@@ -19,9 +17,7 @@ import {
   Activity,
   BarChart3,
   ArrowUp,
-  ArrowDown,
-  Calendar,
-  Clock
+  ArrowDown
 } from 'lucide-react'
 
 interface WellnessHubProps {
@@ -40,7 +36,6 @@ interface WellnessHubProps {
 
 export function WellnessHub({ profile: initialProfile, metrics: initialMetrics, insights }: WellnessHubProps) {
   const [showRealMetrics, setShowRealMetrics] = useState(false)
-  const [scrolledDown, setScrolledDown] = useState(false)
   const [scrollProgress, setScrollProgress] = useState(0)
   const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d'>('7d')
   const [loading, setLoading] = useState(false)
@@ -144,7 +139,6 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics, 
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolledDown(window.scrollY > 100)
       // Calculate scroll progress for progressive reveal
       const scrollPercentage = Math.min(window.scrollY / 500, 1)
       setScrollProgress(scrollPercentage)
@@ -605,87 +599,6 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics, 
 
         {/* Remove old scroll indicator - we have one in the hero now */}
 
-        {/* Quick Metrics Bar - Shows on scroll only in Real Metrics view */}
-        {scrolledDown && showRealMetrics && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-lg border-t border-gray-200 py-3 z-40"
-          >
-            <div className="max-w-6xl mx-auto px-4">
-              <div className="flex justify-around items-center">
-                <div className="text-center">
-                  <p className="text-xs text-gray-500">Followers</p>
-                  <p className="text-lg font-medium text-gray-800">{followers.toLocaleString()}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-xs text-gray-500">Engagement</p>
-                  <p className="text-lg font-medium text-gray-800">{engagementRate.toFixed(1)}%</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-xs text-gray-500">Avg Likes</p>
-                  <p className="text-lg font-medium text-gray-800">{avgLikes.toLocaleString()}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-xs text-gray-500">Growth</p>
-                  <p className="text-lg font-medium text-green-600">+{followersChange}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-xs text-gray-500">Period</p>
-                  <p className="text-lg font-medium text-purple-600">{timeRange}</p>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Quick Actions - More Prominent */}
-        <motion.div 
-          className="text-center mt-16 mb-8"
-          initial={{ opacity: 0 }}
-          animate={{ 
-            opacity: scrollProgress > 0.8 ? 1 : 0
-          }}
-          transition={{ duration: 0.8 }}
-        >
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto mb-8">
-            <WellnessCard className="text-center group cursor-pointer" hover>
-              <div className="p-4">
-                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full mx-auto mb-3 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Sparkles className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="font-medium text-gray-800 mb-2">Generate Content</h3>
-                <p className="text-sm text-gray-600">Create AI-powered posts for your audience</p>
-              </div>
-            </WellnessCard>
-            
-            <WellnessCard className="text-center group cursor-pointer" hover>
-              <div className="p-4">
-                <div className="w-12 h-12 bg-gradient-to-r from-teal-500 to-green-500 rounded-full mx-auto mb-3 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <TrendingUp className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="font-medium text-gray-800 mb-2">Explore Trends</h3>
-                <p className="text-sm text-gray-600">Discover what's trending in your niche</p>
-              </div>
-            </WellnessCard>
-            
-            <WellnessCard className="text-center group cursor-pointer" hover>
-              <div className="p-4">
-                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full mx-auto mb-3 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Users className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="font-medium text-gray-800 mb-2">Brand Partnerships</h3>
-                <p className="text-sm text-gray-600">Find collaboration opportunities</p>
-              </div>
-            </WellnessCard>
-          </div>
-          
-          <div className="flex gap-4 justify-center">
-            <WellnessButton variant="primary" size="lg">
-              Continue exploring
-            </WellnessButton>
-          </div>
-        </motion.div>
       </div>
     </div>
   )

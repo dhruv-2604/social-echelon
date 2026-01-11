@@ -32,7 +32,12 @@ export default function DashboardNav({ profile }: DashboardNavProps) {
             <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-purple-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">SE</span>
             </div>
-            <span className="font-bold text-xl text-gray-900">Social Echelon</span>
+            <span
+              className="font-bold text-xl text-gray-900 font-sans"
+              style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}
+            >
+              Social Echelon
+            </span>
           </div>
           
           <div className="flex items-center space-x-6">
