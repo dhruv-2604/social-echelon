@@ -6,6 +6,7 @@ import {
   type PartnershipStatus
 } from '@/lib/partnerships'
 import { getRelayByMatchId } from '@/lib/messaging'
+import { getSupabaseAdmin } from '@/lib/supabase-admin'
 
 /**
  * GET /api/creator/partnerships
@@ -46,7 +47,9 @@ export const GET = withSecurityHeaders(
           stats = await getUserPartnershipStats(userId, 'creator')
         }
 
-        // Transform for frontend and fetch relay emails
+        const supabase = getSupabaseAdmin()
+
+        // Transform for frontend and fetch relay emails + brand profiles
         const formattedPartnerships = await Promise.all(
           partnerships.map(async (p) => {
             // Fetch relay email if partnership has a brief match
@@ -56,6 +59,17 @@ export const GET = withSecurityHeaders(
               if (relay) {
                 relayEmail = relay.relayEmail
               }
+            }
+
+            // Fetch brand profile for company name and logo
+            let brandProfile: { company_name: string; logo_url: string | null } | null = null
+            if (p.brand?.id) {
+              const { data } = await supabase
+                .from('brand_profiles')
+                .select('company_name, logo_url')
+                .eq('user_id', p.brand.id)
+                .single()
+              brandProfile = data as { company_name: string; logo_url: string | null } | null
             }
 
             return {
@@ -73,8 +87,8 @@ export const GET = withSecurityHeaders(
               updatedAt: p.updatedAt,
               brand: p.brand ? {
                 id: p.brand.id,
-                name: p.brand.companyName || p.brand.fullName,
-                logoUrl: p.brand.logoUrl,
+                companyName: brandProfile?.company_name || p.brand.fullName || 'Brand',
+                logoUrl: brandProfile?.logo_url || undefined,
                 email: p.brand.email
               } : null,
               briefTitle: p.briefTitle,
