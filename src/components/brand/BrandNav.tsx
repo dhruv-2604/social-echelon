@@ -10,7 +10,8 @@ import {
   MessageSquare,
   Settings,
   LogOut,
-  Building2
+  Building2,
+  Handshake
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -20,7 +21,8 @@ export function BrandNav() {
 
   const navItems = [
     { href: '/brand/dashboard', label: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
-    { href: '/brand/dashboard/briefs', label: 'Campaign Briefs', icon: <FileText className="w-4 h-4" /> },
+    { href: '/brand/dashboard/briefs', label: 'Briefs', icon: <FileText className="w-4 h-4" /> },
+    { href: '/brand/dashboard/partnerships', label: 'Partnerships', icon: <Handshake className="w-4 h-4" /> },
     { href: '/brand/dashboard/messages', label: 'Messages', icon: <MessageSquare className="w-4 h-4" /> },
     { href: '/brand/settings', label: 'Settings', icon: <Settings className="w-4 h-4" /> },
   ]
