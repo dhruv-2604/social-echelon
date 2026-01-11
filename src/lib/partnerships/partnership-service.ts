@@ -179,7 +179,7 @@ export async function getPartnershipWithDetails(
         id, full_name, email
       ),
       creator:profiles!partnerships_creator_user_id_fkey(
-        id, full_name, email, instagram_username, profile_picture_url
+        id, full_name, email, instagram_username, avatar_url
       ),
       brief_match:brief_matches(
         id,
@@ -222,7 +222,7 @@ export async function getPartnershipWithDetails(
       full_name: string | null
       email: string
       instagram_username: string | null
-      profile_picture_url: string | null
+      avatar_url: string | null
     } | null
     brief_match: {
       id: string
@@ -261,7 +261,7 @@ export async function getPartnershipWithDetails(
       fullName: row.creator.full_name,
       email: row.creator.email,
       instagramUsername: row.creator.instagram_username || undefined,
-      profilePictureUrl: row.creator.profile_picture_url || undefined
+      profilePictureUrl: row.creator.avatar_url || undefined
     } : undefined,
     briefTitle: row.brief_match?.brief?.title
   }
@@ -291,7 +291,7 @@ export async function getPartnershipsByUser(
         id, full_name, email
       ),
       creator:profiles!partnerships_creator_user_id_fkey(
-        id, full_name, email, instagram_username, profile_picture_url
+        id, full_name, email, instagram_username, avatar_url
       ),
       brief_match:brief_matches(
         id,
@@ -349,7 +349,7 @@ export async function getPartnershipsByUser(
       full_name: string | null
       email: string
       instagram_username: string | null
-      profile_picture_url: string | null
+      avatar_url: string | null
     } | null
     brief_match: { id: string; brief: { title: string } | null } | null
   }
@@ -370,7 +370,7 @@ export async function getPartnershipsByUser(
         fullName: row.creator.full_name,
         email: row.creator.email,
         instagramUsername: row.creator.instagram_username || undefined,
-        profilePictureUrl: row.creator.profile_picture_url || undefined
+        profilePictureUrl: row.creator.avatar_url || undefined
       } : undefined,
       briefTitle: row.brief_match?.brief?.title
     }
