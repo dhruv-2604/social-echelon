@@ -605,8 +605,8 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics, 
 
         {/* Remove old scroll indicator - we have one in the hero now */}
 
-        {/* Quick Metrics Bar - Shows on scroll */}
-        {scrolledDown && !showRealMetrics && (
+        {/* Quick Metrics Bar - Shows on scroll only in Real Metrics view */}
+        {scrolledDown && showRealMetrics && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

@@ -16,14 +16,14 @@ export function WellnessCard({
   children,
   className,
   hover = true,
-  padding = 'lg',
+  padding = 'md',
   glow = false
 }: WellnessCardProps) {
   const paddings = {
-    sm: 'p-4',
-    md: 'p-6',
-    lg: 'p-8',
-    xl: 'p-10'
+    sm: 'p-3',
+    md: 'p-5',
+    lg: 'p-6',
+    xl: 'p-8'
   }
 
   return (

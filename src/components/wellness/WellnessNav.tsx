@@ -148,11 +148,11 @@ export function WellnessNav() {
   return (
     <nav
       className={cn(
-        "bg-white/80 backdrop-blur-lg border-b border-gray-100/50 sticky top-0 z-50",
-        "transition-transform duration-300 ease-out"
+        "bg-white/80 backdrop-blur-lg border-b border-gray-100/50 sticky top-0 z-50"
       )}
       style={{
         transform: isVisible ? 'translateY(0)' : 'translateY(-100%)',
+        transition: 'transform 500ms cubic-bezier(0.16, 1, 0.3, 1)',
       }}
     >
       <div className="max-w-7xl mx-auto px-4">
@@ -163,7 +163,10 @@ export function WellnessNav() {
               <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center">
                 <Heart className="w-6 h-6 text-white" />
               </div>
-              <span className="text-xl font-light text-gray-800">
+              <span
+                className="text-xl font-light text-gray-800"
+                style={{ fontFamily: "'Inter', sans-serif" }}
+              >
                 Social Echelon
               </span>
             </Link>
@@ -225,9 +228,11 @@ export function WellnessNav() {
       <div
         className={cn(
           "md:hidden bg-white border-t border-gray-100 overflow-hidden",
-          "transition-all duration-300 ease-out",
           isOpen ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"
         )}
+        style={{
+          transition: 'max-height 450ms cubic-bezier(0.16, 1, 0.3, 1), opacity 350ms ease-in-out',
+        }}
       >
         <div className="px-4 py-4 space-y-2">
           {navItems.map((item) => {
@@ -268,9 +273,11 @@ export function WellnessNav() {
       {welcomeMessage && showWelcome && (
         <div
           className={cn(
-            "bg-gradient-to-r from-purple-50 to-blue-50 px-4 py-2 text-center",
-            "transition-all duration-300 ease-out"
+            "bg-gradient-to-r from-purple-50 to-blue-50 px-4 py-2 text-center"
           )}
+          style={{
+            transition: 'opacity 400ms ease-in-out',
+          }}
         >
           <p className="text-sm text-gray-600">{welcomeMessage}</p>
         </div>

@@ -120,23 +120,23 @@ input::placeholder, textarea::placeholder {
 /* Removed gradient overlays - they were causing uneven background visibility */
 
 
-/* Optimized glass cards - less backdrop-filter for performance */
+/* Frosted glass cards - transparent with blur for elegant appearance */
 .glass-card {
-  background: rgba(255, 255, 255, 0.92);  /* More opaque, less need for blur */
-  backdrop-filter: blur(4px);  /* Reduced blur for performance */
-  -webkit-backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 
+  background: rgba(255, 255, 255, 0.85);  /* More transparent for frosted effect */
+  backdrop-filter: blur(12px);  /* Increased blur for frosted glass effect */
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow:
     0 2px 12px rgba(0, 0, 0, 0.06),
     0 0 20px rgba(139, 127, 191, 0.03);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;  /* Only animate what changes */
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
   transform: translateZ(0);  /* Force GPU layer */
   will-change: transform;  /* Optimize for animations */
 }
 
 .glass-card:hover {
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: 
+  background: rgba(255, 255, 255, 0.90);  /* Slightly more opaque on hover */
+  box-shadow:
     0 4px 20px rgba(0, 0, 0, 0.08),
     0 0 30px rgba(139, 127, 191, 0.05);
   transform: translateY(-2px) translateZ(0);

@@ -84,12 +84,12 @@ export function CollapsibleNav() {
   return (
     <div
       className={cn(
-        "fixed top-6 w-full z-50 flex justify-center pointer-events-none",
-        "transition-all duration-300 ease-out"
+        "fixed top-6 w-full z-50 flex justify-center pointer-events-none"
       )}
       style={{
         transform: isVisible ? 'translateY(0)' : 'translateY(-100px)',
         opacity: isVisible ? 1 : 0,
+        transition: 'transform 500ms cubic-bezier(0.16, 1, 0.3, 1), opacity 400ms ease-in-out',
       }}
     >
       <div
@@ -97,7 +97,6 @@ export function CollapsibleNav() {
         onMouseLeave={() => setIsExpanded(false)}
         className={cn(
           "pointer-events-auto cursor-pointer rounded-full flex items-center justify-center h-12",
-          "transition-[width] duration-300 ease-out",
           "will-change-[width]"
         )}
         style={{
@@ -108,17 +107,23 @@ export function CollapsibleNav() {
           WebkitBackdropFilter: 'blur(10px)',
           border: '1px solid rgba(255, 255, 255, 0.8)',
           boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08), 0 0 40px rgba(139, 127, 191, 0.1)',
+          transition: 'width 450ms cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >
         {/* Collapsed state - Social Echelon brand */}
         <div
           className={cn(
             "absolute inset-0 flex items-center justify-center px-6",
-            "transition-all duration-200 ease-out",
             isExpanded ? "opacity-0 scale-95 pointer-events-none" : "opacity-100 scale-100"
           )}
+          style={{
+            transition: 'opacity 350ms ease-in-out, transform 350ms cubic-bezier(0.16, 1, 0.3, 1)',
+          }}
         >
-          <span className="font-medium text-gray-800 whitespace-nowrap text-lg tracking-tight">
+          <span
+            className="font-medium text-gray-800 whitespace-nowrap text-lg tracking-tight"
+            style={{ fontFamily: "'Inter', sans-serif" }}
+          >
             Social Echelon
           </span>
           {/* Show small badge indicator when collapsed */}
@@ -131,9 +136,11 @@ export function CollapsibleNav() {
         <div
           className={cn(
             "flex items-center gap-1 px-4",
-            "transition-all duration-200 ease-out",
             isExpanded ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2 pointer-events-none"
           )}
+          style={{
+            transition: 'opacity 350ms ease-in-out, transform 350ms cubic-bezier(0.16, 1, 0.3, 1)',
+          }}
         >
           {navItems.map((item) => (
             <Link
