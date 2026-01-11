@@ -222,18 +222,26 @@ export default function LoginPage() {
             </Link>
           </motion.div>
 
-          {/* Sign up link */}
-          <motion.p 
-            className="text-center text-sm text-wellness-neutral-600 mt-8"
+          {/* Sign up links */}
+          <motion.div
+            className="mt-8 space-y-2"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7 }}
           >
-            New to Social Echelon?{' '}
-            <Link href="/auth/signup" className="text-wellness-purple hover:text-wellness-purple-soft font-medium">
-              Create an account
-            </Link>
-          </motion.p>
+            <p className="text-center text-sm text-wellness-neutral-600">
+              New creator?{' '}
+              <Link href="/auth/signup" className="text-wellness-purple hover:text-wellness-purple-soft font-medium">
+                Sign up as a creator
+              </Link>
+            </p>
+            <p className="text-center text-sm text-wellness-neutral-600">
+              Looking for creators?{' '}
+              <Link href="/auth/brand-signup" className="text-purple-600 hover:text-purple-700 font-medium">
+                Join as a brand
+              </Link>
+            </p>
+          </motion.div>
         </WellnessCard>
 
         {/* Back to home */}

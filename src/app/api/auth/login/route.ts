@@ -22,7 +22,7 @@ export const POST = withSecurityHeaders(
         // Find user by email (email is already sanitized by validation)
         const { data: user, error: fetchError } = await supabaseAdmin
           .from('profiles')
-          .select('id, email, password_hash, full_name, instagram_username, subscription_status')
+          .select('id, email, password_hash, full_name, instagram_username, subscription_status, user_type')
           .eq('email', email)
           .single() as { data: any, error: any }
 
@@ -51,8 +51,10 @@ export const POST = withSecurityHeaders(
           )
         }
 
-        // Set session cookie
+        // Set session cookies
         const cookieStore = await cookies()
+        const userType = user.user_type || 'creator'
+
         cookieStore.set('user_id', user.id, {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
@@ -60,14 +62,39 @@ export const POST = withSecurityHeaders(
           maxAge: 60 * 60 * 24 * 7 // 7 days
         })
 
-        // Check if Instagram is connected
-        const { data: tokenData } = await supabaseAdmin
-          .from('user_tokens')
-          .select('instagram_access_token')
-          .eq('user_id', user.id)
-          .single()
+        cookieStore.set('user_type', userType, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 60 * 60 * 24 * 7 // 7 days
+        })
 
-        const needsInstagramConnection = !tokenData?.instagram_access_token
+        // Determine redirect based on user type
+        let redirectTo = '/dashboard'
+
+        if (userType === 'brand') {
+          // Check if brand has completed onboarding
+          const { data: brandProfile } = await supabaseAdmin
+            .from('brand_profiles')
+            .select('onboarding_completed')
+            .eq('user_id', user.id)
+            .single()
+
+          redirectTo = brandProfile?.onboarding_completed
+            ? '/brand/dashboard'
+            : '/onboarding/brand'
+        } else {
+          // For creators, check if Instagram is connected
+          const { data: tokenData } = await supabaseAdmin
+            .from('user_tokens')
+            .select('instagram_access_token')
+            .eq('user_id', user.id)
+            .single()
+
+          if (!tokenData?.instagram_access_token) {
+            redirectTo = '/auth/connect'
+          }
+        }
 
         return NextResponse.json({
           success: true,
@@ -76,10 +103,10 @@ export const POST = withSecurityHeaders(
             email: user.email,
             fullName: user.full_name,
             instagramUsername: user.instagram_username,
-            subscriptionStatus: user.subscription_status
+            subscriptionStatus: user.subscription_status,
+            userType
           },
-          needsInstagramConnection,
-          redirectTo: needsInstagramConnection ? '/auth/connect' : '/dashboard'
+          redirectTo
         })
 
       } catch (error) {
