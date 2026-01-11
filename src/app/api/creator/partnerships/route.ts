@@ -8,6 +8,11 @@ import {
 import { getRelayByMatchId } from '@/lib/messaging'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 
+interface BriefInfo {
+  title: string
+  campaignType: string[]
+}
+
 /**
  * GET /api/creator/partnerships
  * Fetch all partnerships for the authenticated creator
@@ -49,32 +54,59 @@ export const GET = withSecurityHeaders(
 
         const supabase = getSupabaseAdmin()
 
-        // Transform for frontend and fetch relay emails + brand profiles
+        // Transform for frontend and fetch relay emails + brand profiles + brief info
         const formattedPartnerships = await Promise.all(
           partnerships.map(async (p) => {
             // Fetch relay email if partnership has a brief match
             let relayEmail: string | undefined
+            let briefInfo: BriefInfo | null = null
+
             if (p.briefMatchId) {
               const relay = await getRelayByMatchId(p.briefMatchId)
               if (relay) {
                 relayEmail = relay.relayEmail
               }
+
+              // Fetch brief info including campaign type - two queries for reliability
+              const { data: matchData } = await supabase
+                .from('brief_matches')
+                .select('brief_id')
+                .eq('id', p.briefMatchId)
+                .single()
+
+              if (matchData?.brief_id) {
+                const { data: briefData } = await supabase
+                  .from('campaign_briefs')
+                  .select('title, campaign_type')
+                  .eq('id', matchData.brief_id)
+                  .single()
+
+                if (briefData) {
+                  const brief = briefData as { title: string; campaign_type: string[] }
+                  briefInfo = {
+                    title: brief.title,
+                    campaignType: brief.campaign_type || []
+                  }
+                }
+              }
             }
 
-            // Fetch brand profile for company name and logo
-            let brandProfile: { company_name: string; logo_url: string | null } | null = null
+            // Fetch brand profile for company name, logo, and other details
+            let brandProfile: { company_name: string; logo_url: string | null; website: string | null; industry: string | null } | null = null
             if (p.brand?.id) {
               const { data } = await supabase
                 .from('brand_profiles')
-                .select('company_name, logo_url')
+                .select('company_name, logo_url, website, industry')
                 .eq('user_id', p.brand.id)
                 .single()
-              brandProfile = data as { company_name: string; logo_url: string | null } | null
+              brandProfile = data as { company_name: string; logo_url: string | null; website: string | null; industry: string | null } | null
             }
 
             return {
               id: p.id,
               briefMatchId: p.briefMatchId,
+              brandUserId: p.brandUserId,
+              creatorUserId: p.creatorUserId,
               status: p.status,
               agreedRate: p.agreedRate,
               deliverables: p.deliverables,
@@ -83,15 +115,17 @@ export const GET = withSecurityHeaders(
               paymentSentAt: p.paymentSentAt,
               completedAt: p.completedAt,
               brandRating: p.brandRating,
+              creatorRating: p.creatorRating,
+              wellnessNotes: p.wellnessNotes,
               createdAt: p.createdAt,
               updatedAt: p.updatedAt,
               brand: p.brand ? {
-                id: p.brand.id,
                 companyName: brandProfile?.company_name || p.brand.fullName || 'Brand',
                 logoUrl: brandProfile?.logo_url || undefined,
-                email: p.brand.email
+                website: brandProfile?.website || undefined,
+                industry: brandProfile?.industry || undefined
               } : null,
-              briefTitle: p.briefTitle,
+              brief: briefInfo || (p.briefTitle ? { title: p.briefTitle, campaignType: [] } : null),
               relayEmail
             }
           })
