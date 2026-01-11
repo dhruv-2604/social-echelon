@@ -141,15 +141,10 @@ export async function fetchAvailableCreators(
     return current < capacity
   })
 
-  // Filter by niche if specified
-  if (options?.niches && options.niches.length > 0) {
-    return availableCreators.filter(creator =>
-      creator.niche && options.niches!.some(niche =>
-        creator.niche.toLowerCase().includes(niche.toLowerCase()) ||
-        niche.toLowerCase().includes(creator.niche.toLowerCase())
-      )
-    )
-  }
+  // NOTE: We intentionally do NOT filter by niche here.
+  // Niche matching is handled by the scoring algorithm in brief-matcher.ts
+  // This allows creators with partially matching or related niches to still
+  // appear in results, just with a lower match score.
 
   return availableCreators
 }

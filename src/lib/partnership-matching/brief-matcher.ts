@@ -150,7 +150,9 @@ export async function matchBriefToCreators(
     maxMatches?: number
   }
 ): Promise<MatchResult[]> {
-  const minScore = options?.minMatchScore || 50
+  // During development: show all matches with their scores (minScore = 0)
+  // For production: set to 50+ to only show quality matches
+  const minScore = options?.minMatchScore || 0
   const maxMatches = options?.maxMatches || 50
 
   // Fetch all potentially matching creators
