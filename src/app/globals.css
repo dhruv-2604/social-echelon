@@ -3,8 +3,17 @@
 @tailwind utilities;
 
 /* Import Wellness Theme - This is our new design system */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import '../styles/wellness-theme.css';
+
+/* Global input text color fix - ensure dark text on all inputs */
+input, textarea, select {
+  color: var(--wellness-neutral-900, #2C2C2C) !important;
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--wellness-neutral-400, #929292) !important;
+}
 
 /* Legacy color variables - will be phased out */
 :root {

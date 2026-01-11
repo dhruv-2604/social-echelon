@@ -1,9 +1,8 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { motion, AnimatePresence } from 'framer-motion'
 import {
   Home,
   Sparkles,
@@ -18,12 +17,19 @@ import {
   Sun,
   Coffee
 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 export function WellnessNav() {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
+  const [isVisible, setIsVisible] = useState(true)
   const [timeOfDay, setTimeOfDay] = useState<'morning' | 'afternoon' | 'evening'>('morning')
   const [lastVisit, setLastVisit] = useState<Date | null>(null)
+  const [showWelcome, setShowWelcome] = useState(true)
+
+  // Scroll tracking refs
+  const lastScrollY = useRef(0)
+  const ticking = useRef(false)
 
   useEffect(() => {
     const hour = new Date().getHours()
@@ -37,7 +43,40 @@ export function WellnessNav() {
       setLastVisit(new Date(stored))
     }
     localStorage.setItem('lastVisit', new Date().toISOString())
+
+    // Auto-hide welcome message after 5 seconds
+    const timer = setTimeout(() => setShowWelcome(false), 5000)
+    return () => clearTimeout(timer)
   }, [])
+
+  // Scroll-based show/hide with requestAnimationFrame for performance
+  const handleScroll = useCallback(() => {
+    if (!ticking.current) {
+      requestAnimationFrame(() => {
+        const currentScrollY = window.scrollY
+        const scrollDelta = currentScrollY - lastScrollY.current
+
+        // Show nav when scrolling up or at the top
+        if (scrollDelta < -5 || currentScrollY < 50) {
+          setIsVisible(true)
+        }
+        // Hide nav when scrolling down past threshold
+        else if (scrollDelta > 5 && currentScrollY > 100) {
+          setIsVisible(false)
+          setIsOpen(false) // Close mobile menu when hiding
+        }
+
+        lastScrollY.current = currentScrollY
+        ticking.current = false
+      })
+      ticking.current = true
+    }
+  }, [])
+
+  useEffect(() => {
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [handleScroll])
 
   const navItems = [
     { 
@@ -93,8 +132,29 @@ export function WellnessNav() {
     return 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
   }
 
+  const getWelcomeMessage = () => {
+    if (!lastVisit) return null
+    const hours = Math.floor((new Date().getTime() - lastVisit.getTime()) / (1000 * 60 * 60))
+    if (hours > 24) {
+      return `Welcome back! You've been recharging for ${Math.floor(hours / 24)} days. Your AI handled everything beautifully.`
+    } else if (hours > 1) {
+      return `You took a ${hours} hour break. Perfect timing for self-care!`
+    }
+    return null
+  }
+
+  const welcomeMessage = getWelcomeMessage()
+
   return (
-    <nav className="bg-white/80 backdrop-blur-lg border-b border-gray-100/50 sticky top-0 z-50">
+    <nav
+      className={cn(
+        "bg-white/80 backdrop-blur-lg border-b border-gray-100/50 sticky top-0 z-50",
+        "transition-transform duration-300 ease-out"
+      )}
+      style={{
+        transform: isVisible ? 'translateY(0)' : 'translateY(-100%)',
+      }}
+    >
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo Section */}
@@ -122,25 +182,31 @@ export function WellnessNav() {
             {navItems.map((item) => {
               const Icon = item.icon
               const isActive = pathname === item.href
-              
+
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`
-                    flex items-center gap-2 px-4 py-2 rounded-lg
-                    transition-all duration-200
-                    ${getColorClasses(item.color, isActive)}
-                  `}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2 rounded-lg",
+                    "transition-colors duration-150",
+                    getColorClasses(item.color, isActive)
+                  )}
                 >
                   <Icon className="w-4 h-4" />
                   <span className="text-sm font-medium">{item.label}</span>
                 </Link>
               )
             })}
-            
+
             {/* Logout Button */}
-            <button className="ml-4 p-2 text-gray-400 hover:text-gray-600 transition-colors">
+            <button
+              onClick={() => {
+                document.cookie = 'user_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+                window.location.href = '/'
+              }}
+              className="ml-4 p-2 text-gray-400 hover:text-gray-600 transition-colors duration-150"
+            >
               <LogOut className="w-5 h-5" />
             </button>
           </div>
@@ -148,7 +214,7 @@ export function WellnessNav() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden p-2 text-gray-600 hover:text-gray-900"
+            className="md:hidden p-2 text-gray-600 hover:text-gray-900 transition-colors duration-150"
           >
             {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
@@ -156,64 +222,58 @@ export function WellnessNav() {
       </div>
 
       {/* Mobile Navigation */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-white border-t border-gray-100"
-          >
-            <div className="px-4 py-4 space-y-2">
-              {navItems.map((item) => {
-                const Icon = item.icon
-                const isActive = pathname === item.href
-                
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setIsOpen(false)}
-                    className={`
-                      flex items-center gap-3 px-4 py-3 rounded-lg
-                      transition-all duration-200
-                      ${getColorClasses(item.color, isActive)}
-                    `}
-                  >
-                    <Icon className="w-5 h-5" />
-                    <span className="font-medium">{item.label}</span>
-                  </Link>
-                )
-              })}
-              
-              <button className="w-full flex items-center gap-3 px-4 py-3 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg">
-                <LogOut className="w-5 h-5" />
-                <span className="font-medium">Logout</span>
-              </button>
-            </div>
-          </motion.div>
+      <div
+        className={cn(
+          "md:hidden bg-white border-t border-gray-100 overflow-hidden",
+          "transition-all duration-300 ease-out",
+          isOpen ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"
         )}
-      </AnimatePresence>
+      >
+        <div className="px-4 py-4 space-y-2">
+          {navItems.map((item) => {
+            const Icon = item.icon
+            const isActive = pathname === item.href
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setIsOpen(false)}
+                className={cn(
+                  "flex items-center gap-3 px-4 py-3 rounded-lg",
+                  "transition-colors duration-150",
+                  getColorClasses(item.color, isActive)
+                )}
+              >
+                <Icon className="w-5 h-5" />
+                <span className="font-medium">{item.label}</span>
+              </Link>
+            )
+          })}
+
+          <button
+            onClick={() => {
+              document.cookie = 'user_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+              window.location.href = '/'
+            }}
+            className="w-full flex items-center gap-3 px-4 py-3 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors duration-150"
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="font-medium">Logout</span>
+          </button>
+        </div>
+      </div>
 
       {/* Welcome Back Message */}
-      {lastVisit && (
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-r from-purple-50 to-blue-50 px-4 py-2 text-center"
+      {welcomeMessage && showWelcome && (
+        <div
+          className={cn(
+            "bg-gradient-to-r from-purple-50 to-blue-50 px-4 py-2 text-center",
+            "transition-all duration-300 ease-out"
+          )}
         >
-          <p className="text-sm text-gray-600">
-            {(() => {
-              const hours = Math.floor((new Date().getTime() - lastVisit.getTime()) / (1000 * 60 * 60))
-              if (hours > 24) {
-                return `Welcome back! You've been recharging for ${Math.floor(hours / 24)} days. Your AI handled everything beautifully. 🌱`
-              } else if (hours > 1) {
-                return `You took a ${hours} hour break. Perfect timing for self-care! 💜`
-              }
-              return null
-            })()}
-          </p>
-        </motion.div>
+          <p className="text-sm text-gray-600">{welcomeMessage}</p>
+        </div>
       )}
     </nav>
   )
