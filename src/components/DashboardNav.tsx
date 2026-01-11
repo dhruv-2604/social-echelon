@@ -19,8 +19,7 @@ export default function DashboardNav({ profile }: DashboardNavProps) {
     { href: '/dashboard', label: 'Dashboard' },
     { href: '/intelligence', label: 'Intelligence' },
     { href: '/algorithm', label: 'Algorithm' },
-    { href: '/dashboard/brand-opportunities', label: 'Brand Matching' },
-    { href: '/dashboard/brand-outreach', label: 'Outreach' },
+    { href: '/dashboard/brand-opportunities', label: 'Partnerships' },
     { href: '/trends', label: 'Trends' }
   ]
   
