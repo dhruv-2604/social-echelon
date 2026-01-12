@@ -3,11 +3,12 @@ import { JobQueue } from '@/lib/queue/job-queue'
 import { CacheService } from '@/lib/queue/cache-service'
 import { AnomalyDetector } from '@/lib/algorithm/anomaly-detector'
 import { PerformanceCollector } from '@/lib/algorithm/performance-collector'
-import { InstagramTrendCollector } from '@/lib/trends/instagram-collector'
+import { ApifyInstagramCollector } from '@/lib/trends/apify-instagram-collector'
 import { TrendManager } from '@/lib/trends/trend-manager'
 import { ContentGenerator } from '@/lib/ai/content-generator'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { withSecurityHeaders } from '@/lib/validation/middleware'
+import { TrendData } from '@/lib/trends/types'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60 // 60 seconds max for processing jobs
@@ -161,44 +162,75 @@ async function processPerformanceCollection(payload: any, userId?: string) {
 
 async function processTrendCollection(payload: any, userId?: string) {
   const { niche } = payload || {}
-  
+
   if (!niche) {
     throw new Error('Niche required for trend collection')
   }
-  
-  const supabase = getSupabaseAdmin()
+
   const cache = CacheService.getInstance()
-  
+
   // Check cache
   const cacheKey = `trends:${niche}:${new Date().toISOString().split('T')[0]}`
   const cached = await cache.get('trend_data', cacheKey)
-  
+
   if (cached) {
     return cached
   }
-  
-  // Get Instagram token
-  const { data: tokenData } = await supabase
-    .from('user_tokens')
-    .select('instagram_access_token')
-    .not('instagram_access_token', 'is', null)
-    .limit(1)
-    .single()
-  
-  if (!tokenData?.instagram_access_token) {
-    throw new Error('No Instagram access token available')
-  }
-  
-  const collector = new InstagramTrendCollector(tokenData.instagram_access_token as string)
-  const trends = await collector.collectTrends(niche)
-  
+
+  // Use Apify Instagram collector (no token needed - uses APIFY_TOKEN env var)
+  const collector = new ApifyInstagramCollector()
+
+  // Get relevant hashtags for the niche
+  const nicheHashtags = getNicheHashtags(niche)
+
+  // Collect real Instagram data via Apify
+  const apifyTrends = await collector.collectHashtagTrends(nicheHashtags.slice(0, 5), 200)
+
+  // Convert Apify format to TrendData format
+  const trends: TrendData[] = apifyTrends.map(trend => ({
+    niche,
+    trend_type: 'hashtag' as const,
+    trend_name: `#${trend.hashtag}`,
+    growth_velocity: Math.round(trend.growthRate || 0),
+    current_volume: trend.postCount,
+    engagement_rate: trend.avgEngagement,
+    saturation_level: Math.min(100, trend.postCount / 100),
+    confidence_score: trend.growthRate && trend.growthRate > 10 ? 80 : 70,
+    trend_phase: (trend.growthRate && trend.growthRate > 20 ? 'growing' :
+                  trend.growthRate && trend.growthRate > 0 ? 'emerging' : 'declining') as 'emerging' | 'growing' | 'peak' | 'declining',
+    related_hashtags: [],
+    example_posts: trend.topPosts.slice(0, 5).map(p => ({
+      caption: p.caption?.substring(0, 200),
+      likes: p.likeCount,
+      comments: p.commentCount
+    })),
+    optimal_posting_times: [9, 12, 17, 20] // Default optimal times in UTC
+  }))
+
   // Save trends
   await TrendManager.saveTrends(trends)
-  
+
   // Cache results
   await cache.set('trend_data', cacheKey, trends, { ttl: 21600 })
-  
+
   return { trends: trends.length, niche }
+}
+
+// Helper function to get relevant hashtags for each niche
+function getNicheHashtags(niche: string): string[] {
+  const hashtagMap: Record<string, string[]> = {
+    fitness: ['fitness', 'workout', 'fitnessmotivation', 'gym', 'fitfam'],
+    beauty: ['beauty', 'makeup', 'skincare', 'beautytips', 'makeuptutorial'],
+    lifestyle: ['lifestyle', 'lifestyleblogger', 'dailylife', 'livingmybestlife', 'selfcare'],
+    fashion: ['fashion', 'ootd', 'fashionista', 'style', 'fashionblogger'],
+    food: ['foodie', 'foodstagram', 'foodporn', 'recipe', 'cooking'],
+    travel: ['travel', 'wanderlust', 'travelgram', 'vacation', 'explore'],
+    business: ['entrepreneur', 'business', 'startup', 'businessowner', 'success'],
+    parenting: ['parenting', 'momlife', 'parenthood', 'kids', 'family'],
+    tech: ['tech', 'technology', 'innovation', 'coding', 'ai'],
+    education: ['education', 'learning', 'study', 'students', 'teaching']
+  }
+  return hashtagMap[niche.toLowerCase()] || ['trending', niche]
 }
 
 async function processContentGeneration(payload: any, userId?: string) {
