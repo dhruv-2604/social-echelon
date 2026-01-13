@@ -123,6 +123,100 @@ async function checkDailyBudget(): Promise<{ withinBudget: boolean; postsCollect
   }
 }
 
+// Extract and save audio trends from collected trend data
+async function saveAudioTrends(allTrends: any[]): Promise<void> {
+  const { getSupabaseAdmin } = await import('@/lib/supabase-admin')
+  const supabase = getSupabaseAdmin()
+
+  // Aggregate audio across all collected trends
+  const audioMap = new Map<string, {
+    artist: string
+    track: string
+    usageCount: number
+    niches: Set<string>
+    totalEngagement: number
+    engagementSamples: number
+  }>()
+
+  for (const trend of allTrends) {
+    // Skip non-Instagram trends (Twitter doesn't have audio)
+    if (trend.platform !== 'instagram') continue
+
+    // Get audio data from metrics.trendingAudio (array of [audioKey, count] pairs)
+    const trendingAudio = trend.metrics?.trendingAudio || []
+    const niche = trend.niche || 'general'
+    const avgEngagement = trend.engagement_rate || 0
+
+    for (const [audioKey, count] of trendingAudio) {
+      // Parse "Artist - Track" format
+      const parts = audioKey.split(' - ')
+      const artist = parts[0] || 'Unknown'
+      const track = parts.slice(1).join(' - ') || 'Unknown'
+
+      // Create normalized key for deduplication
+      const normalizedKey = audioKey.toLowerCase().trim()
+
+      if (audioMap.has(normalizedKey)) {
+        const existing = audioMap.get(normalizedKey)!
+        existing.usageCount += count
+        existing.niches.add(niche)
+        existing.totalEngagement += avgEngagement * count
+        existing.engagementSamples += count
+      } else {
+        audioMap.set(normalizedKey, {
+          artist,
+          track,
+          usageCount: count,
+          niches: new Set([niche]),
+          totalEngagement: avgEngagement * count,
+          engagementSamples: count
+        })
+      }
+    }
+  }
+
+  // Skip if no audio data collected
+  if (audioMap.size === 0) {
+    console.log('📊 No audio trends to save')
+    return
+  }
+
+  // Convert to database format and upsert
+  const audioRecords = Array.from(audioMap.entries())
+    .filter(([_, data]) => data.usageCount >= 2) // Only save audio with 2+ uses
+    .map(([key, data]) => ({
+      track_key: key,
+      artist: data.artist.substring(0, 255),
+      track: data.track.substring(0, 255),
+      usage_count: data.usageCount,
+      niches: Array.from(data.niches),
+      avg_engagement: data.engagementSamples > 0
+        ? Math.round(data.totalEngagement / data.engagementSamples)
+        : 0,
+      growth_rate: 0, // Will be calculated by comparing with yesterday's data
+      last_updated: new Date().toISOString()
+    }))
+
+  if (audioRecords.length === 0) {
+    console.log('📊 No significant audio trends (all had < 2 uses)')
+    return
+  }
+
+  // Upsert to audio_trends table
+  const { error } = await supabase
+    .from('audio_trends')
+    .upsert(audioRecords, {
+      onConflict: 'track_key',
+      ignoreDuplicates: false
+    })
+
+  if (error) {
+    throw new Error(`Failed to save audio trends: ${error.message}`)
+  }
+
+  console.log(`📊 Saved ${audioRecords.length} audio trends to database`)
+}
+
 // Determine which niches to collect today (rotation for cron)
 function getNichesForToday(): string[] {
   const dayOfWeek = new Date().getDay() // 0-6
@@ -377,6 +471,15 @@ export const GET = withSecurityHeaders(
             errors.push({ niche, error: String(error) })
             // Continue with next niche instead of failing all
           }
+        }
+
+        // Extract and save audio trends from collected data
+        try {
+          await saveAudioTrends(allTrends)
+          console.log('✅ Audio trends extracted and saved')
+        } catch (error) {
+          console.error('Error saving audio trends:', error)
+          errors.push({ task: 'audio_trends', error: String(error) })
         }
 
         // Clean up old trends with error handling
