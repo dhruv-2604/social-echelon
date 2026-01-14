@@ -288,7 +288,10 @@ export const GET = withSecurityHeaders(
         // Reduce posts per hashtag for cron to stay within 10sec timeout
         const postsPerHashtagOverride = isVercelCron ? 50 : 500
 
-        
+        // Import supabase admin here so it's available for all operations below
+        const { getSupabaseAdmin } = await import('@/lib/supabase-admin')
+        const supabaseAdmin = getSupabaseAdmin()
+
         const allTrends = []
         const remainingBudget = MAX_POSTS_PER_DAY - postsCollectedToday
 
@@ -433,9 +436,6 @@ export const GET = withSecurityHeaders(
             }
 
             // Save directly to trend_analysis table with upsert
-            const { getSupabaseAdmin } = await import('@/lib/supabase-admin')
-            const supabaseAdmin = getSupabaseAdmin()
-            
             // Check for existing trends today before inserting
             const today = new Date().toISOString().split('T')[0]
             const { data: existingToday } = await supabaseAdmin
