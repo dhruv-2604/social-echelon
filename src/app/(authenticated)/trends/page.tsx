@@ -253,7 +253,7 @@ export default function TrendGardenPage() {
             },
             body: JSON.stringify({
               hashtags: hashtagsToCollect,
-              maxPostsPerTag: 500, // Increased for better trend detection
+              maxPostsPerTag: 200, // 200 posts per hashtag - solid sample size for trend detection, faster refresh
               analysisType: 'standard',
               niche: niche // Pass the actual niche category
             })
