@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { requireUserType, withSecurityHeaders } from '@/lib/validation/middleware'
+import { GOLDEN_MATCH_CONFIG, getMatchTier } from '@/lib/partnership-matching/brief-matcher'
 
 /**
  * GET /api/creator/opportunities
@@ -8,6 +9,7 @@ import { requireUserType, withSecurityHeaders } from '@/lib/validation/middlewar
  *
  * Query params:
  * - status: 'pending' | 'yes' | 'no' | 'all' (default: 'all')
+ * - golden_only: 'true' to only return golden matches (score >= 85%, max 3)
  */
 export const GET = withSecurityHeaders(
   requireUserType('creator')(
@@ -16,6 +18,7 @@ export const GET = withSecurityHeaders(
         const supabaseAdmin = getSupabaseAdmin()
         const { searchParams } = new URL(request.url)
         const status = searchParams.get('status') || 'all'
+        const goldenOnly = searchParams.get('golden_only') === 'true'
 
         // Build query for brief matches
         let query = supabaseAdmin
@@ -158,7 +161,7 @@ export const GET = withSecurityHeaders(
         }
 
         // Combine matches with brand info
-        const opportunities = matches
+        let opportunities = matches
           .filter(m => {
             // Only include matches where the brief is still active
             const brief = briefMap[m.brief_id]
@@ -167,11 +170,16 @@ export const GET = withSecurityHeaders(
           .map(match => {
             const brief = briefMap[match.brief_id]
             const brand = brief ? brandProfiles[brief.brand_user_id] : null
+            const score = match.match_score || 0
+            const matchTier = getMatchTier(score)
+            const isGolden = score >= GOLDEN_MATCH_CONFIG.MIN_SCORE
 
             return {
               id: match.id,
               briefId: match.brief_id,
               matchScore: match.match_score,
+              matchTier,
+              isGolden,
               matchReasons: match.match_reasons,
               creatorResponse: match.creator_response,
               responseAt: match.response_at,
@@ -203,11 +211,17 @@ export const GET = withSecurityHeaders(
             }
           })
 
+        // Filter to golden only if requested
+        if (goldenOnly) {
+          opportunities = opportunities.filter(o => o.isGolden)
+        }
+
         // Count by status for badges
         const counts = {
           pending: matches.filter(m => m.creator_response === 'pending').length,
           yes: matches.filter(m => m.creator_response === 'yes').length,
           no: matches.filter(m => m.creator_response === 'no').length,
+          golden: matches.filter(m => (m.match_score || 0) >= GOLDEN_MATCH_CONFIG.MIN_SCORE).length,
           total: matches.length
         }
 

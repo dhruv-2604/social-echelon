@@ -92,25 +92,34 @@ export async function fetchAvailableCreators(
     minFollowers?: number
     maxFollowers?: number
     minEngagementRate?: number
+    includeEmbeddings?: boolean
   }
 ): Promise<CreatorAvailability[]> {
+  // Build select columns - include embeddings when needed for semantic matching
+  const baseColumns = `
+    id,
+    actively_seeking,
+    partnership_capacity,
+    current_partnerships,
+    min_budget,
+    preferred_campaign_types,
+    availability_updated_at,
+    full_name,
+    instagram_username,
+    follower_count,
+    engagement_rate,
+    niche,
+    profile_picture_url
+  `
+
+  // Add embedding columns for semantic matching
+  const embeddingColumns = options?.includeEmbeddings
+    ? `, profile_embedding, dream_brands`
+    : ''
+
   let query = supabase
     .from('profiles')
-    .select(`
-      id,
-      actively_seeking,
-      partnership_capacity,
-      current_partnerships,
-      min_budget,
-      preferred_campaign_types,
-      availability_updated_at,
-      full_name,
-      instagram_username,
-      follower_count,
-      engagement_rate,
-      niche,
-      profile_picture_url
-    `)
+    .select(baseColumns + embeddingColumns)
     .eq('user_type', 'creator')
     .eq('actively_seeking', true)
 
@@ -134,8 +143,20 @@ export async function fetchAvailableCreators(
     return []
   }
 
+  // Cast data to array with proper typing (dynamic select loses type inference)
+  const creators = (data || []) as unknown as Array<CreatorAvailability & {
+    full_name?: string | null
+    instagram_username?: string | null
+    follower_count?: number | null
+    engagement_rate?: number | null
+    niche?: string | null
+    profile_picture_url?: string | null
+    profile_embedding?: string | null
+    dream_brands?: string[] | null
+  }>
+
   // Further filter by capacity (can't do this in SQL easily)
-  const availableCreators = (data || []).filter(creator => {
+  const availableCreators = creators.filter(creator => {
     const capacity = creator.partnership_capacity || 3
     const current = creator.current_partnerships || 0
     return current < capacity

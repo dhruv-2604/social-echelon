@@ -1,10 +1,18 @@
 /**
  * Brief Matcher
- * Matches campaign briefs to available creators based on criteria
+ * Matches campaign briefs to available creators using hybrid scoring:
+ * - Vector similarity for semantic matching (60% weight)
+ * - Rule-based criteria matching (40% weight)
+ * - Dream brand boost (1.5x multiplier)
  */
 
 import { SupabaseClient } from '@supabase/supabase-js'
 import { fetchAvailableCreators, checkCreatorAvailability } from './availability-checker'
+import {
+  generateEmbedding,
+  buildBriefEmbeddingText,
+  cosineSimilarity
+} from '../embeddings/embedding-service'
 
 export interface CampaignBrief {
   id: string
@@ -18,6 +26,9 @@ export interface CampaignBrief {
   min_engagement_rate: number | null
   budget_min: number | null
   budget_max: number | null
+  product_name?: string
+  product_description?: string
+  brief_embedding?: string | null
 }
 
 export interface CreatorProfile {
@@ -33,6 +44,8 @@ export interface CreatorProfile {
   current_partnerships: number
   min_budget: number | null
   preferred_campaign_types: string[]
+  dream_brands?: string[] | null
+  profile_embedding?: string | null
 }
 
 export interface MatchResult {
@@ -44,17 +57,23 @@ export interface MatchResult {
     engagementMatch: boolean
     budgetMatch: boolean
     campaignTypeMatch: boolean
+    semanticMatch: boolean
+    dreamBrandMatch: boolean
   }
+  semanticScore?: number // 0-100 score from vector similarity
+  ruleScore?: number // 0-100 score from rule-based matching
+  isDreamBrand?: boolean // True if brand is in creator's dream list
   creator: CreatorProfile
 }
 
 /**
- * Calculate match score between a brief and a creator
+ * Calculate RULE-BASED match score between a brief and a creator
+ * This is the traditional matching (40% of final hybrid score)
  */
-export function calculateMatchScore(
+export function calculateRuleBasedScore(
   brief: CampaignBrief,
   creator: CreatorProfile
-): { score: number; reasons: MatchResult['matchReasons'] } {
+): { score: number; reasons: Omit<MatchResult['matchReasons'], 'semanticMatch' | 'dreamBrandMatch'> } {
   let score = 0
   const reasons = {
     nicheMatch: false,
@@ -140,7 +159,140 @@ export function calculateMatchScore(
 }
 
 /**
- * Match a brief to all available creators
+ * Calculate SEMANTIC match score using vector embeddings
+ * Returns 0-100 score based on cosine similarity
+ */
+export function calculateSemanticScore(
+  briefEmbedding: number[] | null,
+  creatorEmbedding: number[] | null
+): number {
+  if (!briefEmbedding || !creatorEmbedding) {
+    return 0 // No embeddings available
+  }
+
+  // Cosine similarity returns 0-1, convert to 0-100
+  const similarity = cosineSimilarity(briefEmbedding, creatorEmbedding)
+
+  // Map similarity to score (0.5-1.0 range maps to 0-100)
+  // Similarity < 0.5 = poor match, similarity = 1.0 = perfect match
+  const normalizedScore = Math.max(0, (similarity - 0.5) * 200)
+
+  return Math.min(100, Math.round(normalizedScore))
+}
+
+/**
+ * Check if the brand matches any of the creator's dream brands
+ */
+export function checkDreamBrandMatch(
+  brandName: string | undefined,
+  dreamBrands: string[] | null | undefined
+): boolean {
+  if (!brandName || !dreamBrands || dreamBrands.length === 0) {
+    return false
+  }
+
+  const normalizedBrand = brandName.toLowerCase().trim()
+
+  return dreamBrands.some(dream => {
+    const normalizedDream = dream.toLowerCase().trim()
+    return normalizedBrand.includes(normalizedDream) ||
+           normalizedDream.includes(normalizedBrand)
+  })
+}
+
+/**
+ * Calculate HYBRID match score combining semantic and rule-based scoring
+ *
+ * Final score = (semantic * 0.6) + (rule * 0.4)
+ * If dream brand match: score *= 1.5 (capped at 100)
+ */
+export function calculateHybridMatchScore(
+  brief: CampaignBrief,
+  creator: CreatorProfile,
+  briefEmbedding: number[] | null,
+  brandName?: string
+): {
+  score: number
+  semanticScore: number
+  ruleScore: number
+  reasons: MatchResult['matchReasons']
+  isDreamBrand: boolean
+} {
+  // Calculate rule-based score (40% weight)
+  const { score: ruleScore, reasons: ruleReasons } = calculateRuleBasedScore(brief, creator)
+
+  // Parse creator embedding if it's a string
+  let creatorEmbedding: number[] | null = null
+  if (creator.profile_embedding) {
+    try {
+      creatorEmbedding = typeof creator.profile_embedding === 'string'
+        ? JSON.parse(creator.profile_embedding)
+        : creator.profile_embedding
+    } catch {
+      creatorEmbedding = null
+    }
+  }
+
+  // Calculate semantic score (60% weight)
+  const semanticScore = calculateSemanticScore(briefEmbedding, creatorEmbedding)
+  const hasSemanticMatch = semanticScore > 50 // Above 50 considered a semantic match
+
+  // Check dream brand match
+  const isDreamBrand = checkDreamBrandMatch(brandName, creator.dream_brands)
+
+  // Calculate hybrid score
+  let hybridScore: number
+
+  if (semanticScore > 0) {
+    // Use hybrid scoring: 60% semantic + 40% rule-based
+    hybridScore = (semanticScore * 0.6) + (ruleScore * 0.4)
+  } else {
+    // Fallback to pure rule-based if no embeddings
+    hybridScore = ruleScore
+  }
+
+  // Apply dream brand boost (1.5x multiplier)
+  if (isDreamBrand) {
+    hybridScore = hybridScore * 1.5
+  }
+
+  // Cap at 100
+  hybridScore = Math.min(100, Math.round(hybridScore))
+
+  return {
+    score: hybridScore,
+    semanticScore,
+    ruleScore,
+    reasons: {
+      ...ruleReasons,
+      semanticMatch: hasSemanticMatch,
+      dreamBrandMatch: isDreamBrand
+    },
+    isDreamBrand
+  }
+}
+
+/**
+ * Legacy function for backwards compatibility
+ * @deprecated Use calculateHybridMatchScore instead
+ */
+export function calculateMatchScore(
+  brief: CampaignBrief,
+  creator: CreatorProfile
+): { score: number; reasons: MatchResult['matchReasons'] } {
+  const { score: ruleScore, reasons } = calculateRuleBasedScore(brief, creator)
+  return {
+    score: ruleScore,
+    reasons: {
+      ...reasons,
+      semanticMatch: false,
+      dreamBrandMatch: false
+    }
+  }
+}
+
+/**
+ * Match a brief to all available creators using hybrid scoring
  */
 export async function matchBriefToCreators(
   supabase: SupabaseClient,
@@ -148,21 +300,77 @@ export async function matchBriefToCreators(
   options?: {
     minMatchScore?: number
     maxMatches?: number
+    useSemanticMatching?: boolean
+    brandName?: string
   }
 ): Promise<MatchResult[]> {
   // During development: show all matches with their scores (minScore = 0)
   // For production: set to 50+ to only show quality matches
   const minScore = options?.minMatchScore || 0
   const maxMatches = options?.maxMatches || 50
+  const useSemanticMatching = options?.useSemanticMatching !== false // Default true
 
-  // Fetch all potentially matching creators
+  // Get brand name for dream brand matching if not provided
+  let brandName = options?.brandName
+  if (!brandName) {
+    const { data: brandProfile } = await supabase
+      .from('brand_profiles')
+      .select('company_name')
+      .eq('user_id', brief.brand_user_id)
+      .single()
+    brandName = (brandProfile as any)?.company_name || undefined
+  }
+
+  // Parse or generate brief embedding for semantic matching
+  let briefEmbedding: number[] | null = null
+
+  if (useSemanticMatching) {
+    // First try to use existing embedding
+    if (brief.brief_embedding) {
+      try {
+        briefEmbedding = typeof brief.brief_embedding === 'string'
+          ? JSON.parse(brief.brief_embedding)
+          : brief.brief_embedding
+      } catch {
+        briefEmbedding = null
+      }
+    }
+
+    // Generate embedding if not available
+    if (!briefEmbedding) {
+      try {
+        const embeddingText = buildBriefEmbeddingText({
+          id: brief.id,
+          title: brief.title,
+          description: brief.description,
+          product_name: brief.product_name,
+          product_description: brief.product_description,
+          target_niches: brief.target_niches,
+          campaign_type: brief.campaign_type
+        })
+        briefEmbedding = await generateEmbedding(embeddingText)
+
+        // Store the embedding for future use
+        await supabase
+          .from('campaign_briefs')
+          .update({ brief_embedding: JSON.stringify(briefEmbedding) })
+          .eq('id', brief.id)
+      } catch (error) {
+        console.warn('Failed to generate brief embedding, falling back to rule-based:', error)
+        briefEmbedding = null
+      }
+    }
+  }
+
+  // Fetch all potentially matching creators (including embeddings and dream_brands)
   const creators = await fetchAvailableCreators(supabase, {
     minBudget: brief.budget_max || undefined,
     campaignTypes: brief.campaign_type,
     niches: brief.target_niches.length > 0 ? brief.target_niches : undefined,
     minFollowers: brief.min_followers || undefined,
     maxFollowers: brief.max_followers || undefined,
-    minEngagementRate: brief.min_engagement_rate || undefined
+    minEngagementRate: brief.min_engagement_rate || undefined,
+    includeEmbeddings: useSemanticMatching
   })
 
   // Calculate match scores for each creator
@@ -181,14 +389,28 @@ export async function matchBriefToCreators(
       continue
     }
 
-    // Calculate match score
-    const { score, reasons } = calculateMatchScore(brief, creator as unknown as CreatorProfile)
+    // Calculate hybrid match score
+    const {
+      score,
+      semanticScore,
+      ruleScore,
+      reasons,
+      isDreamBrand
+    } = calculateHybridMatchScore(
+      brief,
+      creator as unknown as CreatorProfile,
+      briefEmbedding,
+      brandName
+    )
 
     if (score >= minScore) {
       matches.push({
         creatorId: creator.id,
         matchScore: score,
         matchReasons: reasons,
+        semanticScore,
+        ruleScore,
+        isDreamBrand,
         creator: creator as unknown as CreatorProfile
       })
     }
@@ -216,7 +438,14 @@ export async function saveBriefMatches(
     brief_id: briefId,
     creator_user_id: match.creatorId,
     match_score: match.matchScore,
-    match_reasons: match.matchReasons,
+    match_reasons: {
+      ...match.matchReasons,
+      // Include scoring breakdown for transparency
+      semantic_score: match.semanticScore,
+      rule_score: match.ruleScore,
+      is_dream_brand: match.isDreamBrand,
+      match_tier: getMatchTier(match.matchScore)
+    },
     creator_response: 'pending',
     partnership_status: 'matching',
     created_at: new Date().toISOString()
@@ -274,4 +503,74 @@ export async function processBriefMatching(
   // await notifyMatchedCreators(supabase, briefId, matches)
 
   return { success: true, matchCount: saveResult.count }
+}
+
+/**
+ * Golden Matches Configuration
+ * Golden matches have score >= 85% - these are high-quality matches
+ */
+export const GOLDEN_MATCH_CONFIG = {
+  MIN_SCORE: 85
+}
+
+/**
+ * Filter matches to only include "Golden Matches"
+ * Golden Matches are high-quality matches (score >= 85%)
+ *
+ * Note: In production, you may want to limit to top 3 to reduce choice paralysis
+ * For now, returning all golden matches for dev/testing purposes
+ */
+export function filterGoldenMatches(matches: MatchResult[]): MatchResult[] {
+  return matches.filter(m => m.matchScore >= GOLDEN_MATCH_CONFIG.MIN_SCORE)
+}
+
+/**
+ * Check if a match qualifies as a "Golden Match"
+ */
+export function isGoldenMatch(match: MatchResult): boolean {
+  return match.matchScore >= GOLDEN_MATCH_CONFIG.MIN_SCORE
+}
+
+/**
+ * Get match quality tier
+ * Used for displaying appropriate UI badges
+ */
+export function getMatchTier(score: number): 'golden' | 'great' | 'good' | 'fair' {
+  if (score >= 85) return 'golden'   // ⭐ Golden Match - Top tier
+  if (score >= 70) return 'great'    // 💚 Great Match
+  if (score >= 50) return 'good'     // 👍 Good Match
+  return 'fair'                       // 🤷 Fair Match
+}
+
+/**
+ * Generate human-readable match description
+ */
+export function getMatchDescription(match: MatchResult): string {
+  const parts: string[] = []
+
+  if (match.isDreamBrand) {
+    parts.push('This is a dream brand for you!')
+  }
+
+  if (match.matchReasons.semanticMatch) {
+    parts.push('Great content fit based on your style')
+  }
+
+  if (match.matchReasons.nicheMatch) {
+    parts.push('Matches your niche')
+  }
+
+  if (match.matchReasons.engagementMatch) {
+    parts.push('Your engagement rate meets requirements')
+  }
+
+  if (match.matchReasons.budgetMatch) {
+    parts.push('Budget aligns with your expectations')
+  }
+
+  if (parts.length === 0) {
+    parts.push('Potential match based on your profile')
+  }
+
+  return parts.join('. ')
 }
