@@ -194,8 +194,18 @@ export const POST = withSecurityHeaders(
 
     } catch (error) {
       console.error('Content plan generation error:', error)
+      // Return more detailed error for debugging
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      const isOpenAIError = errorMessage.includes('API') || errorMessage.includes('OpenAI') || errorMessage.includes('401') || errorMessage.includes('429')
+
       return NextResponse.json(
-        { error: 'Failed to generate content plan' },
+        {
+          error: 'Failed to generate content plan',
+          details: process.env.NODE_ENV === 'development' ? errorMessage : undefined,
+          suggestion: isOpenAIError
+            ? 'Please check your OpenAI API key configuration'
+            : 'Please try again later'
+        },
         { status: 500 }
       )
     }

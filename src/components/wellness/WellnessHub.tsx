@@ -188,7 +188,7 @@ export function WellnessHub({ profile: initialProfile, metrics: initialMetrics, 
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.8 }}
             >
-              {greeting}, <span className="text-gray-900">{profile?.instagram_username || 'Creator'}</span>
+              {greeting}, <span className="text-gray-900">{profile?.full_name || profile?.instagram_username || 'Creator'}</span>
             </motion.h1>
             <motion.p 
               className="text-gray-500 text-xl"

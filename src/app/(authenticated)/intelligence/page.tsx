@@ -57,14 +57,28 @@ export default function IntelligencePage() {
     setError(null)
     try {
       const response = await fetch('/api/ai/generate-content-plan', {
-        method: 'POST'
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
       })
-      if (!response.ok) throw new Error('Failed to generate plan')
+
       const data = await response.json()
+
+      if (!response.ok) {
+        // Extract more helpful error message from API response
+        const errorMsg = data.suggestion || data.details || data.error || 'Failed to generate plan'
+        throw new Error(errorMsg)
+      }
+
       setWeeklyPlan(data)
     } catch (err) {
       console.error('Error generating plan:', err)
-      setError('Unable to generate your content plan. Please try again in a moment.')
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+      setError(errorMessage === 'Failed to generate plan'
+        ? 'Unable to generate your content plan. Please try again in a moment.'
+        : errorMessage
+      )
     } finally {
       setGenerating(false)
     }

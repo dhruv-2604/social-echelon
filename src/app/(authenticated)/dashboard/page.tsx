@@ -45,7 +45,9 @@ export default function Dashboard() {
         // Add slight delay for smoother loading experience
         await new Promise(resolve => setTimeout(resolve, 500))
         
-        const response = await fetch(`/api/user/profile?timeRange=30d`)
+        const response = await fetch(`/api/user/profile?timeRange=30d`, {
+          cache: 'no-store'
+        })
         
         if (!response.ok) {
           if (response.status === 401) {
