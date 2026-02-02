@@ -476,6 +476,11 @@ export default function TrendGardenPage() {
               <option value="lifestyle">Lifestyle</option>
               <option value="fashion">Fashion</option>
               <option value="food">Food</option>
+              <option value="travel">Travel</option>
+              <option value="business">Business</option>
+              <option value="parenting">Parenting</option>
+              <option value="tech">Tech</option>
+              <option value="education">Education</option>
             </select>
           </div>
 
