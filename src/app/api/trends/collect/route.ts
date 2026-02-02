@@ -218,19 +218,20 @@ async function saveAudioTrends(allTrends: any[]): Promise<void> {
 }
 
 // Determine which niches to collect today (rotation for cron)
+// At ~14 seconds per niche, we can do 5 niches safely (~70s, well under 300s timeout)
 function getNichesForToday(): string[] {
   const dayOfWeek = new Date().getDay() // 0-6
-  // Split 10 niches across days: 2 niches per weekday, all on weekends
+  // 5 niches per day, rotating to cover all 10 across 2 days
   const nicheRotation: Record<number, string[]> = {
-    0: [...SUPPORTED_NICHES], // Sunday: all
-    1: ['fitness', 'beauty'], // Monday
-    2: ['lifestyle', 'fashion'], // Tuesday
-    3: ['food', 'travel'], // Wednesday
-    4: ['business', 'parenting'], // Thursday
-    5: ['tech', 'education'], // Friday
-    6: [...SUPPORTED_NICHES], // Saturday: all
+    0: ['fitness', 'beauty', 'lifestyle', 'fashion', 'food'], // Sunday
+    1: ['travel', 'business', 'parenting', 'tech', 'education'], // Monday
+    2: ['fitness', 'beauty', 'lifestyle', 'fashion', 'food'], // Tuesday
+    3: ['travel', 'business', 'parenting', 'tech', 'education'], // Wednesday
+    4: ['fitness', 'beauty', 'lifestyle', 'fashion', 'food'], // Thursday
+    5: ['travel', 'business', 'parenting', 'tech', 'education'], // Friday
+    6: ['fitness', 'beauty', 'lifestyle', 'fashion', 'food'], // Saturday
   }
-  return nicheRotation[dayOfWeek] || SUPPORTED_NICHES.slice(0, 2)
+  return nicheRotation[dayOfWeek] || ['fitness', 'beauty', 'lifestyle', 'fashion', 'food']
 }
 
 // GET - Scheduled trend collection (Vercel cron jobs use GET)
@@ -265,7 +266,9 @@ export const GET = withSecurityHeaders(
         }
 
         // Check if this is a cron job (limited time) or manual trigger
+        // Vercel cron sets this header automatically
         const isVercelCron = request.headers.get('x-vercel-cron') === '1'
+        console.log(`🕐 Cron detection: isVercelCron=${isVercelCron}, header=${request.headers.get('x-vercel-cron')}`)
 
         // Parse optional body for custom collection params
         let body: any = {}
@@ -285,8 +288,9 @@ export const GET = withSecurityHeaders(
         const nichesToCollect = validatedBody?.niches || (isVercelCron ? getNichesForToday() : SUPPORTED_NICHES)
         const maxPerNiche = validatedBody?.maxPerNiche || 5
 
-        // Reduce posts per hashtag for cron to stay within 10sec timeout
-        const postsPerHashtagOverride = isVercelCron ? 50 : 500
+        // Reduce posts per hashtag for cron to stay within timeout
+        // Vercel Pro cron timeout is 300s, but Apify calls are slow (~6s each)
+        const postsPerHashtagOverride = isVercelCron ? 30 : 500
 
         // Import supabase admin here so it's available for all operations below
         const { getSupabaseAdmin } = await import('@/lib/supabase-admin')
@@ -312,17 +316,14 @@ export const GET = withSecurityHeaders(
             const twitterCollector = new TwitterTrendCollector()
             
             // Calculate posts per hashtag based on remaining budget and cron limits
-            // For cron: use 3 hashtags with 50 posts each (fast)
+            // For cron: use only 2 hashtags with 30 posts each (must complete in ~60s)
             // For manual: use all 10 hashtags with 500 posts each (comprehensive)
             const hashtagsToAnalyze = isVercelCron
-              ? getNicheHashtags(niche).slice(0, 3) // Only 3 hashtags for cron
+              ? getNicheHashtags(niche).slice(0, 2) // Only 2 hashtags for cron (strict limit)
               : getNicheHashtags(niche) // All 10 for manual
-            const postsPerHashtag = postsPerHashtagOverride
-            
-            if (postsPerHashtag < 50) {
-              continue
-            }
-            
+            console.log(`📋 Processing ${hashtagsToAnalyze.length} hashtags for ${niche} (cron=${isVercelCron})`)
+            const postsPerHashtag = isVercelCron ? 50 : postsPerHashtagOverride
+
             // Collect Instagram trends with retry logic
             let instagramTrends
             for (let attempt = 1; attempt <= 3; attempt++) {

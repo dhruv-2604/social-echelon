@@ -335,7 +335,9 @@ export default function TrendGardenPage() {
     return 'bg-gray-50'
   }
 
-  const formatEngagement = (num: number): string => {
+  const formatEngagement = (num: number | null | undefined): string => {
+    // Handle null/undefined values
+    if (num === null || num === undefined) return '—'
     // Handle small engagement rates (like 4.23)
     if (num < 100) return num.toFixed(2)
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
@@ -546,10 +548,10 @@ export default function TrendGardenPage() {
                     )}
                   </div>
                   <div className={`text-2xl font-medium ${
-                    insights.avgGrowthRate > 5 ? 'text-green-600' : 
-                    insights.avgGrowthRate < -5 ? 'text-red-600' : 'text-gray-700'
+                    (insights.avgGrowthRate ?? 0) > 5 ? 'text-green-600' :
+                    (insights.avgGrowthRate ?? 0) < -5 ? 'text-red-600' : 'text-gray-700'
                   }`}>
-                    {insights.avgGrowthRate > 0 ? '+' : ''}{insights.avgGrowthRate.toFixed(1)}%
+                    {(insights.avgGrowthRate ?? 0) > 0 ? '+' : ''}{(insights.avgGrowthRate ?? 0).toFixed(1)}%
                   </div>
                   <div className="text-sm text-gray-600 font-medium">Avg Growth Rate</div>
                 </div>
@@ -690,10 +692,10 @@ export default function TrendGardenPage() {
                     </div>
                     <div className="text-xs text-gray-600 font-medium mt-1">Avg Engagement</div>
                   </div>
-                  <div className={`text-center p-3 rounded-lg ${getGrowthBgColor(trend.metrics.growthRate)}`}>
-                    <div className={`text-xl font-medium flex items-center justify-center gap-1 ${getGrowthColor(trend.metrics.growthRate)}`}>
-                      {getGrowthIcon(trend.metrics.growthRate)}
-                      {trend.metrics.growthRate > 0 ? '+' : ''}{trend.metrics.growthRate.toFixed(1)}%
+                  <div className={`text-center p-3 rounded-lg ${getGrowthBgColor(trend.metrics.growthRate ?? 0)}`}>
+                    <div className={`text-xl font-medium flex items-center justify-center gap-1 ${getGrowthColor(trend.metrics.growthRate ?? 0)}`}>
+                      {getGrowthIcon(trend.metrics.growthRate ?? 0)}
+                      {(trend.metrics.growthRate ?? 0) > 0 ? '+' : ''}{(trend.metrics.growthRate ?? 0).toFixed(1)}%
                     </div>
                     <div className="text-xs text-gray-600 font-medium mt-1">Growth Rate</div>
                   </div>
@@ -817,10 +819,10 @@ export default function TrendGardenPage() {
                   </div>
                   <div className="text-sm text-gray-600 mt-1">Avg Engagement</div>
                 </div>
-                <div className={`text-center p-4 rounded-xl ${getGrowthBgColor(selectedTrend.metrics.growthRate)}`}>
-                  <div className={`text-2xl font-medium flex items-center justify-center gap-1 ${getGrowthColor(selectedTrend.metrics.growthRate)}`}>
-                    {getGrowthIcon(selectedTrend.metrics.growthRate)}
-                    {selectedTrend.metrics.growthRate > 0 ? '+' : ''}{selectedTrend.metrics.growthRate.toFixed(1)}%
+                <div className={`text-center p-4 rounded-xl ${getGrowthBgColor(selectedTrend.metrics.growthRate ?? 0)}`}>
+                  <div className={`text-2xl font-medium flex items-center justify-center gap-1 ${getGrowthColor(selectedTrend.metrics.growthRate ?? 0)}`}>
+                    {getGrowthIcon(selectedTrend.metrics.growthRate ?? 0)}
+                    {(selectedTrend.metrics.growthRate ?? 0) > 0 ? '+' : ''}{(selectedTrend.metrics.growthRate ?? 0).toFixed(1)}%
                   </div>
                   <div className="text-sm text-gray-600 mt-1">Growth Rate</div>
                 </div>
