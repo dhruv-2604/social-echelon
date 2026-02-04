@@ -122,7 +122,7 @@ export const POST = withSecurityHeaders(
               trendingAudio: Array.from(trend.trendingAudio.entries()).slice(0, 5),
               topHashtags: []
             },
-            top_posts: trend.topPosts.slice(0, 5),
+            top_posts: trend.topPosts.filter(p => p && !p.noResults).slice(0, 5),
             // Add missing fields with proper historical growth rate
             growth_velocity: historicalGrowthRate,
             current_volume: trend.postCount,
@@ -160,10 +160,10 @@ export const POST = withSecurityHeaders(
               avgEngagement: Math.round(t.avgEngagement),
               growthRate: (record?.growth_velocity || 0).toFixed(2), // Use historical, not Apify's
               topAudio: Array.from(t.trendingAudio.entries()).slice(0, 3),
-              topPosts: t.topPosts.slice(0, 3).map(p => ({
-                url: p.url,
-                likes: p.likeCount,
-                owner: p.owner.username
+              topPosts: t.topPosts.slice(0, 3).filter(p => p && !p.noResults).map(p => ({
+                url: p.url || '',
+                likes: p.likeCount || 0,
+                owner: p.owner?.username || 'unknown'
               }))
             }
           }),

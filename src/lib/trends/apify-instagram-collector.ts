@@ -24,6 +24,7 @@ interface InstagramPost {
   location?: {
     name: string
   }
+  noResults?: boolean // Apify returns this when scraping fails
 }
 
 interface TrendData {

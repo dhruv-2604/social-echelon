@@ -365,7 +365,7 @@ export const GET = withSecurityHeaders(
                   trendingAudio: Array.from(trend.trendingAudio.entries()).slice(0, 10),
                   topHashtags: []  // relatedHashtags not available from Apify collector yet
                 },
-                top_posts: trend.topPosts.slice(0, 5),
+                top_posts: trend.topPosts.filter((p: any) => p && !p.noResults).slice(0, 5),
                 // Add individual fields for querying
                 growth_velocity: historicalGrowthRate,
                 current_volume: trend.postCount,
@@ -576,7 +576,7 @@ export const POST = withSecurityHeaders(
         confidence_score: 80,
         trend_phase: (trend.growthRate && trend.growthRate > 10 ? 'growing' : 'emerging') as 'emerging' | 'growing' | 'peak' | 'declining',
         related_hashtags: [],  // Not available from current collector
-        example_posts: trend.topPosts.slice(0, 3).map(p => p.caption?.substring(0, 100) || ''),
+        example_posts: trend.topPosts.filter(p => p && !p.noResults).slice(0, 3).map(p => p.caption?.substring(0, 100) || ''),
         optimal_posting_times: [9, 12, 17, 20],
         audio_trends: Array.from(trend.trendingAudio.entries()).slice(0, 5)
       }))
